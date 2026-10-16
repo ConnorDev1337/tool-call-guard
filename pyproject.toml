@@ -31,7 +31,7 @@ toolguard = "toolguard.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-toolguard = ["py.typed", "presets/*.toml"]
+toolguard = ["py.typed", "presets/*.toml", "scenarios/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
