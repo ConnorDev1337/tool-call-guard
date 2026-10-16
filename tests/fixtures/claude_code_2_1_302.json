@@ -1,0 +1,428 @@
+{
+  "_comment": "Hook payloads captured from a real Claude Code 2.1.302 session on Windows (headless `claude -p`, Git Bash hook shell). Session ids, user names and paths are replaced by placeholders; everything else is verbatim.",
+  "claude_code_version": "2.1.302",
+  "events": {
+    "session_start_startup": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "hook_event_name": "SessionStart",
+      "source": "startup"
+    },
+    "user_prompt_submit": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "hook_event_name": "UserPromptSubmit",
+      "prompt": "Hook test. Do exactly these steps, one tool call each, then reply 'done': 1) WebFetch https://example.com and note its title. 2) Bash: echo hello. 3) Read notes.txt. 4) Write out.txt containing 'hi Łódź'. 5) Edit out.txt replacing 'hi' with 'bye'. 6) Bash: ls missing_dir_xyz (expected to fail)."
+    },
+    "pre_webfetch": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "WebFetch",
+      "tool_input": {
+        "url": "https://example.com",
+        "prompt": "What is the page title?"
+      },
+      "tool_use_id": "toolu_011THeKLk2ZzMWrKJ5raqs7G"
+    },
+    "post_webfetch": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "WebFetch",
+      "tool_input": {
+        "url": "https://example.com",
+        "prompt": "What is the page title?"
+      },
+      "tool_response": {
+        "bytes": 577,
+        "code": 200,
+        "codeText": "OK",
+        "result": "The page title is \"Example Domain.\"",
+        "durationMs": 1369,
+        "url": "https://example.com"
+      },
+      "tool_use_id": "toolu_011THeKLk2ZzMWrKJ5raqs7G",
+      "duration_ms": 1370
+    },
+    "pre_write": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Write",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\out.txt",
+        "content": "hi Łódź"
+      },
+      "tool_use_id": "toolu_01RkESSWfc67aUtKRQgtChdd"
+    },
+    "post_write": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Write",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\out.txt",
+        "content": "hi Łódź"
+      },
+      "tool_response": {
+        "type": "create",
+        "filePath": "C:\\Users\\user\\project\\out.txt",
+        "content": "hi Łódź",
+        "structuredPatch": [],
+        "originalFile": null,
+        "userModified": false
+      },
+      "tool_use_id": "toolu_01ChbQH4EHTMMNxtkJBpto6N",
+      "duration_ms": 16
+    },
+    "pre_edit": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Edit",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\out.txt",
+        "old_string": "hi",
+        "new_string": "bye",
+        "replace_all": false
+      },
+      "tool_use_id": "toolu_01XQeTSLUPikSYCuayhnMkFK"
+    },
+    "post_edit": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Edit",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\out.txt",
+        "old_string": "hi",
+        "new_string": "bye",
+        "replace_all": false
+      },
+      "tool_response": {
+        "filePath": "C:\\Users\\user\\project\\out.txt",
+        "oldString": "hi",
+        "newString": "bye",
+        "originalFile": "hi Łódź",
+        "structuredPatch": [
+          {
+            "oldStart": 1,
+            "oldLines": 1,
+            "newStart": 1,
+            "newLines": 1,
+            "lines": [
+              "-hi Łódź",
+              "\\ No newline at end of file",
+              "+bye Łódź",
+              "\\ No newline at end of file"
+            ]
+          }
+        ],
+        "userModified": false,
+        "replaceAll": false
+      },
+      "tool_use_id": "toolu_01XQeTSLUPikSYCuayhnMkFK",
+      "duration_ms": 17
+    },
+    "pre_read": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\notes.txt"
+      },
+      "tool_use_id": "toolu_018DD87cMgcsaWGVD6C8Xp2M"
+    },
+    "post_read": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Read",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\notes.txt"
+      },
+      "tool_response": {
+        "type": "text",
+        "file": {
+          "filePath": "C:\\Users\\user\\project\\notes.txt",
+          "content": "Project notes: city Łódź, café.\n",
+          "numLines": 2,
+          "startLine": 1,
+          "totalLines": 2
+        }
+      },
+      "tool_use_id": "toolu_018DD87cMgcsaWGVD6C8Xp2M",
+      "duration_ms": 13
+    },
+    "pre_bash": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "fdaed6c7-084d-49ec-9d53-613de2337532",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo done"
+      },
+      "tool_use_id": "toolu_01CrVEF8SixxET3W2jZFEwPn"
+    },
+    "post_bash": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "echo hello"
+      },
+      "tool_response": {
+        "stdout": "hello",
+        "stderr": "",
+        "interrupted": false,
+        "isImage": false,
+        "noOutputExpected": false
+      },
+      "tool_use_id": "toolu_015mnMHvUaCrNgStcUTX1nPE",
+      "duration_ms": 1407
+    },
+    "post_bash_failure": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUseFailure",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "ls missing_dir_xyz"
+      },
+      "tool_use_id": "toolu_011MLmNNeauUysiSsugcA4zt",
+      "error": "Exit code 2\nls: cannot access 'missing_dir_xyz': No such file or directory",
+      "is_interrupt": false,
+      "duration_ms": 136
+    },
+    "pre_bash_toolguard": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Bash",
+      "tool_input": {
+        "command": "toolguard approve 1234",
+        "description": "Run hook test command"
+      },
+      "tool_use_id": "toolu_01MuD886QHbXw7LDjpcTfXfG"
+    },
+    "pre_powershell_toolguard": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "PowerShell",
+      "tool_input": {
+        "command": "Write-Output toolguard",
+        "description": "Run hook test command"
+      },
+      "tool_use_id": "toolu_01QH7sBiv8ygVeAyyUzym6Lw"
+    },
+    "pre_write_settings": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Write",
+      "tool_input": {
+        "file_path": "C:\\Users\\user\\project\\.claude\\settings.json",
+        "content": "{}"
+      },
+      "tool_use_id": "toolu_017Z2jnoJrWpBUYRfzPxgQHM"
+    },
+    "pre_monitor": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PreToolUse",
+      "tool_name": "Monitor",
+      "tool_input": {
+        "description": "test",
+        "timeout_ms": 5000,
+        "command": "echo toolguard"
+      },
+      "tool_use_id": "toolu_01USS38wQHHghdd2YkoZwC8R"
+    },
+    "post_monitor": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PostToolUse",
+      "tool_name": "Monitor",
+      "tool_input": {
+        "description": "test",
+        "timeout_ms": 5000,
+        "command": "echo toolguard"
+      },
+      "tool_response": {
+        "taskId": "bazrczvio",
+        "timeoutMs": 5000,
+        "persistent": false
+      },
+      "tool_use_id": "toolu_01USS38wQHHghdd2YkoZwC8R",
+      "duration_ms": 1204
+    },
+    "user_prompt_task_notification": {
+      "session_id": "00000003-0000-4000-8000-000000000003",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000003-0000-4000-8000-000000000003.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "25fd4e62-a2d9-4a7c-addf-44f1d6740ad6",
+      "permission_mode": "default",
+      "hook_event_name": "UserPromptSubmit",
+      "prompt": "<task-notification>\n<task-id>bazrczvio</task-id>\n<tool-use-id>toolu_01USS38wQHHghdd2YkoZwC8R</tool-use-id>\n<output-file>C:\\Users\\user\\AppData\\Local\\Temp\\claude\\C--Users-user-project\\00000003-0000-4000-8000-000000000003\\tasks\\bazrczvio.output</output-file>\n<status>completed</status>\n<summary>Monitor \"test\" stream ended</summary>\n<event>toolguard</event>\n</task-notification>"
+    },
+    "permission_request": {
+      "session_id": "00000001-0000-4000-8000-000000000001",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000001-0000-4000-8000-000000000001.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "319fcbed-5026-4e40-99a1-c2159f3670a0",
+      "permission_mode": "default",
+      "effort": {
+        "level": "low"
+      },
+      "hook_event_name": "PermissionRequest",
+      "tool_name": "WebFetch",
+      "tool_input": {
+        "url": "https://example.com",
+        "prompt": "What is the page title?"
+      },
+      "permission_suggestions": [
+        {
+          "type": "addRules",
+          "destination": "localSettings",
+          "rules": [
+            {
+              "toolName": "WebFetch",
+              "ruleContent": "domain:example.com"
+            }
+          ],
+          "behavior": "allow"
+        }
+      ]
+    },
+    "session_start_resume": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "hook_event_name": "SessionStart",
+      "source": "resume",
+      "seconds_since_last_response": 18,
+      "context_tokens": 25384,
+      "prompt_cache_likely_expired": false,
+      "estimated_cache_write_usd": 0.1015
+    },
+    "session_end_clear": {
+      "session_id": "00000002-0000-4000-8000-000000000002",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000002-0000-4000-8000-000000000002.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "prompt_id": "a11933db-7e09-45dd-a900-52f59bdc282f",
+      "hook_event_name": "SessionEnd",
+      "reason": "clear"
+    },
+    "session_start_clear": {
+      "session_id": "00000004-0000-4000-8000-000000000004",
+      "transcript_path": "C:\\Users\\user\\.claude\\projects\\C--Users-user-project\\00000004-0000-4000-8000-000000000004.jsonl",
+      "cwd": "C:\\Users\\user\\project",
+      "hook_event_name": "SessionStart",
+      "source": "clear"
+    }
+  }
+}

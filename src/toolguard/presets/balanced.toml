@@ -126,12 +126,14 @@ tools = [
   "mcp__*__chat_post*", "mcp__*__*_post_message", "mcp__*__*send_message*", "mcp__*__*notify*",
 ]
 
+# Claude Code's Monitor tool runs a shell command (or opens a WebSocket, `ws`) in the
+# background, so it is a shell like Bash.
 [[sink]]
 category = "shell"
 egress = false
-critical = ["command", "cmd", "script", "code", "args"]
+critical = ["command", "cmd", "script", "code", "args", "ws"]
 tools = [
-  "Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
+  "Bash", "PowerShell", "Monitor", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
   "mcp__*__*terminal*", "mcp__*__run_code*", "mcp__*__*execute*",
 ]
 
@@ -227,7 +229,7 @@ trifecta = "allow"
 # guard's state, policy or hook configuration.
 
 [[protect]]
-tools = ["Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*", "mcp__*__*terminal*"]
+tools = ["Bash", "PowerShell", "Monitor", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*", "mcp__*__*terminal*"]
 args = { "*" = ["*toolguard*", "*/.claude/settings*.json*"] }
 message = "agents may not invoke the guard or edit its configuration (self-approval / tampering)"
 
