@@ -228,6 +228,11 @@ class Policy:
             return cls.preset("balanced")
         if str(spec) in PRESETS:
             return cls.preset(str(spec))
+        if not Path(spec).exists():
+            raise PolicyError(
+                f"unknown policy {str(spec)!r}: not a preset ({', '.join(PRESETS)}) "
+                "nor an existing file"
+            )
         return cls.from_toml(spec)
 
     def with_mode(self, mode: str) -> Policy:

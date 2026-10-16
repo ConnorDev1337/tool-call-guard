@@ -11,6 +11,7 @@ with owner-only permissions where the OS supports it.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import secrets
@@ -116,6 +117,17 @@ class Store:
 
     def close(self) -> None:
         with self._lock:
+            self.conn.close()
+
+    def __enter__(self) -> Store:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        # Safety net for short-lived CLI/hook processes; explicit close() is preferred.
+        with contextlib.suppress(Exception):
             self.conn.close()
 
     @contextmanager
