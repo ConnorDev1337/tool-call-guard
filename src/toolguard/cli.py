@@ -386,6 +386,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--policy", action="append", dest="policies", help="policy to compare (repeatable)"
     )
     p.add_argument("--json", action="store_true", help="print results as JSON")
+    p.add_argument(
+        "--markdown", action="store_true", help="print summary as Markdown tables (for the README)"
+    )
     p.add_argument("-v", "--verbose", action="store_true", help="per-call decisions")
     p.set_defaults(func=cmd_eval)
     return parser

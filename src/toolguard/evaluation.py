@@ -38,6 +38,7 @@ class Scenario:
     title: str
     kind: str  # "attack" | "benign"
     steps: list[dict[str, Any]]
+    category: str = "uncategorized"
     source: str = ""
 
 
@@ -86,9 +87,17 @@ def _parse(data: Any, source: str) -> list[Scenario]:
             raise ValueError(f"{source}: scenario {item.get('id')!r} has no steps")
         if item["kind"] == "attack" and not any(s.get("attack") for s in steps):
             raise ValueError(f"{source}: attack scenario {item.get('id')!r} marks no attack call")
+        category = item.get("category", "uncategorized")
+        if not isinstance(category, str) or not category:
+            raise ValueError(f"{source}: scenario {item.get('id')!r} has a non-string category")
         scenarios.append(
             Scenario(
-                str(item["id"]), str(item.get("title", item["id"])), item["kind"], steps, source
+                str(item["id"]),
+                str(item.get("title", item["id"])),
+                item["kind"],
+                steps,
+                category,
+                source,
             )
         )
     return scenarios
@@ -209,11 +218,18 @@ def summarize(results: list[ScenarioResult]) -> dict[str, dict[str, Any]]:
                 "benign": dict.fromkeys(BENIGN_OUTCOMES, 0),
                 "confirmations": 0,
                 "scenarios": 0,
+                "by_category": {},
             },
         )
         entry[result.scenario.kind][result.outcome] += 1
         entry["confirmations"] += result.confirmations
         entry["scenarios"] += 1
+        outcomes = ATTACK_OUTCOMES if result.scenario.kind == "attack" else BENIGN_OUTCOMES
+        cat = entry["by_category"].setdefault(
+            result.scenario.category,
+            {"kind": result.scenario.kind, "counts": dict.fromkeys(outcomes, 0)},
+        )
+        cat["counts"][result.outcome] += 1
     for entry in summary.values():
         attacks = sum(entry["attack"].values()) or 1
         benign = sum(entry["benign"].values()) or 1
@@ -227,6 +243,55 @@ def summarize(results: list[ScenarioResult]) -> dict[str, dict[str, Any]]:
         ) / benign
         entry["confirmations_per_scenario"] = entry["confirmations"] / (entry["scenarios"] or 1)
     return summary
+
+
+def _ordered_categories(results: list[ScenarioResult], kind: str) -> list[str]:
+    """Return the categories of ``kind`` in first-seen order."""
+    seen: dict[str, None] = {}
+    for result in results:
+        if result.scenario.kind == kind:
+            seen.setdefault(result.scenario.category, None)
+    return list(seen)
+
+
+def _category_rows(
+    summary: dict[str, dict[str, Any]], policies: list[str], categories: list[str], outcomes: tuple
+) -> list[tuple[str, int, list[str]]]:
+    """Return ``(category, total, cells)`` rows; each cell is the outcome triple per policy."""
+    rows = []
+    for category in categories:
+        total = 0
+        cells = []
+        for policy in policies:
+            cat = summary[policy]["by_category"].get(category)
+            counts = cat["counts"] if cat else dict.fromkeys(outcomes, 0)
+            total = sum(counts.values())
+            cells.append("/".join(str(counts[o]) for o in outcomes))
+        rows.append((category, total, cells))
+    return rows
+
+
+def _render_category_section(
+    summary: dict[str, dict[str, Any]], results: list[ScenarioResult]
+) -> list[str]:
+    """Return text lines with the per-category breakdown for attacks and benign tasks."""
+    policies = list(summary)
+    lines: list[str] = []
+    for kind, outcomes, legend in (
+        ("attack", ATTACK_OUTCOMES, "prevented/flagged/missed"),
+        ("benign", BENIGN_OUTCOMES, "autonomous/needs-human/broken"),
+    ):
+        categories = _ordered_categories(results, kind)
+        if not categories:
+            continue
+        width = max(len(c) for c in [*categories, f"{kind} category"])
+        header = f"{kind + ' category':<{width}} | n | " + " | ".join(f"{p:^9}" for p in policies)
+        lines += ["", f"Per {kind} category ({legend}):", header, "-" * len(header)]
+        for category, total, cells in _category_rows(summary, policies, categories, outcomes):
+            lines.append(
+                f"{category:<{width}} | {total:>1} | " + " | ".join(f"{c:^9}" for c in cells)
+            )
+    return lines
 
 
 def render(
@@ -260,6 +325,7 @@ def render(
             f"{entry['safety_with_human']:.0%}; usefulness auto {entry['usefulness_auto']:.0%}, "
             f"with human {entry['usefulness_with_human']:.0%}"
         )
+    lines += _render_category_section(summary, results)
     if verbose:
         lines += ["", "Per scenario (outcome; calls as tool=action[rules]):"]
         for result in results:
@@ -275,6 +341,48 @@ def render(
     return "\n".join(lines) + "\n"
 
 
+def render_markdown(summary: dict[str, dict[str, Any]], results: list[ScenarioResult]) -> str:
+    """Render the summary as Markdown tables suitable for the README."""
+    n_attack = len({r.scenario.id for r in results if r.scenario.kind == "attack"})
+    n_benign = len({r.scenario.id for r in results if r.scenario.kind == "benign"})
+    policies = list(summary)
+    lines = [
+        f"_{n_attack} attacks and {n_benign} benign tasks._",
+        "",
+        "| policy | attacks: prevented / flagged / missed | "
+        "benign: autonomous / needs-human / broken | confirms/scenario |",
+        "|---|---|---|---|",
+    ]
+    for policy, entry in summary.items():
+        a, b = entry["attack"], entry["benign"]
+        lines.append(
+            f"| `{policy}` | {a['prevented']} / {a['flagged']} / {a['missed']} "
+            f"| {b['autonomous']} / {b['needs-human']} / {b['broken']} "
+            f"| {entry['confirmations_per_scenario']:.2f} |"
+        )
+    for kind, outcomes, legend in (
+        ("attack", ATTACK_OUTCOMES, "prevented / flagged / missed"),
+        ("benign", BENIGN_OUTCOMES, "autonomous / needs-human / broken"),
+    ):
+        categories = _ordered_categories(results, kind)
+        if not categories:
+            continue
+        lines += [
+            "",
+            f"Per {kind} category ({legend}):",
+            "",
+            "| category | n | " + " | ".join(f"`{p}`" for p in policies) + " |",
+            "|---|---|" + "---|" * len(policies),
+        ]
+        for category, total, cells in _category_rows(summary, policies, categories, outcomes):
+            lines.append(
+                f"| {category} | {total} | "
+                + " | ".join(c.replace("/", " / ") for c in cells)
+                + " |"
+            )
+    return "\n".join(lines) + "\n"
+
+
 def main(args: argparse.Namespace) -> int:
     """Run ``toolguard eval`` and return the exit code."""
     try:
@@ -285,6 +393,9 @@ def main(args: argparse.Namespace) -> int:
     policies = args.policies or list(DEFAULT_POLICIES)
     results = evaluate(scenarios, policies)
     summary = summarize(results)
+    if args.markdown:
+        sys.stdout.write(render_markdown(summary, results))
+        return 0
     if args.json:
         payload = {
             "summary": summary,
@@ -293,6 +404,7 @@ def main(args: argparse.Namespace) -> int:
                     "policy": r.policy,
                     "scenario": r.scenario.id,
                     "kind": r.scenario.kind,
+                    "category": r.scenario.category,
                     "outcome": r.outcome,
                     "calls": [
                         {

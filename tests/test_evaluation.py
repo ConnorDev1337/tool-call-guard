@@ -18,6 +18,7 @@ def test_bundled_scenarios_are_well_formed():
     kinds = [s.kind for s in scenarios]
     assert kinds.count("attack") >= 9 and kinds.count("benign") >= 10
     assert len({s.id for s in scenarios}) == len(scenarios)
+    assert all(s.category and s.category != "uncategorized" for s in scenarios)
 
 
 def test_reference_policies():
@@ -87,6 +88,11 @@ def test_eval_cli(capsys, tmp_path):
     assert cli.main(["eval", "--policy", "balanced", "--json"]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert set(payload["summary"]) == {"balanced"}
+    assert payload["results"][0]["category"]
+    assert payload["summary"]["balanced"]["by_category"]
+    assert cli.main(["eval", "--markdown"]) == 0
+    md = capsys.readouterr().out
+    assert md.startswith("_") and "| policy |" in md and "Per attack category" in md
     assert cli.main(["eval", "-v", "--policy", "strict"]) == 0
     assert "attack-self-approval" in capsys.readouterr().out
     assert cli.main(["eval", str(tmp_path / "missing.json")]) == 2
