@@ -78,19 +78,24 @@ def _pre_tool_use(guard: Guard, event: dict[str, Any], ask_modes: frozenset[str]
 
 
 def _post_tool_use(guard: Guard, event: dict[str, Any], annotate: bool) -> HookResult:
+    """Record a finished call; ``PostToolUseFailure`` carries ``error`` instead of a response."""
     session = _session(event)
+    name = str(event.get("hook_event_name"))
     tool = str(event.get("tool_name", ""))
     args = event.get("tool_input") or {}
-    observation = guard.observe(tool, event.get("tool_response"), args, session=session)
+    failed = name == "PostToolUseFailure"
+    # A failed call still ran and its error text can carry source content (an MCP error
+    # result, a command's stderr), so it is observed like a normal response.
+    output = event.get("error") if failed else event.get("tool_response")
+    observation = guard.observe(tool, output, args, session=session)
     if guard.policy.sink_for(tool, args) is not None:
-        guard.audit.append(
-            "executed", session, {"tool": tool, "tool_use_id": event.get("tool_use_id")}
-        )
+        record: dict[str, Any] = {"tool": tool, "tool_use_id": event.get("tool_use_id")}
+        if failed:
+            record.update(failed=True, interrupted=bool(event.get("is_interrupt")))
+        guard.audit.append("executed", session, record)
     if annotate and observation is not None and observation.untrusted:
         note = UNTRUSTED_NOTE.format(tool=tool, kind=observation.kind)
-        payload = {
-            "hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": note}
-        }
+        payload = {"hookSpecificOutput": {"hookEventName": name, "additionalContext": note}}
         return HookResult(stdout=json.dumps(payload))
     return HookResult()
 
@@ -106,7 +111,7 @@ def handle_event(
     name = event.get("hook_event_name")
     if name == "PreToolUse":
         return _pre_tool_use(guard, event, ask_modes)
-    if name == "PostToolUse":
+    if name in ("PostToolUse", "PostToolUseFailure"):
         return _post_tool_use(guard, event, annotate)
     if name == "UserPromptSubmit":
         guard.observe_user(str(event.get("prompt") or ""), session=_session(event))
@@ -157,6 +162,7 @@ def settings_snippet(command: str) -> dict[str, Any]:
             "UserPromptSubmit": [{"hooks": [hook]}],
             "PreToolUse": [{"matcher": "*", "hooks": [hook]}],
             "PostToolUse": [{"matcher": "*", "hooks": [hook]}],
+            "PostToolUseFailure": [{"matcher": "*", "hooks": [hook]}],
         }
     }
 
