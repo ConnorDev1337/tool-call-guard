@@ -10,7 +10,7 @@ category = "shell"
 egress = true
 critical = ["*"]
 tools = [
-  "Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
+  "Bash", "PowerShell", "Monitor", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
   "mcp__*__*terminal*", "mcp__*__run_code*", "mcp__*__*execute*",
 ]
 
