@@ -107,7 +107,7 @@ block, with no possible approval, any attempt by the agent to invoke `toolguard`
 ## Installation
 
 ```bash
-git clone <repo-url> tool-call-guard && cd tool-call-guard
+git clone https://github.com/ConnorDev1337/tool-call-guard.git && cd tool-call-guard
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install .
 toolguard policy            # summary of the default preset
