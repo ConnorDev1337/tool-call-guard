@@ -95,7 +95,9 @@ def test_monitor_mode_never_blocks(make_guard):
         guard, pre("mcp__gmail__send_email", {"to": "billing@evil-payments.example"})
     )
     assert result.stdout is None
-    assert list(guard.audit.records())[-1]["data"]["action"] == "block"
+    record = list(guard.audit.records())[-1]["data"]
+    assert record["action"] == "block" and record["effective"] == "allow"
+    assert record["mode"] == "monitor" and record["permission_mode"] == "default"
 
 
 def test_annotation_and_audit(make_guard):
