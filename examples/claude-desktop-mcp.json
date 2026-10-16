@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "toolguard",
+      "args": ["mcp-proxy", "--server-name", "fetch", "--session", "desktop", "--",
+               "uvx", "mcp-server-fetch==2025.4.7"]
+    },
+    "gmail": {
+      "command": "toolguard",
+      "args": ["mcp-proxy", "--server-name", "gmail", "--session", "desktop",
+               "--policy", "/home/me/.config/toolguard/team-policy.toml", "--",
+               "npx", "-y", "@example/gmail-mcp@1.4.0"]
+    }
+  }
+}

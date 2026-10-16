@@ -1,0 +1,40 @@
+# Example team policy: start from the balanced preset and describe your own tools.
+# Validate with:  toolguard policy examples/team-policy.toml
+
+extends = "balanced"
+
+# Forget the taint 8 hours after the last untrusted read (0 = until reset).
+taint_ttl = 28800
+
+# Our internal wiki is editable by every employee and by integrations:
+# treat it like the web.
+[[source]]
+kind = "wiki"
+untrusted = true
+tools = ["mcp__confluence__*", "mcp__intranet__get_page"]
+
+# The CRM holds customer personal data.
+[[source]]
+kind = "crm"
+private = true
+tools = ["mcp__crm__get_*", "mcp__crm__search_*"]
+
+# Exporting contacts is a form of sending data out.
+[[sink]]
+category = "send"
+egress = true
+critical = ["destination", "email", "webhook"]
+tools = ["mcp__crm__export_contacts"]
+
+# Production deploys: always a human when anything untrusted was read,
+# and never when the target comes from untrusted text.
+[[sink]]
+category = "deploy"
+critical = ["environment", "service", "image"]
+tools = ["mcp__deployer__*"]
+
+[actions.deploy]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "block"
+trifecta = "block"
