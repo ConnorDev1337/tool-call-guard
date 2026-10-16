@@ -116,7 +116,12 @@ def handle_event(
     ask_modes: frozenset[str] = ASK_MODES,
     annotate: bool = False,
 ) -> HookResult:
-    """Handle one parsed hook event; ``SessionStart`` after ``/clear`` resets the taint."""
+    """Handle one parsed hook event; ``SessionStart`` after ``/clear`` resets the taint.
+
+    Claude Code 2.1.302 gives the cleared conversation a new session id, so the reset only
+    matters for versions that keep the id; the old session keeps its taint since it can be
+    resumed.
+    """
     name = event.get("hook_event_name")
     if name == "PreToolUse":
         return _pre_tool_use(guard, event, ask_modes)

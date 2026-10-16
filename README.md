@@ -130,10 +130,10 @@ A single command handles every event:
 
 | Event | What toolguard does |
 |---|---|
-| `UserPromptSubmit` | Records the prompt as trusted input (endorses values) |
-| `PostToolUse` | Records the result if the tool is a source |
+| `UserPromptSubmit` | Records the prompt as trusted input (endorses values). Prompts that Claude Code injects, which start with a tag such as `<task-notification>` (Monitor events, background task results), are never endorsed |
+| `PostToolUse`, `PostToolUseFailure` | Records the result, or the error text of a failed call, if the tool is a source; audits sink calls as `executed` |
 | `PreToolUse` | `BLOCK` → `deny` (Claude sees the reason); `CONFIRM` → `ask` (**the user** sees the reason in Claude Code's permission dialog) |
-| `SessionStart` (`clear`) | The context was cleared: resets the session's taint |
+| `SessionStart` (`clear`) | Resets the session's taint (see below: `/clear` now also starts a new session id) |
 
 Design details:
 
@@ -141,14 +141,65 @@ Design details:
   nothing and Claude Code follows its usual flow.
 - In permission modes where nobody would answer (`bypassPermissions`, `dontAsk`, `auto`), a
   `CONFIRM` becomes a `deny`. A classifier or another model does not count as a human.
-  Configurable with `--ask-modes`.
+  Configurable with `--ask-modes`. In unattended runs (CI, Agent SDK hosts,
+  `--permission-prompt-tool`) an `ask` may be answered by a program; pass `--ask-modes ""` there so
+  that `CONFIRM` always denies.
 - **Fails closed**: any internal error in `PreToolUse` exits with code 2, which Claude Code treats
-  as a block. Exit code 1 would let the call through.
-- On Windows, Claude Code's shell may be `PowerShell`; the policies treat it like `Bash`.
+  as a block. Exit code 1 would let the call through. Errors in the other events cannot block
+  anything (an observation would be lost), so the hook reads its input as UTF-8 whatever the
+  system locale: with the Windows default (cp1252) any non-ASCII payload used to fail.
+- On Windows, Claude Code offers both `Bash` (Git Bash) and `PowerShell`, plus `Monitor`, which runs
+  a background command or opens a WebSocket; the presets treat all three as a shell. Hook commands
+  run under Git Bash, where the quoted command printed by `toolguard install` works as is.
+- Prompts injected by Claude Code reach the policy as the pseudo tool `claude-code:<tag>`, so a
+  policy can treat them as a source, e.g. `[[source]] kind = "background"`, `untrusted = true`,
+  `tools = ["claude-code:task-notification"]`. The presets do not, because background builds would
+  then taint every session.
 - `--annotate` adds a note to the model's context saying the output comes from an untrusted source.
   It is an extra soft defense, not a replacement for the policy.
 - If your Claude Code version supports `"onFailure": "block"` on hooks, add it: by default a hook
   that times out does not block.
+- After installing, check that the hooks fire (`toolguard audit tail` should show a `decision` per
+  tool call): in `-p` mode Claude Code silently ignores a settings file that fails validation. The
+  snippet registers `PostToolUseFailure`; drop that entry on Claude Code versions that predate it.
+
+#### Verified behaviour (Claude Code 2.1.302)
+
+Verified on Windows 11 with Claude Code 2.1.302 in headless sessions (`claude -p`, hooks in a
+project-level `.claude/settings.json`, `balanced` preset). Sanitized payloads from those sessions
+are replayed by [`tests/test_claude_code_live.py`](tests/test_claude_code_live.py).
+
+| Event | Observed |
+|---|---|
+| `SessionStart` | `source` is `startup`, `resume` (same `session_id`, so the taint is kept) or `clear`. `/clear` ends the session (`SessionEnd`, `reason: "clear"`) and starts a **new** `session_id`: the new conversation starts clean and the old one keeps its taint, which is right because it can be resumed |
+| `UserPromptSubmit` | `prompt` and `permission_mode`. Also fires for injected prompts: a Monitor event arrived as `<task-notification>…<event>…</event></task-notification>` |
+| `PreToolUse` | `tool_name`, `tool_input`, `tool_use_id`, `permission_mode`; Windows paths with backslashes. `Bash`/`PowerShell`: `{command, description}`; `Monitor`: `{command, description, timeout_ms}` |
+| `PostToolUse` | `tool_response` is an object: `WebFetch` `{bytes, code, codeText, result, durationMs, url}` (`result` is a model's answer about the page, not the page itself), `Bash` `{stdout, stderr, interrupted, …}`, `Read` `{type, file: {filePath, content, …}}`, `Write`/`Edit` with the content or patch |
+| `PostToolUseFailure` | Fires **instead of** `PostToolUse` when a call runs and fails (e.g. a non-zero exit), with `error` and `is_interrupt` |
+| `PermissionRequest` | Fires when Claude Code itself would prompt; toolguard does not use it |
+
+Decision for a shell call after an untrusted `WebFetch`, per permission mode:
+
+| `--permission-mode` | `permission_mode` in the payload | toolguard | Outcome in `claude -p` |
+|---|---|---|---|
+| `default` (or `manual`) | `default` | `ask` | Not run: nobody can answer, Claude gets the reason as the tool error (`permission_denied`, `decision_reason_type: "hook"`) |
+| `acceptEdits` | `acceptEdits` | `ask` | Not run, as above |
+| `plan` | `plan` | `ask` | Not run, as above |
+| `bypassPermissions` | `bypassPermissions` | `deny` | Not run; Claude gets `PreToolUse:Bash hook error: <reason>` |
+| `dontAsk` | `dontAsk` | `deny` | Not run, as above |
+| `auto` | `auto` | `deny` | Not run, as above |
+
+With `--ask-modes` forced to return `ask` in `bypassPermissions`, Claude Code still honoured it in
+`-p` (the call was not run). Self-protection denied `toolguard approve 1234` through `Bash` and
+`PowerShell`, a `Write` to `.claude\settings.json` and `Monitor` running `echo toolguard`; Claude
+received each reason verbatim. Exit code 2 from the hook blocked the call. Writes and edits after
+web content were allowed, as the preset says. The audit chain verified, with one `decision` per
+call (including `tool_use_id` and `permission_mode`), the `observation` of each source result and
+an `executed` record per sink call that ran. Whether a delegated `ask` was accepted is not
+recorded; an `executed` record with the same `tool_use_id` shows that it ran.
+
+In `-p` mode Claude Code runs project hooks even in a workspace that was never trusted, but ignores
+the project's `permissions.allow` until it is (it says so on stderr).
 
 ### Any MCP client (stdio proxy)
 
@@ -350,8 +401,8 @@ in the response text); verifying the identity of MCP servers.
   session.
 - **The user's prompt is trusted.** If the user pastes an e-mail or a web page into the prompt,
   that content endorses values instead of tainting them.
-- **Taint is per session and persists** until `reset`, `/clear` or `taint_ttl`. It is kept after
-  context compaction, conservatively.
+- **Taint is per session and persists** until `reset` or `taint_ttl`; `/clear` starts a new
+  session. It is kept after context compaction and `--resume`, conservatively.
 - **Same OS user as the agent.** Self-protection rules are pattern-based and can be evaded by
   obfuscating the command (for example `t''oolguard`). An agent with an arbitrary shell could, in
   principle, modify `~/.toolguard`. For strong guarantees the state and the HMAC key must be out of
@@ -362,9 +413,17 @@ in the response text); verifying the identity of MCP servers.
   protection; the evidence is shown precisely to reduce that risk.
 - **Performance**: each observation is capped at 256 KiB of normalized text and matching is linear
   over the session's observations. Very long sessions with many reads grow in cost.
-- **Claude Code**: the adapter follows the documented hook contract (October 2026) and is tested
-  with simulated events and by running the real command as a subprocess, not inside a Claude Code
-  session. Tool names and formats may change between versions.
+- **Claude Code**: verified with Claude Code 2.1.302 on Windows in headless sessions (see
+  [Verified behaviour](#verified-behaviour-claude-code-21302)). Not exercised live: the interactive
+  permission dialog, macOS and Linux, subagents and MCP tools. Tool names and payloads change
+  between versions (2.1.302 added `Monitor`, `ToolSearch` and `PostToolUseFailure`); re-check after
+  upgrading. The presets do not classify other recent tools (`Workflow`, `CronCreate`,
+  `ScheduleWakeup`, `RemoteTrigger`, `PushNotification`, `SendMessage`).
+- **Background output is not seen as a tool result.** Monitor events and background task results
+  reach the model later as injected prompts. They are not endorsed, but they only taint the session
+  if the policy declares `claude-code:task-notification` as a source.
+- **`WebFetch` returns a model's summary**, not the page, so injected text may arrive paraphrased
+  and only the coarse `tainted` rule applies to it.
 
 ## Development
 
