@@ -15,7 +15,7 @@ import sys
 import traceback
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, TextIO
+from typing import Any, BinaryIO, TextIO
 
 from ..guard import Guard
 from ..model import Action
@@ -118,15 +118,22 @@ def handle_event(
 
 def run(
     make_guard: Callable[[], Guard],
-    stdin: TextIO,
+    stdin: TextIO | BinaryIO,
     *,
     ask_modes: frozenset[str] = ASK_MODES,
     annotate: bool = False,
 ) -> HookResult:
-    """Read one hook event from ``stdin`` and handle it, failing closed."""
+    """Read one hook event from ``stdin`` and handle it, failing closed.
+
+    A binary stream is decoded as UTF-8, which is what Claude Code writes.
+    """
     event: dict[str, Any] = {}
     try:
-        payload = json.load(stdin)
+        data = stdin.read()
+        # Text-mode stdin uses the locale encoding (cp1252 on most Windows hosts), which
+        # garbles non-ASCII payloads; Claude Code always sends UTF-8.
+        text = data.decode("utf-8-sig") if isinstance(data, bytes) else data
+        payload = json.loads(text)
         if not isinstance(payload, dict):
             raise ValueError("hook input is not a JSON object")
         event = payload
@@ -156,7 +163,7 @@ def settings_snippet(command: str) -> dict[str, Any]:
 
 def main(make_guard: Callable[[], Guard], **kwargs: Any) -> int:
     """Run the hook on the process's standard streams and return its exit code."""
-    result = run(make_guard, sys.stdin, **kwargs)
+    result = run(make_guard, getattr(sys.stdin, "buffer", sys.stdin), **kwargs)
     if result.stdout:
         sys.stdout.write(result.stdout + "\n")
     if result.stderr:

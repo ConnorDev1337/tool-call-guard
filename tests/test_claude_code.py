@@ -158,6 +158,46 @@ def test_hook_command_end_to_end(tmp_path):
     assert broken.returncode == 2
 
 
+def test_hook_reads_utf8_regardless_of_locale(tmp_path):
+    # Claude Code writes UTF-8; text-mode stdin on Windows decodes as cp1252, which made
+    # every non-ASCII payload an internal error (benign calls blocked, observations lost).
+    env = {
+        **os.environ,
+        "TOOLGUARD_HOME": str(tmp_path / "home"),
+        "PYTHONIOENCODING": "cp1252",
+        "PYTHONUTF8": "0",
+    }
+    command = [sys.executable, "-m", "toolguard", "hook", "claude-code"]
+    city = "Łódź"
+    for payload in (
+        event("UserPromptSubmit", prompt=f"write hi {city}"),
+        pre("Write", {"file_path": "out.txt", "content": f"hi {city}"}),
+        post("WebFetch", {"url": "https://example.com"}, {"result": f"Café {city}"}),
+    ):
+        result = subprocess.run(
+            command,
+            input=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            capture_output=True,
+            env=env,
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+    blocked = subprocess.run(
+        command,
+        input=json.dumps(pre("Bash", {"command": f"echo {city}"}), ensure_ascii=False).encode(),
+        capture_output=True,
+        env=env,
+        check=False,
+    )
+    output = json.loads(blocked.stdout)["hookSpecificOutput"]
+    assert (
+        output["permissionDecision"] == "ask"
+        and "untrusted data" in output["permissionDecisionReason"]
+    )
+    invalid = run(lambda: None, io.BytesIO(b'{"hook_event_name": "PreToolUse", "x": "\xff"}'))
+    assert invalid.exit_code == 2 and "UnicodeDecodeError" in invalid.stderr
+
+
 def test_main_writes_streams(make_guard, monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(pre("Bash", {"command": "ls"}))))
     assert claude_code.main(make_guard) == 0
