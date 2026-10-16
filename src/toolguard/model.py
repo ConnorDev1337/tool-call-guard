@@ -10,7 +10,7 @@ from typing import Any
 
 
 class Action(enum.IntEnum):
-    """Ordered so that ``max()`` picks the most restrictive action."""
+    """Outcome for a tool call, ordered so that ``max()`` picks the most restrictive."""
 
     ALLOW = 0
     CONFIRM = 1
@@ -22,6 +22,7 @@ class Action(enum.IntEnum):
 
     @classmethod
     def parse(cls, value: str | Action) -> Action:
+        """Return the action named ``value`` (case-insensitive); raise ValueError if unknown."""
         if isinstance(value, Action):
             return value
         try:
@@ -33,18 +34,21 @@ class Action(enum.IntEnum):
 
 
 def canonical_json(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
+    """Serialize ``value`` deterministically (sorted keys, no whitespace) for hashing."""
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str
+    )
 
 
 def call_fingerprint(tool: str, args: Any) -> str:
-    """Identity of one exact tool call; approvals are bound to it."""
+    """Return the SHA-256 identity of one exact tool call; approvals are bound to it."""
     payload = canonical_json({"tool": tool, "args": args})
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
 class Indicator:
-    """A concrete, attributable value extracted from text (URL, e-mail, IBAN...)."""
+    """A concrete, attributable value extracted from text (URL, e-mail, IBAN, ...)."""
 
     kind: str
     value: str
@@ -62,7 +66,7 @@ class Observation:
     untrusted: bool
     private: bool
     trusted: bool
-    text: str  # normalized, size-capped; used for provenance matching
+    text: str  # Normalized and size-capped; used for provenance matching
     indicators: tuple[Indicator, ...]
     digest: str
 
@@ -76,16 +80,18 @@ class Observation:
 class Evidence:
     """Why an argument is attributed to an observation."""
 
-    arg: str  # dotted path of the argument, e.g. "to" or "destination.iban"
+    arg: str  # Dotted argument path, e.g. "to" or "destination.iban"
     method: str  # "indicator" | "verbatim" | "fragment" | "secret"
-    matched: str  # redacted excerpt of the matched value
+    matched: str  # Redacted excerpt of the matched value
     observation_id: int
-    source: str  # observation label
-    endorsed: bool = False  # the same value also appears in trusted (user) input
+    source: str  # Observation label
+    endorsed: bool = False  # The value also appears in trusted (user) input
 
 
 @dataclass(frozen=True)
 class Reason:
+    """A rule that fired, the action it demands and its evidence."""
+
     rule: str  # "tainted" | "untrusted_flow" | "private_flow" | "trifecta" | "protect" | ...
     action: Action
     message: str
@@ -94,15 +100,17 @@ class Reason:
 
 @dataclass
 class Decision:
+    """Outcome of evaluating one tool call; ``category`` is the matched sink, if any."""
+
     tool: str
     args: Any
-    action: Action  # what the policy demands
+    action: Action  # What the policy demands
     category: str | None = None
     reasons: list[Reason] = field(default_factory=list)
     mode: str = "enforce"
-    effective: Action | None = None  # after monitor mode / approval
+    effective: Action | None = None  # After monitor mode or approval
     approval_id: str | None = None
-    approval_status: str | None = None  # "approved" | "denied" | "pending"
+    approval_status: str | None = None  # "approved" | "denied" | "pending" | "delegated"
     approved_by: str | None = None
 
     def __post_init__(self) -> None:
@@ -118,7 +126,7 @@ class Decision:
         return self.effective == Action.ALLOW
 
     def explain(self) -> str:
-        """Human/model-readable explanation (no raw argument values)."""
+        """Return an explanation for humans and the model, without raw argument values."""
         head = f"toolguard: {self.action.label.upper()} {self.tool}"
         if self.category:
             head += f" (sink: {self.category})"

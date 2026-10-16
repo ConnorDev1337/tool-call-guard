@@ -1,9 +1,8 @@
-"""Redaction for anything written to the audit log or shown in explanations.
+"""Redaction of values written to the audit log or shown in explanations.
 
-Audit records outlive sessions and may be shipped elsewhere, so argument
-values are masked when they look like credentials and truncated otherwise.
-Each truncated or masked value keeps a short SHA-256 prefix so identical values
-can still be correlated across records.
+Audit records outlive sessions and may be shipped elsewhere, so credential-like
+values are masked and long values truncated. Each masked or truncated value keeps
+a short SHA-256 prefix so identical values can still be correlated.
 """
 
 from __future__ import annotations
@@ -28,10 +27,12 @@ _URL_CREDENTIALS = re.compile(r"(?<=://)([^/\s:@]+):([^/\s@]+)@")
 
 
 def short_hash(value: str) -> str:
+    """Return a 12-character SHA-256 prefix used to correlate redacted values."""
     return hashlib.sha256(value.encode("utf-8")).hexdigest()[:12]
 
 
 def mask_secrets(text: str) -> str:
+    """Mask known credential formats and passwords embedded in URLs."""
     text = _KNOWN_SECRET.sub(lambda m: f"[secret:{short_hash(m.group())}]", text)
     return _URL_CREDENTIALS.sub(lambda m: f"{m.group(1)}:****@", text)
 
@@ -47,7 +48,7 @@ def redact_value(value: str, limit: int = 500, *, force: bool = False) -> str:
 
 
 def redact_args(value: Any, limit: int = 500, _key: str = "") -> Any:
-    """Deep copy of tool arguments that is safe to persist."""
+    """Return a redacted deep copy of tool arguments; values of sensitive keys are hidden."""
     if isinstance(value, dict):
         return {str(k): redact_args(v, limit, str(k)) for k, v in value.items()}
     if isinstance(value, list | tuple):

@@ -59,8 +59,14 @@ class Harness:
 
     def initialize(self, elicitation=False):
         capabilities = {"elicitation": {}} if elicitation else {}
-        self.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": capabilities,
-                                    "clientInfo": {"name": "test", "version": "0"}})  # fmt: skip
+        self.request(
+            "initialize",
+            {
+                "protocolVersion": "2025-06-18",
+                "capabilities": capabilities,
+                "clientInfo": {"name": "test", "version": "0"},
+            },
+        )
         return self.recv()
 
     def close(self):
@@ -138,8 +144,8 @@ def test_confirmation_via_elicitation(harness, answer, allowed):
     assert elicitation["method"] == "elicitation/create"
     assert "tainted" in elicitation["params"]["message"]
     if answer is not None:
-        h.send({"jsonrpc": "2.0", "id": elicitation["id"],
-                "result": {"action": "accept", "content": {"approve": answer}}})  # fmt: skip
+        result = {"action": "accept", "content": {"approve": answer}}
+        h.send({"jsonrpc": "2.0", "id": elicitation["id"], "result": result})
     response = h.recv()
     if allowed:
         assert text_of(response) == "sent to alice@corp.example"
@@ -149,7 +155,7 @@ def test_confirmation_via_elicitation(harness, answer, allowed):
 
 def test_blank_and_non_json_lines(harness):
     h = harness()
-    h.to_proxy.write(b"\n")  # ignored
+    h.to_proxy.write(b"\n")  # Ignored
     assert h.initialize()["result"]["serverInfo"]["name"] == "fake-mail"
     h.proxy.handle_server_line(b"server log line")
     assert h.recv() == b"server log line\n"

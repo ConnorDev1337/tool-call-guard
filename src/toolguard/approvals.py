@@ -1,17 +1,10 @@
 """Human approval channels for decisions that require confirmation.
 
-The approval channel is the crux of the design from an AI-control point of
-view: it must be *out of band*, i.e. something the agent cannot drive. A tool
-the model can call, or text the model can write, is never an approval.
-Channels provided here:
-
-* :class:`ConsoleApprover` asks on the controlling terminal (``/dev/tty`` or
-  ``CONIN$``/``CONOUT$``), not on stdin/stdout, which may belong to the agent.
-* :class:`QueueApprover` records a pending request; a human approves it with
-  ``toolguard approve <id>`` from an interactive terminal and the agent retries
-  the *identical* call, which consumes the approval (single use, short TTL).
-* :class:`CallbackApprover` lets an embedding application plug its own UI.
-* :class:`DenyApprover` is the fail-closed default when nobody can be asked.
+Approvals must come from a channel the agent cannot drive: a tool the model can
+call, or text it can write, is never an approval. Hence the console channel uses
+the controlling terminal rather than stdin/stdout, which may belong to the agent,
+and queued requests are decided with ``toolguard approve`` in an interactive
+terminal.
 """
 
 from __future__ import annotations
@@ -25,20 +18,24 @@ from typing import Any, Protocol, TextIO
 
 from .store import Store
 
-APPROVAL_TTL = 600.0  # seconds an approval stays usable after a human decides
+APPROVAL_TTL = 600.0  # Seconds an approval stays usable after a human decides
 
 
 @dataclass(frozen=True)
 class ApprovalRequest:
+    """A tool call submitted for human approval."""
+
     session: str
     tool: str
     fingerprint: str
-    summary: str  # Decision.explain(): rules, evidence, no raw secrets
-    args_preview: Any  # redacted arguments
+    summary: str  # Decision.explain(): rules and evidence, no raw secrets
+    args_preview: Any  # Redacted arguments
 
 
 @dataclass(frozen=True)
 class ApprovalOutcome:
+    """Answer of an approval channel; ``by`` identifies who decided, if anyone."""
+
     status: str  # "approved" | "denied" | "pending"
     by: str | None = None
     approval_id: str | None = None
@@ -46,16 +43,24 @@ class ApprovalOutcome:
 
 
 class Approver(Protocol):
+    """Interface of an approval channel."""
+
     def request(self, req: ApprovalRequest) -> ApprovalOutcome: ...
 
 
 class DenyApprover:
+    """Fail-closed default: deny every request because nobody can be asked."""
+
     def request(self, req: ApprovalRequest) -> ApprovalOutcome:
         return ApprovalOutcome("denied", note="no human approval channel is configured")
 
 
 class CallbackApprover:
-    def __init__(self, callback: Callable[[ApprovalRequest], bool], name: str = "callback") -> None:
+    """Delegate the decision to a callback, e.g. the embedding application's UI."""
+
+    def __init__(
+        self, callback: Callable[[ApprovalRequest], bool], name: str = "callback"
+    ) -> None:
         self.callback = callback
         self.name = name
 
@@ -66,7 +71,7 @@ class CallbackApprover:
 
 @contextlib.contextmanager
 def open_console() -> Iterator[tuple[TextIO, TextIO] | None]:
-    """The process' controlling terminal, independent of stdin/stdout."""
+    """Yield ``(reader, writer)`` for the controlling terminal, or ``None`` if unavailable."""
     handles: list[TextIO] = []
     try:
         if os.name == "nt":
@@ -89,6 +94,8 @@ def open_console() -> Iterator[tuple[TextIO, TextIO] | None]:
 
 
 class ConsoleApprover:
+    """Ask on the controlling terminal; deny if there is none."""
+
     def __init__(self, opener: Callable[[], Any] = open_console) -> None:
         self.opener = opener
 
@@ -109,6 +116,12 @@ class ConsoleApprover:
 
 
 class QueueApprover:
+    """Queue requests in the store for ``toolguard approve`` or ``toolguard deny``.
+
+    The agent retries the identical call to use an approval, which is bound to the
+    call fingerprint, single use and valid for ``ttl`` seconds after the decision.
+    """
+
     def __init__(
         self, store: Store, ttl: float = APPROVAL_TTL, clock: Callable[[], float] = time.time
     ):
@@ -140,7 +153,7 @@ class QueueApprover:
 
 
 class ChainApprover:
-    """Try approvers in order until one gives a definitive answer."""
+    """Try approvers in order; unattributed denials (no channel available) fall through."""
 
     def __init__(self, *approvers: Approver) -> None:
         self.approvers = approvers

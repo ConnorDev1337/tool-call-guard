@@ -1,9 +1,10 @@
-# toolguard "strict" preset: the balanced sources, sinks and self-protection,
-# but any evidence of untrusted data reaching a sink blocks, every sensitive
-# action in a tainted session needs a human, and the shell counts as egress.
+# toolguard "strict" preset: the balanced sources, sinks and self-protection, but
+# any evidence of untrusted data reaching a sink blocks, every sensitive action in
+# a tainted session needs a human, and the shell counts as egress.
 
 extends = "balanced"
 
+# Precedes the balanced shell sink, since policy entries come before the preset's.
 [[sink]]
 category = "shell"
 egress = true

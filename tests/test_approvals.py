@@ -54,11 +54,11 @@ def test_queue_approver_lifecycle(store, clock):
     queue = QueueApprover(store, ttl=60, clock=clock)
     first = queue.request(REQ)
     assert first.status == "pending" and first.approval_id
-    assert queue.request(REQ).approval_id == first.approval_id  # no duplicate requests
+    assert queue.request(REQ).approval_id == first.approval_id  # No duplicate requests
     store.decide_approval(first.approval_id, "approved", "alice", clock())
     approved = queue.request(REQ)
     assert approved.status == "approved" and approved.by == "alice"
-    again = queue.request(REQ)  # single use: a new request is created
+    again = queue.request(REQ)  # Single use: a new request is created
     assert again.status == "pending" and again.approval_id != first.approval_id
 
 
@@ -68,11 +68,11 @@ def test_queue_approver_denial_and_expiry(store, clock):
     store.decide_approval(pending.approval_id, "denied", "bob", clock())
     assert queue.request(REQ).status == "denied"
     clock.advance(120)
-    assert queue.request(REQ).status == "pending"  # stale denial: ask again
+    assert queue.request(REQ).status == "pending"  # Stale denial: ask again
     newer = store.latest_approval("fp", "s")
     store.decide_approval(newer.id, "approved", "alice", clock())
     clock.advance(120)
-    assert queue.request(REQ).status == "pending"  # approval expired unused
+    assert queue.request(REQ).status == "pending"  # Approval expired unused
 
 
 def test_chain_approver_falls_through_to_definitive_answer(store, clock):

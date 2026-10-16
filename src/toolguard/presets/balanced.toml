@@ -1,22 +1,22 @@
 # toolguard "balanced" preset.
 #
-# Threat model: the model may be steered by anything it reads (web pages,
-# e-mails, issues, documents). Data from those sources is UNTRUSTED. Secrets
-# and personal data are PRIVATE. Sensitive actions (sinks) get stricter the
-# more directly untrusted data drives them:
+# Threat model: the model may be steered by anything it reads (web pages, e-mails,
+# issues, documents), so data from those sources is UNTRUSTED. Secrets and personal
+# data are PRIVATE. Each sensitive action (sink) gets stricter the more directly
+# untrusted data drives it:
 #
 #   tainted         the session has seen untrusted data (coarse, always sound)
 #   untrusted_flow  a critical argument contains data seen in an untrusted source
 #   private_flow    an argument carries private data (verbatim or secret-shaped)
-#   trifecta        untrusted + private data in the session and an egress sink
+#   trifecta        untrusted and private data in the session, and an egress sink
 #
-# Tool names follow Claude Code: built-ins (Bash, WebFetch...) and MCP tools as
+# Tool names follow Claude Code: built-ins (Bash, WebFetch, ...) and MCP tools as
 # mcp__<server>__<tool>. Patterns are shell-style globs.
 
 version = 1
 mode = "enforce"
-taint_ttl = 0                 # seconds; 0 = tainted until `toolguard reset`
-endorse_user_input = true     # values the user typed are not attributed to untrusted data
+taint_ttl = 0                 # Seconds; 0 keeps the taint until `toolguard reset`
+endorse_user_input = true     # User-typed values are not attributed to untrusted data
 max_observation_chars = 262144
 
 # ----------------------------------------------------------------- sources
@@ -99,7 +99,7 @@ tools = [
 ]
 
 # ----------------------------------------------------------------- sinks
-# First matching sink wins, so the more specific entries come first.
+# The first matching sink wins, so more specific entries come first.
 
 [[sink]]
 category = "payment"
@@ -178,8 +178,8 @@ untrusted_flow = "block"
 private_flow = "block"
 trifecta = "block"
 
-# An attacker-chosen recipient/account blocks outright. Private content or the
-# untrusted+private combination ("reply to this e-mail") needs a human.
+# An attacker-chosen recipient or account blocks outright; private content or the
+# untrusted and private combination ("reply to this e-mail") needs a human.
 [actions.payment]
 tainted = "confirm"
 untrusted_flow = "block"
@@ -194,14 +194,14 @@ trifecta = "confirm"
 
 [actions.shell]
 tainted = "confirm"
-untrusted_flow = "confirm"   # the human sees which page/e-mail the command came from
+untrusted_flow = "confirm"   # The human sees which page or e-mail the command came from
 private_flow = "confirm"
 trifecta = "confirm"
 
 [actions.publish]
 tainted = "confirm"
 untrusted_flow = "confirm"
-private_flow = "block"       # publishing secrets
+private_flow = "block"       # Publishing secrets
 trifecta = "confirm"
 
 [actions.destructive]
@@ -211,20 +211,20 @@ private_flow = "confirm"
 trifecta = "confirm"
 
 [actions.web]
-tainted = "allow"            # following links is normal browsing
+tainted = "allow"            # Following links is normal browsing
 untrusted_flow = "allow"
-private_flow = "block"       # secrets in a URL are exfiltration
+private_flow = "block"       # Secrets in a URL are exfiltration
 trifecta = "confirm"
 
 [actions.write]
 tainted = "allow"
-untrusted_flow = "confirm"   # an attacker-chosen path (e.g. ~/.bashrc) needs a human
+untrusted_flow = "confirm"   # An attacker-chosen path (e.g. ~/.bashrc) needs a human
 private_flow = "allow"
 trifecta = "allow"
 
 # ----------------------------------------------------------------- self-protection
-# The agent must not be able to approve its own requests, reset the taint
-# state, or edit the policy/hook configuration that enforces this guard.
+# The agent must not approve its own requests, reset the taint or edit the
+# guard's state, policy or hook configuration.
 
 [[protect]]
 tools = ["Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*", "mcp__*__*terminal*"]

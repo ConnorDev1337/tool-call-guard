@@ -1,7 +1,7 @@
 """``toolguard`` command line.
 
-Exit codes for ``check``: 0 allowed, 1 blocked/denied, 3 approval pending,
-2 usage or configuration error.
+Exit codes for ``check``: 0 allowed, 1 blocked or denied, 2 usage or configuration
+error, 3 approval pending.
 """
 
 from __future__ import annotations
@@ -97,7 +97,7 @@ def cmd_observe(args: argparse.Namespace) -> int:
 
 
 def _require_human(action: str) -> bool:
-    """Approvals and resets lower protection: only a person at a terminal may do them."""
+    """Return whether stdin is a terminal; approvals and resets must not be scriptable."""
     if not sys.stdin.isatty():
         print(f"error: '{action}' requires an interactive terminal", file=sys.stderr)
         return False
@@ -105,6 +105,7 @@ def _require_human(action: str) -> bool:
 
 
 def _confirm_on_console(prompt: str) -> bool:
+    """Return whether the person at the controlling terminal typed ``yes``."""
     with open_console() as console:
         if console is None:
             print("error: no controlling terminal available", file=sys.stderr)
@@ -150,8 +151,11 @@ def cmd_decide(args: argparse.Namespace, status: str) -> int:
     guard.audit.append(
         "approval", approval.session, {"id": approval.id, "status": status, "by": by}
     )
-    print(f"{approval.id}: {status}. The agent may now retry the identical call."
-          if status == "approved" else f"{approval.id}: denied.")  # fmt: skip
+    print(
+        f"{approval.id}: {status}. The agent may now retry the identical call."
+        if status == "approved"
+        else f"{approval.id}: denied."
+    )
     return 0
 
 
@@ -166,7 +170,9 @@ def cmd_sessions(args: argparse.Namespace) -> int:
             flags.append(f"{row.untrusted} untrusted")
         if row.private:
             flags.append(f"{row.private} private")
-        print(f"{row.session}  {row.observations} observation(s) [{', '.join(flags)}]  last {last}")
+        print(
+            f"{row.session}  {row.observations} observation(s) [{', '.join(flags)}]  last {last}"
+        )
     return 0
 
 
@@ -222,8 +228,10 @@ def cmd_policy(args: argparse.Namespace) -> int:
         print(f"invalid policy: {exc}", file=sys.stderr)
         return 2
     print(f"policy {policy.name} (mode {policy.mode}, digest {policy.digest[:12]})")
-    print(f"  {len(policy.sources)} source rule(s), {len(policy.sinks)} sink rule(s), "
-          f"{len(policy.protect)} protect rule(s), taint_ttl={policy.taint_ttl:g}s")  # fmt: skip
+    print(
+        f"  {len(policy.sources)} source rule(s), {len(policy.sinks)} sink rule(s), "
+        f"{len(policy.protect)} protect rule(s), taint_ttl={policy.taint_ttl:g}s"
+    )
     print("  actions (tainted / untrusted_flow / private_flow / trifecta):")
     for category, table in sorted(policy.actions.items()):
         values = [table.tainted, table.untrusted_flow, table.private_flow, table.trifecta]
@@ -396,7 +404,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return int(args.func(args))
     except (PolicyError, AuditError) as exc:
         if args.command == "hook":
-            raise  # the hook adapter handles its own failures
+            raise  # The hook adapter applies its own fail-closed exit codes
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

@@ -14,7 +14,7 @@ def ask_human(request) -> bool:
 
 guard = Guard(
     Policy.preset("balanced"),
-    store=Store(":memory:"),  # default: ~/.toolguard/guard.db shared across processes
+    store=Store(":memory:"),  # Default: ~/.toolguard/guard.db, shared across processes
     session="demo",
     approver=CallbackApprover(ask_human, name="demo-ui"),
 )

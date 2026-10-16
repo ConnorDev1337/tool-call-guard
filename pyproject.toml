@@ -46,12 +46,17 @@ show_missing = true
 skip_covered = true
 
 [tool.ruff]
-line-length = 100
+line-length = 99
 target-version = "py311"
 src = ["src", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF", "D"]
+# Enforce well-formed docstrings without requiring one on every object.
+ignore = ["D1"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "pep257"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106", "S108", "S311", "S603"]
+"tests/**" = ["D", "S101", "S105", "S106", "S108", "S311", "S603"]

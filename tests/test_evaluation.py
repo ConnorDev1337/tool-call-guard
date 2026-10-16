@@ -25,7 +25,7 @@ def test_reference_policies():
     assert allow_all.sinks == ()
     _, taint = resolve_policy("taint-only")
     assert all(t.untrusted_flow == Action.CONFIRM for t in taint.actions.values())
-    assert taint.protect  # self-protection is kept
+    assert taint.protect  # Self-protection is kept
 
 
 def test_benchmark_regression():
@@ -69,8 +69,12 @@ def test_custom_scenarios_and_errors(tmp_path):
     (scenario,) = load_scenarios([str(tmp_path)])
     (result,) = evaluate([scenario], ["balanced"])
     assert result.outcome == "prevented"
-    for bad in ({"id": "y", "kind": "other", "steps": [{}]}, {"id": "y", "kind": "benign"},
-                {"id": "y", "kind": "attack", "steps": [{"user": "hi"}]}):  # fmt: skip
+    invalid = (
+        {"id": "y", "kind": "other", "steps": [{}]},
+        {"id": "y", "kind": "benign"},
+        {"id": "y", "kind": "attack", "steps": [{"user": "hi"}]},
+    )
+    for bad in invalid:
         good.write_text(json.dumps(bad), encoding="utf-8")
         with pytest.raises(ValueError):
             load_scenarios([str(good)])

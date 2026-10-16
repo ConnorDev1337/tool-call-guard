@@ -26,7 +26,7 @@ def test_untrusted_flow_blocks_attacker_recipient_and_iban(make_guard):
     )
     assert send.action == Action.BLOCK and not send.allowed
     assert rules(send)["untrusted_flow"] == Action.BLOCK
-    assert "private_flow" not in rules(send)  # attributed to the untrusted flow instead
+    assert "private_flow" not in rules(send)  # Attributed to the untrusted flow instead
     pay = guard.check("mcp__bank__make_payment", {"iban": "GB82WEST12345698765432", "amount": 9})
     assert pay.action == Action.BLOCK
     evidence = next(r for r in pay.reasons if r.rule == "untrusted_flow").evidence
@@ -65,7 +65,7 @@ def test_endorsed_recipient_is_not_attributed(make_guard):
     decision = guard.check("mcp__gmail__send_email", {"to": "partner@vendor.example", "body": "r"})
     found = rules(decision)
     assert "untrusted_flow" not in found and found["endorsed_flow"] == Action.ALLOW
-    assert decision.action == Action.CONFIRM  # still tainted + trifecta, so a human confirms
+    assert decision.action == Action.CONFIRM  # Still tainted and a trifecta, so a human confirms
 
 
 def test_secret_exfiltration_through_url(make_guard):
@@ -141,10 +141,10 @@ def test_queue_approval_with_identical_retry(make_guard, store, clock):
     assert f"toolguard approve {first.approval_id}" in first.explain()
     store.decide_approval(first.approval_id, "approved", "console:alice", clock())
     other = guard.check("Bash", {"command": "make deploy --force"})
-    assert other.approval_status == "pending"  # approval is bound to the exact call
+    assert other.approval_status == "pending"  # The approval is bound to the exact call
     retry = guard.check("Bash", {"command": "make deploy"})
     assert retry.allowed and retry.approved_by == "console:alice"
-    assert not guard.check("Bash", {"command": "make deploy"}).allowed  # consumed
+    assert not guard.check("Bash", {"command": "make deploy"}).allowed  # Consumed
 
 
 def test_wrap_decorator(make_guard):

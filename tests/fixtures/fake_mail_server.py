@@ -18,16 +18,17 @@ for line in sys.stdin:
     message = json.loads(line)
     method = message.get("method")
     if method == "initialize":
-        send({"jsonrpc": "2.0", "id": message["id"], "result": {
+        result = {
             "protocolVersion": "2025-06-18",
             "capabilities": {"tools": {}},
             "serverInfo": {"name": "fake-mail", "version": "0"},
-        }})  # fmt: skip
+        }
+        send({"jsonrpc": "2.0", "id": message["id"], "result": result})
     elif method == "tools/call":
         name = message["params"]["name"]
         args = message["params"].get("arguments", {})
         text = INBOX if name == "read_inbox" else f"sent to {args.get('to')}"
-        send({"jsonrpc": "2.0", "id": message["id"],
-              "result": {"content": [{"type": "text", "text": text}]}})  # fmt: skip
+        result = {"content": [{"type": "text", "text": text}]}
+        send({"jsonrpc": "2.0", "id": message["id"], "result": result})
     elif method == "ping":
         send({"jsonrpc": "2.0", "id": message["id"], "result": {}})

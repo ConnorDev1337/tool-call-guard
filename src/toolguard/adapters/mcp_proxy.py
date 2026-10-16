@@ -1,24 +1,10 @@
-"""MCP stdio proxy: ``client <-> toolguard <-> server``.
+"""MCP stdio proxy that guards ``tools/call`` requests between a client and a server.
 
-Replace a server's command in any MCP client configuration with::
-
-    toolguard mcp-proxy --server-name gmail --session my-agent -- npx -y some-gmail-mcp
-
-The proxy relays JSON-RPC lines unchanged except for ``tools/call``:
-
-* the call is evaluated as ``mcp__<server-name>__<tool>`` (Claude Code naming,
-  so the presets apply to any client);
-* ALLOW -> forwarded; its result is recorded if the tool is a policy source;
-* BLOCK -> answered by the proxy with an ``isError`` tool result that explains
-  why, so the model learns the call was refused;
-* CONFIRM -> if the client supports *elicitation*, the user is asked through
-  the client UI (the model cannot answer an elicitation); otherwise the
-  request is queued and a human approves it with ``toolguard approve <id>``,
-  after which the identical call can be retried.
-
-Several proxies (one per server) share taint through the same ``--session``
-and state directory, so data read through one server is tracked when it
-reaches another.
+Calls are evaluated as ``mcp__<server-name>__<tool>`` (Claude Code naming), so the
+presets apply to any client. Confirmations use MCP elicitation when the client
+supports it, since the model cannot answer an elicitation; otherwise they go to
+the approval queue. Proxies that share a ``--session`` and state directory share
+taint, so data read through one server is tracked when it reaches another.
 """
 
 from __future__ import annotations
@@ -37,10 +23,16 @@ from ..guard import Guard
 from ..model import Action, Decision
 from ..redact import redact_args
 
-ELICITATION_TIMEOUT = 300.0
+ELICITATION_TIMEOUT = 300.0  # Seconds to wait for the user's answer
 
 
 class McpProxy:
+    """Relay JSON-RPC lines between a client and a server, guarding ``tools/call``.
+
+    Blocked calls never reach the server: the proxy answers them with an
+    ``isError`` result that explains the decision.
+    """
+
     def __init__(
         self,
         guard: Guard,
@@ -78,13 +70,14 @@ class McpProxy:
             self.client_out.flush()
 
     def _send_server_raw(self, line: bytes) -> None:
-        assert self.server is not None and self.server.stdin is not None  # noqa: S101
+        if self.server is None or self.server.stdin is None:
+            raise RuntimeError("the MCP server is not running")
         with self._in_lock:
             try:
                 self.server.stdin.write(line if line.endswith(b"\n") else line + b"\n")
                 self.server.stdin.flush()
             except OSError:
-                pass  # server gone; its exit ends the proxy
+                pass  # Server gone; its exit ends the proxy
 
     def _send_server(self, message: dict[str, Any]) -> None:
         self._send_server_raw(json.dumps(message, ensure_ascii=False).encode("utf-8"))
@@ -92,6 +85,7 @@ class McpProxy:
     # ------------------------------------------------------------------ main loop
 
     def run(self) -> int:
+        """Start the server, relay messages until it exits and return its exit code."""
         self.server = self.popen(self.command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         threading.Thread(target=self._pump_server, daemon=True).start()
         threading.Thread(target=self._pump_client, daemon=True).start()
@@ -106,7 +100,8 @@ class McpProxy:
                 self.server.stdin.close()
 
     def _pump_server(self) -> None:
-        assert self.server is not None and self.server.stdout is not None  # noqa: S101
+        if self.server is None or self.server.stdout is None:
+            raise RuntimeError("the MCP server is not running")
         for line in self.server.stdout:
             if line.strip():
                 self.handle_server_line(line)
@@ -114,6 +109,7 @@ class McpProxy:
     # ------------------------------------------------------------------ client -> server
 
     def handle_client_line(self, line: bytes) -> None:
+        """Guard a ``tools/call`` request; relay any other client message unchanged."""
         try:
             message = json.loads(line)
         except ValueError:
@@ -123,6 +119,7 @@ class McpProxy:
             self._send_server_raw(line)
             return
         if "method" not in message and str(message.get("id", "")).startswith("toolguard-"):
+            # Answer to an elicitation sent by the proxy itself, not by the server.
             self._resolve_elicitation(message)
             return
         method = message.get("method")
@@ -135,6 +132,7 @@ class McpProxy:
         self._send_server_raw(line)
 
     def _tool_name(self, message: dict[str, Any]) -> tuple[str, Any]:
+        """Return the guarded tool name and the arguments of a ``tools/call`` request."""
         params = message.get("params") or {}
         name = str(params.get("name", ""))
         return f"mcp__{self.server_name}__{name}", params.get("arguments") or {}
@@ -150,6 +148,7 @@ class McpProxy:
             self._audit(decision)
             self._refuse(message, decision)
         elif self.client_elicitation:
+            # Wait off the client pump, which must keep reading to receive the answer.
             threading.Thread(
                 target=self._confirm_via_elicitation,
                 args=(message, tool, args, decision),
@@ -242,8 +241,6 @@ class McpProxy:
         )
         decision.approval_status = "approved" if approved else "denied"
         decision.approved_by = "mcp-elicitation" if answered else None
-        if not answered:
-            decision.approval_status = "denied"
         decision.effective = Action.ALLOW if approved else Action.BLOCK
         self._audit(decision)
         if approved:
@@ -261,6 +258,7 @@ class McpProxy:
     # ------------------------------------------------------------------ server -> client
 
     def handle_server_line(self, line: bytes) -> None:
+        """Relay a server message, recording the results of forwarded source calls."""
         try:
             message = json.loads(line)
         except ValueError:

@@ -1,15 +1,8 @@
 """The guard: records what the agent has seen and decides on every tool call.
 
-Typical use (framework-agnostic)::
-
-    guard = Guard(Policy.load("balanced"), session="run-42", approver=ConsoleApprover())
-    guard.observe_user(user_prompt)                 # trusted input (endorsement)
-    decision = guard.check("mcp__mail__send_email", {"to": ..., "body": ...})
-    if decision.allowed:
-        result = send_email(...)
-        guard.observe("mcp__mail__send_email", result)
-
-or wrap a callable with :meth:`Guard.wrap`, which does both steps.
+Integrations call :meth:`Guard.observe_user` for trusted input, :meth:`Guard.check`
+before each tool call and :meth:`Guard.observe` with its result; :meth:`Guard.wrap`
+does the last two for a plain callable.
 """
 
 from __future__ import annotations
@@ -39,6 +32,12 @@ def _labels(observations: list[Observation], limit: int = 3) -> str:
 
 
 class Guard:
+    """Information-flow guard for one agent.
+
+    Defaults to the ``balanced`` preset, the shared on-disk store, a fail-closed
+    :class:`DenyApprover` and the audit key from ``TOOLGUARD_AUDIT_KEY``.
+    """
+
     def __init__(
         self,
         policy: Policy | None = None,
@@ -115,7 +114,7 @@ class Guard:
     def observe(
         self, tool: str, output: Any, args: Any = None, *, session: str | None = None
     ) -> Observation | None:
-        """Record a tool result if the policy marks the tool as a source."""
+        """Record a tool result if the policy marks the tool as a source; else return ``None``."""
         match = self.policy.source_for(tool, args if args is not None else {})
         if match is None:
             return None
@@ -144,6 +143,7 @@ class Guard:
         )
 
     def reset(self, *, session: str | None = None, by: str = "api") -> int:
+        """Forget a session's observations (its taint); return how many were removed."""
         session = session or self.session
         removed = self.store.clear_session(session)
         self.audit.append("reset", session, {"observations_removed": removed, "by": by})
@@ -152,7 +152,7 @@ class Guard:
     # ------------------------------------------------------------------ decisions
 
     def evaluate(self, tool: str, args: Any = None, *, session: str | None = None) -> Decision:
-        """Policy decision for a call, without approval handling or audit."""
+        """Return the policy decision for a call, without approval handling or audit."""
         session = session or self.session
         args = args if args is not None else {}
         policy = self.policy
@@ -206,8 +206,8 @@ class Guard:
                 )
             )
         # An argument already attributed to an untrusted source (e.g. the attacker's
-        # own address inside a private e-mail) is explained by that flow; do not
-        # also report it as a leak of private data.
+        # address inside a private e-mail) is explained by that flow; do not report
+        # it again as a leak of private data.
         attributed_args = {e.arg for e in attributed}
         leaks = tuple(
             e
@@ -244,7 +244,7 @@ class Guard:
         session: str | None = None,
         approver: Approver | None = None,
     ) -> Decision:
-        """Evaluate, ask a human if required, write the audit record."""
+        """Evaluate a call, ask for approval if required and audit the decision."""
         session = session or self.session
         decision = self.evaluate(tool, args, session=session)
         self._log_policy(session)
@@ -270,6 +270,7 @@ class Guard:
 
     @staticmethod
     def decision_record(decision: Decision) -> dict[str, Any]:
+        """Return the audit representation of ``decision``, with arguments redacted."""
         return {
             "tool": decision.tool,
             "category": decision.category,
@@ -309,9 +310,9 @@ class Guard:
     # ------------------------------------------------------------------ wrapping
 
     def wrap(self, tool: str, *, observe_output: bool = True) -> Callable[[F], F]:
-        """Decorator: check before calling, record the result afterwards.
+        """Return a decorator that checks each call and records its result.
 
-        Raises :class:`ToolBlocked` when the call is not allowed.
+        The wrapped function raises :class:`ToolBlocked` when a call is not allowed.
         """
 
         def decorator(fn: F) -> F:

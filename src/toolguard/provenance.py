@@ -1,17 +1,12 @@
-"""Provenance: does a tool argument carry data that came from a given source?
+"""Provenance: attribution of tool arguments to the observations they were copied from.
 
-The guard cannot see inside the model, so attribution is evidence-based:
-
-* **indicator** - a concrete value (URL, domain, e-mail, IBAN, crypto address,
-  phone, IP) in the argument also appears in the source text;
-* **verbatim** - the whole (normalized) argument appears in the source text;
-* **fragment** - a run of >= 4 consecutive tokens (>= 20 chars) of the
-  argument appears in the source text (e.g. a copied shell command);
-* **secret** - a high-entropy token of the argument appears in a private
-  source (keys, tokens, passwords).
-
-This is sound only for data that is copied, not paraphrased; the coarse
-session-level "tainted" rule exists to cover the rest.
+The guard cannot see inside the model, so attribution relies on evidence. An
+argument matches an observation by ``indicator`` (a URL, e-mail, IBAN, crypto
+address, phone number or IP address appears in both), ``verbatim`` (the whole
+normalized value appears), ``fragment`` (a run of at least 4 tokens and 20
+characters appears) or ``secret`` (a high-entropy token appears in a private
+observation). Only copied data is detected, not paraphrased data; the coarse
+session-level ``tainted`` rule covers the rest.
 """
 
 from __future__ import annotations
@@ -33,8 +28,18 @@ MAX_FRAGMENTS = 400
 SECRET_MIN_LEN = 16
 SECRET_MIN_ENTROPY = 3.3
 
+# Soft hyphen, zero-width characters, word joiner, BOM and bidi controls.
 _ZERO_WIDTH = dict.fromkeys(
-    [0x00AD, 0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF, *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
+    [
+        0x00AD,
+        0x200B,
+        0x200C,
+        0x200D,
+        0x2060,
+        0xFEFF,
+        *range(0x202A, 0x202F),
+        *range(0x2066, 0x206A),
+    ]
 )
 _WS = re.compile(r"\s+")
 _URL = re.compile(r"\b(?:https?|ftp|wss?)://[^\s<>\"'`)\]}]+", re.IGNORECASE)
@@ -44,19 +49,20 @@ _IBAN = re.compile(r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,4}
 _BTC = re.compile(r"\b(?:bc1[ac-hj-np-z02-9]{25,62}|[13][a-km-zA-HJ-NP-Z1-9]{25,34})\b")
 _ETH = re.compile(r"\b0x[a-fA-F0-9]{40}\b")
 _PHONE = re.compile(r"(?<![\w+])\+\d[\d ()./-]{7,18}\d\b")
-# Secret-shaped runs: base64/base64url/hex alphabets. '=', '.', ':' and '@' split
-# tokens so a key inside "k=<key>" or a JWT segment is still found on its own.
+# Secret-shaped runs in base64, base64url or hex alphabets. '=', '.', ':' and '@' end a
+# token, so a key inside "k=<key>" or a JWT segment is still found on its own.
 _TOKEN = re.compile(rf"[A-Za-z0-9+/_\-]{{{SECRET_MIN_LEN},}}")
 _TRAILING = ".,;:!?'\""
 
 
 def normalize(text: str) -> str:
-    """Canonical text for matching: NFKC, no invisible chars, lowercase, single spaces."""
+    """Normalize ``text``: NFKC, lowercase, single spaces and no invisible characters."""
     text = unicodedata.normalize("NFKC", text).translate(_ZERO_WIDTH)
     return _WS.sub(" ", text).strip().lower()
 
 
 def _iban_valid(value: str) -> bool:
+    """Check the length and ISO 13616 mod-97 checksum of an IBAN."""
     compact = value.replace(" ", "")
     if not 15 <= len(compact) <= 34:
         return False
@@ -66,7 +72,7 @@ def _iban_valid(value: str) -> bool:
 
 
 def extract_indicators(text: str) -> tuple[Indicator, ...]:
-    """Attributable values in ``text`` (deduplicated, normalized)."""
+    """Return the attributable values in ``text``, deduplicated and normalized."""
     found: dict[tuple[str, str], None] = {}
 
     def add(kind: str, value: str) -> None:
@@ -83,7 +89,7 @@ def extract_indicators(text: str) -> tuple[Indicator, ...]:
             add("domain", host.removeprefix("www."))
     for match in _EMAIL.finditer(text):
         if any(start <= match.start() < end for start, end in url_spans):
-            continue  # "user:pass@host" inside a URL is not an address
+            continue  # Credentials inside a URL ("user:pass@host") are not an address
         email = match.group().lower()
         add("email", email)
         add("domain", email.split("@", 1)[1])
@@ -110,7 +116,7 @@ def _entropy(value: str) -> float:
 
 
 def secret_tokens(text: str) -> set[str]:
-    """High-entropy tokens that look like keys, tokens or passwords."""
+    """Return high-entropy tokens in ``text`` that look like keys or passwords."""
     tokens = set()
     for match in _TOKEN.finditer(text):
         token = match.group().strip("-/")
@@ -145,13 +151,13 @@ class _Hit:
 
 
 def _match_value(value: str, observations: Iterable[Observation]) -> _Hit | None:
-    """Strongest attribution of one argument value to one of ``observations``."""
+    """Return the strongest attribution of ``value`` to one of ``observations``, if any."""
     observations = list(observations)
     if not observations:
         return None
     for indicator in extract_indicators(value):
         if indicator.kind == "domain":
-            continue  # domains are reported through their URL/e-mail; too coarse alone
+            continue  # Too coarse alone; reported through the URL or e-mail instead
         for obs in observations:
             if indicator in obs.indicators:
                 return _Hit("indicator", indicator.value, obs)
@@ -178,7 +184,10 @@ def untrusted_flows(
     untrusted: list[Observation],
     trusted: list[Observation],
 ) -> list[Evidence]:
-    """Evidence that argument values were copied from untrusted observations."""
+    """Return evidence that ``(path, value)`` pairs were copied from untrusted observations.
+
+    Values that also appear in ``trusted`` observations are marked as endorsed.
+    """
     evidence = []
     for path, value in values:
         hit = _match_value(value, untrusted)
@@ -198,7 +207,7 @@ def untrusted_flows(
 
 
 def private_flows(values: Iterable[tuple[str, str]], private: list[Observation]) -> list[Evidence]:
-    """Evidence that argument values carry private data (secrets or copied text)."""
+    """Return evidence that ``(path, value)`` pairs carry private data (secrets or copied text)."""
     if not private:
         return []
     evidence = []

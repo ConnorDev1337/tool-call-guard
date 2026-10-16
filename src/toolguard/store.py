@@ -1,12 +1,10 @@
 """SQLite state shared by every process that guards the same agent.
 
-One database holds the observations (what untrusted/private data each session
-has seen), pending/decided approvals and the audit chain. SQLite gives
-cross-process locking for free, which matters because one agent may talk to
-several MCP proxies and hook invocations at once.
-
-The database contains copies of untrusted and private content; it is created
-with owner-only permissions where the OS supports it.
+One database holds the observations, approvals and audit chain. SQLite provides
+cross-process locking, which matters because one agent may run several MCP
+proxies and hook processes at once. The database contains copies of untrusted
+and private content, so it is created with owner-only permissions where the OS
+supports it.
 """
 
 from __future__ import annotations
@@ -64,18 +62,21 @@ CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 
 
 def default_home() -> Path:
+    """Return ``$TOOLGUARD_HOME`` if set, otherwise ``~/.toolguard``."""
     override = os.environ.get(ENV_HOME)
     return Path(override) if override else Path.home() / ".toolguard"
 
 
 @dataclass(frozen=True)
 class Approval:
+    """A stored approval request and its decision."""
+
     id: str
     session: str
     fingerprint: str
     tool: str
     summary: str
-    status: str  # pending | approved | denied | consumed
+    status: str  # "pending" | "approved" | "denied" | "consumed"
     created: float
     decided: float | None
     decided_by: str | None
@@ -83,6 +84,8 @@ class Approval:
 
 @dataclass(frozen=True)
 class SessionInfo:
+    """Observation counts and time range of one session."""
+
     session: str
     observations: int
     untrusted: int
@@ -92,6 +95,12 @@ class SessionInfo:
 
 
 class Store:
+    """Thread-safe connection to the guard database.
+
+    ``path=None`` uses ``guard.db`` in :func:`default_home`; ``":memory:"`` gives a
+    private, non-persistent database.
+    """
+
     def __init__(self, path: str | Path | None = None) -> None:
         if path is None:
             home = default_home()
@@ -126,13 +135,13 @@ class Store:
         self.close()
 
     def __del__(self) -> None:
-        # Safety net for short-lived CLI/hook processes; explicit close() is preferred.
+        # Safety net for short-lived CLI and hook processes; prefer an explicit close().
         with contextlib.suppress(Exception):
             self.conn.close()
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Connection]:
-        """Serialized write transaction (across threads and processes)."""
+        """Run a write transaction serialized across threads and processes."""
         with self._lock:
             self.conn.execute("BEGIN IMMEDIATE")
             try:
@@ -218,7 +227,8 @@ class Store:
         with self._lock:
             rows = self.conn.execute(
                 "SELECT session, COUNT(*) AS n, SUM(untrusted) AS u, SUM(private) AS p, "
-                "MIN(ts) AS first, MAX(ts) AS last FROM observations GROUP BY session ORDER BY last"
+                "MIN(ts) AS first, MAX(ts) AS last FROM observations "
+                "GROUP BY session ORDER BY last"
             ).fetchall()
         return [
             SessionInfo(r["session"], r["n"], r["u"] or 0, r["p"] or 0, r["first"], r["last"])
@@ -270,7 +280,10 @@ class Store:
         return [self._approval(r) for r in rows]
 
     def decide_approval(self, approval_id: str, status: str, by: str, now: float) -> bool:
-        """Move a *pending* approval to approved/denied. Returns False if not pending."""
+        """Record a human decision; return ``False`` if the approval is not pending.
+
+        Raises ValueError unless ``status`` is ``"approved"`` or ``"denied"``.
+        """
         if status not in {"approved", "denied"}:
             raise ValueError(status)
         with self.transaction() as conn:
@@ -282,7 +295,7 @@ class Store:
         return changed == 1
 
     def consume_approval(self, approval_id: str) -> bool:
-        """Single use: approved -> consumed. Returns False if someone else consumed it."""
+        """Mark an approval as used; return ``False`` if it is not (or no longer) approved."""
         with self.transaction() as conn:
             changed = conn.execute(
                 "UPDATE approvals SET status = 'consumed' WHERE id = ? AND status = 'approved'",

@@ -62,11 +62,11 @@ def test_approval_lifecycle(store):
     assert store.get_approval(pending.id).status == "pending"
     assert [a.id for a in store.list_approvals("pending")] == [pending.id]
     assert store.decide_approval(pending.id, "approved", "alice", 11.0)
-    assert not store.decide_approval(pending.id, "denied", "bob", 12.0)  # already decided
+    assert not store.decide_approval(pending.id, "denied", "bob", 12.0)  # Already decided
     latest = store.latest_approval("f", "s")
     assert latest.status == "approved" and latest.decided_by == "alice"
     assert store.consume_approval(pending.id)
-    assert not store.consume_approval(pending.id)  # single use
+    assert not store.consume_approval(pending.id)  # Single use
     assert store.get_approval(pending.id).status == "consumed"
     assert store.get_approval("missing") is None
     with pytest.raises(ValueError):
@@ -113,8 +113,11 @@ def test_plain_chain_can_be_rewritten_but_hmac_chain_cannot(tmp_path):
     log = AuditLog(plain)
     log.append("decision", "s", {"n": 1})
     # An attacker with write access recomputes the whole (unkeyed) chain...
-    body = json.dumps({"data": {"n": 666}, "event": "decision", "seq": 1, "session": "s",
-                       "ts": "x"}, separators=(",", ":"), sort_keys=True)  # fmt: skip
+    body = json.dumps(
+        {"data": {"n": 666}, "event": "decision", "seq": 1, "session": "s", "ts": "x"},
+        separators=(",", ":"),
+        sort_keys=True,
+    )
     plain.conn.execute(
         "UPDATE audit SET body = ?, hash = ? WHERE seq = 1", (body, log._digest(GENESIS, body))
     )

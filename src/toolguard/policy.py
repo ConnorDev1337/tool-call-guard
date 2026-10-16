@@ -1,9 +1,7 @@
-"""Policy: which tools are sources of untrusted/private data, which are sensitive
-sinks, and what to do when data flows from one to the other.
+"""Policy: sources of untrusted or private data, sensitive sinks and the actions to take.
 
-Policies are TOML files. A user policy usually ``extends`` a bundled preset and
-only adds its own tools; list entries of the user policy take precedence over
-the preset's, tables are merged key by key.
+Policies are TOML files. A user policy usually ``extends`` a bundled preset: its
+list entries take precedence over the preset's and tables are merged key by key.
 """
 
 from __future__ import annotations
@@ -23,14 +21,22 @@ from .model import Action, canonical_json
 PRESETS = ("balanced", "strict")
 MODES = ("enforce", "monitor")
 _TOP_KEYS = {
-    "version", "extends", "mode", "taint_ttl", "endorse_user_input", "max_observation_chars",
-    "source", "sink", "actions", "protect",
-}  # fmt: skip
+    "version",
+    "extends",
+    "mode",
+    "taint_ttl",
+    "endorse_user_input",
+    "max_observation_chars",
+    "source",
+    "sink",
+    "actions",
+    "protect",
+}
 _RULE_FIELDS = ("tainted", "untrusted_flow", "private_flow", "trifecta")
 
 
 class PolicyError(ValueError):
-    pass
+    """The policy is invalid or cannot be read."""
 
 
 def _strings(value: Any, where: str) -> tuple[str, ...]:
@@ -50,7 +56,7 @@ def _patterns(value: Any, where: str) -> dict[str, tuple[str, ...]]:
 
 
 def iter_strings(value: Any, path: str = "") -> Iterator[tuple[str, str]]:
-    """Yield ``(dotted_path, string)`` for every string leaf (numbers included)."""
+    """Yield ``(dotted_path, text)`` for every string or number leaf of ``value``."""
     if isinstance(value, str):
         yield path or "$", value
     elif isinstance(value, bool) or value is None:
@@ -66,7 +72,10 @@ def iter_strings(value: Any, path: str = "") -> Iterator[tuple[str, str]]:
 
 
 def select_args(args: Any, names: tuple[str, ...]) -> list[tuple[str, str]]:
-    """String leaves whose top-level key (or dotted prefix) is in ``names``."""
+    """Return the string leaves whose top-level key or full path is in ``names``.
+
+    Matching is case-insensitive; ``"*"`` selects every leaf.
+    """
     leaves = list(iter_strings(args))
     if "*" in names:
         return leaves
@@ -80,6 +89,7 @@ def select_args(args: Any, names: tuple[str, ...]) -> list[tuple[str, str]]:
 
 
 def _glob(value: str, patterns: tuple[str, ...]) -> bool:
+    """Match case-insensitively, treating Windows path separators as ``/``."""
     norm = value.replace("\\", "/").lower()
     return any(fnmatch.fnmatchcase(norm, p.replace("\\", "/").lower()) for p in patterns)
 
@@ -89,7 +99,7 @@ def _tool_matches(tool: str, patterns: tuple[str, ...]) -> bool:
 
 
 def _when_matches(args: Any, when: dict[str, tuple[str, ...]]) -> bool:
-    """All conditions must hold; a condition holds if any selected value matches."""
+    """Return whether every condition matches at least one selected argument value."""
     for name, patterns in when.items():
         values = [v for _, v in select_args(args, (name,))]
         if not any(_glob(v, patterns) for v in values):
@@ -99,6 +109,8 @@ def _when_matches(args: Any, when: dict[str, tuple[str, ...]]) -> bool:
 
 @dataclass(frozen=True)
 class SourceRule:
+    """Tools whose results bring untrusted and/or private data into the context."""
+
     tools: tuple[str, ...]
     kind: str = "external"
     untrusted: bool = False
@@ -111,6 +123,8 @@ class SourceRule:
 
 @dataclass(frozen=True)
 class SinkRule:
+    """A sensitive action; ``critical`` names the arguments checked for untrusted flows."""
+
     tools: tuple[str, ...]
     category: str
     critical: tuple[str, ...] = ("*",)
@@ -123,12 +137,15 @@ class SinkRule:
 
 @dataclass(frozen=True)
 class ProtectRule:
+    """Argument patterns that must never reach the given tools (self-protection)."""
+
     tools: tuple[str, ...]
     args: dict[str, tuple[str, ...]]
     message: str
     action: Action = Action.BLOCK
 
     def hits(self, tool: str, args: Any) -> list[str]:
+        """Return the paths of the arguments that match a protected pattern."""
         if not _tool_matches(tool, self.tools):
             return []
         found = []
@@ -141,6 +158,8 @@ class ProtectRule:
 
 @dataclass(frozen=True)
 class ActionTable:
+    """Action demanded by each rule for one sink category."""
+
     tainted: Action = Action.CONFIRM
     untrusted_flow: Action = Action.BLOCK
     private_flow: Action = Action.BLOCK
@@ -149,6 +168,8 @@ class ActionTable:
 
 @dataclass(frozen=True)
 class SourceMatch:
+    """Combined classification of a tool result by its matching source rules."""
+
     kind: str
     untrusted: bool
     private: bool
@@ -156,6 +177,8 @@ class SourceMatch:
 
 @dataclass
 class Policy:
+    """A validated policy; build it with :meth:`load`, :meth:`preset` or :meth:`from_dict`."""
+
     name: str = "custom"
     mode: str = "enforce"
     taint_ttl: float = 0.0
@@ -171,6 +194,7 @@ class Policy:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], name: str = "custom") -> Policy:
+        """Validate ``data``, resolving ``extends``; raise :class:`PolicyError` if invalid."""
         raw = data
         if "extends" in data:
             base_name = data["extends"]
@@ -208,6 +232,7 @@ class Policy:
 
     @classmethod
     def from_toml(cls, path: str | Path) -> Policy:
+        """Load a TOML file; raise :class:`PolicyError` if it is unreadable or invalid."""
         file_path = Path(path)
         try:
             data = tomllib.loads(file_path.read_text(encoding="utf-8"))
@@ -223,7 +248,7 @@ class Policy:
 
     @classmethod
     def load(cls, spec: str | Path | None) -> Policy:
-        """Preset name, path to a TOML file, or ``None`` for ``balanced``."""
+        """Load a preset by name, a TOML file by path, or ``balanced`` for ``None``."""
         if spec is None:
             return cls.preset("balanced")
         if str(spec) in PRESETS:
@@ -243,7 +268,7 @@ class Policy:
     # ------------------------------------------------------------------ queries
 
     def source_for(self, tool: str, args: Any) -> SourceMatch | None:
-        """Union of every matching source rule (most cautious combination)."""
+        """Return the union of all matching source rules (the most cautious combination)."""
         matched = [rule for rule in self.sources if rule.matches(tool, args)]
         if not matched:
             return None
@@ -254,10 +279,11 @@ class Policy:
         )
 
     def sink_for(self, tool: str, args: Any) -> SinkRule | None:
-        """First matching sink rule (user rules come first when extending)."""
+        """Return the first matching sink rule; user rules precede the preset's."""
         return next((rule for rule in self.sinks if rule.matches(tool, args)), None)
 
     def actions_for(self, category: str) -> ActionTable:
+        """Return the table for ``category``, else ``default``, else the built-in defaults."""
         return self.actions.get(category) or self.actions.get("default") or ActionTable()
 
     def protect_hits(self, tool: str, args: Any) -> list[tuple[ProtectRule, list[str]]]:
@@ -273,6 +299,7 @@ def _preset_dict(name: str) -> dict[str, Any]:
 
 
 def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    """Merge ``override`` into ``base``: lists are prepended, tables merged recursively."""
     merged = dict(base)
     for key, value in override.items():
         if key == "extends":

@@ -103,7 +103,8 @@ def test_fragment_match_without_indicator():
 
 def test_short_or_common_values_are_not_attributed():
     page = obs("The quick brown fox. Price: 100 EUR. Contact us at info@shop.example")
-    assert untrusted_flows([("amount", "100"), ("currency", "EUR"), ("x", "fox")], [page], []) == []
+    values = [("amount", "100"), ("currency", "EUR"), ("x", "fox")]
+    assert untrusted_flows(values, [page], []) == []
 
 
 def test_endorsement_by_trusted_user_input():
@@ -122,7 +123,7 @@ def test_private_flows():
     url = "https://x.example/c?k=b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQ"
     (evidence,) = private_flows([("url", url)], [key])
     assert evidence.method == "secret"
-    assert "b3Bl" not in evidence.matched  # always fully redacted
+    assert "b3Bl" not in evidence.matched  # Always fully redacted
     note = obs(
         "Patient record: diagnosis confidential, do not share outside the clinic", private=True
     )

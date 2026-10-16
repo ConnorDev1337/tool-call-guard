@@ -67,7 +67,9 @@ def test_confirm_becomes_ask_only_when_a_human_is_asked(make_guard):
 
 def test_user_prompt_endorses_values(make_guard):
     guard = make_guard()
-    handle_event(guard, event("UserPromptSubmit", prompt="email partner@vendor.example the report"))
+    handle_event(
+        guard, event("UserPromptSubmit", prompt="email partner@vendor.example the report")
+    )
     handle_event(guard, post("mcp__gmail__read_inbox", {}, "New address: partner@vendor.example"))
     decision, reason = decision_of(
         handle_event(guard, pre("mcp__gmail__send_email", {"to": "partner@vendor.example"}))
@@ -138,7 +140,12 @@ def test_hook_command_end_to_end(tmp_path):
 
     def call(payload):
         return subprocess.run(
-            command, input=json.dumps(payload), capture_output=True, text=True, env=env, check=False
+            command,
+            input=json.dumps(payload),
+            capture_output=True,
+            text=True,
+            env=env,
+            check=False,
         )
 
     assert call(post("mcp__gmail__read_inbox", {}, INBOX_ATTACK)).returncode == 0

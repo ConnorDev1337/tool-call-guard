@@ -1,12 +1,10 @@
-"""Tamper-evident audit log.
+"""Tamper-evident, hash-chained audit log.
 
-Every record stores the hash of the previous one, so editing, reordering or
-deleting a record in the middle breaks the chain. With a key
-(``TOOLGUARD_AUDIT_KEY``) the chain uses HMAC-SHA256, so someone who can write
-the database but does not hold the key cannot forge a consistent chain either.
-Truncating the tail is only detectable against an external anchor: keep the
-``head`` hash that ``toolguard audit verify`` prints somewhere the agent cannot
-write.
+Each record stores the hash of the previous one, so editing, reordering or
+deleting a record breaks the chain. With ``TOOLGUARD_AUDIT_KEY`` set, the chain
+uses HMAC-SHA256 and cannot be recomputed without the key. Truncating the tail
+is only detectable against an external anchor: the ``head`` hash printed by
+``toolguard audit verify``, kept where the agent cannot write.
 """
 
 from __future__ import annotations
@@ -28,16 +26,19 @@ GENESIS = "0" * 64
 
 
 class AuditError(Exception):
-    pass
+    """The audit key does not match the algorithm the log was created with."""
 
 
 def key_from_env() -> bytes | None:
+    """Return the HMAC key from ``TOOLGUARD_AUDIT_KEY``, or ``None`` if unset."""
     value = os.environ.get(ENV_KEY)
     return value.encode("utf-8") if value else None
 
 
 @dataclass(frozen=True)
 class VerifyReport:
+    """Result of :meth:`AuditLog.verify`; ``head`` is the hash of the last valid record."""
+
     ok: bool
     records: int
     algorithm: str
@@ -47,6 +48,12 @@ class VerifyReport:
 
 
 class AuditLog:
+    """Hash chain of audit records in a :class:`Store`.
+
+    The algorithm is fixed when the log is created; raises :class:`AuditError` if
+    ``key`` does not match it.
+    """
+
     def __init__(self, store: Store, key: bytes | None = None) -> None:
         self.store = store
         self.key = key
@@ -67,6 +74,7 @@ class AuditLog:
         return hashlib.sha256(message).hexdigest()
 
     def append(self, event: str, session: str, data: dict[str, Any]) -> dict[str, Any]:
+        """Append an event and return the stored record, including ``prev`` and ``hash``."""
         with self.store.transaction() as conn:
             row = conn.execute("SELECT seq, hash FROM audit ORDER BY seq DESC LIMIT 1").fetchone()
             seq, prev = (row["seq"] + 1, row["hash"]) if row else (1, GENESIS)
@@ -90,6 +98,7 @@ class AuditLog:
             yield {**json.loads(row["body"]), "prev": row["prev"], "hash": row["hash"]}
 
     def verify(self) -> VerifyReport:
+        """Check the whole chain and report the first inconsistency."""
         prev, count = GENESIS, 0
         for row in self.store.iter_audit():
             count += 1
@@ -111,6 +120,7 @@ class AuditLog:
         return VerifyReport(True, count, self.algorithm, prev)
 
     def export_jsonl(self, out: TextIO, since: int = 0) -> int:
+        """Write the records after ``since`` as JSON Lines; return how many were written."""
         count = 0
         for record in self.records(since):
             out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
