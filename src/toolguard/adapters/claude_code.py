@@ -69,7 +69,10 @@ def _pre_tool_use(guard: Guard, event: dict[str, Any], ask_modes: frozenset[str]
         output = {"permissionDecision": "deny", "permissionDecisionReason": reason}
 
     record = guard.decision_record(decision)
-    record.update(integration="claude-code", tool_use_id=event.get("tool_use_id"), mode=mode)
+    # ``mode`` already holds the policy mode (enforce/monitor); keep both in the audit.
+    record.update(
+        integration="claude-code", tool_use_id=event.get("tool_use_id"), permission_mode=mode
+    )
     guard.audit.append("decision", session, record)
     if output is None:
         return HookResult()
