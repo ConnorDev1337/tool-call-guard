@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+report.xml
+htmlcov/
+
+# Local guard state (contains untrusted content and the audit log)
+.toolguard/
+*.db
+*.db-wal
+*.db-shm

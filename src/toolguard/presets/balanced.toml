@@ -1,0 +1,237 @@
+# toolguard "balanced" preset.
+#
+# Threat model: the model may be steered by anything it reads (web pages,
+# e-mails, issues, documents). Data from those sources is UNTRUSTED. Secrets
+# and personal data are PRIVATE. Sensitive actions (sinks) get stricter the
+# more directly untrusted data drives them:
+#
+#   tainted         the session has seen untrusted data (coarse, always sound)
+#   untrusted_flow  a critical argument contains data seen in an untrusted source
+#   private_flow    an argument carries private data (verbatim or secret-shaped)
+#   trifecta        untrusted + private data in the session and an egress sink
+#
+# Tool names follow Claude Code: built-ins (Bash, WebFetch...) and MCP tools as
+# mcp__<server>__<tool>. Patterns are shell-style globs.
+
+version = 1
+mode = "enforce"
+taint_ttl = 0                 # seconds; 0 = tainted until `toolguard reset`
+endorse_user_input = true     # values the user typed are not attributed to untrusted data
+max_observation_chars = 262144
+
+# ----------------------------------------------------------------- sources
+
+[[source]]
+kind = "web"
+untrusted = true
+tools = [
+  "WebFetch", "WebSearch",
+  "mcp__*fetch*", "mcp__*browser*", "mcp__*puppeteer*", "mcp__*playwright*",
+  "mcp__*__*search_web*", "mcp__*__*web_search*", "mcp__*scrape*", "mcp__*crawl*",
+  "mcp__*firecrawl*", "mcp__*brave*", "mcp__*tavily*", "mcp__*exa__*",
+]
+
+[[source]]
+kind = "message"
+untrusted = true
+private = true
+tools = [
+  "mcp__*mail*__*read*", "mcp__*mail*__*get*", "mcp__*mail*__*search*", "mcp__*mail*__*list*",
+  "mcp__*outlook*__*get*", "mcp__*outlook*__*list*", "mcp__*outlook*__*search*",
+  "mcp__*slack*__*history*", "mcp__*slack*__*get*", "mcp__*slack*__*search*", "mcp__*slack*__*read*",
+  "mcp__*discord*__*read*", "mcp__*discord*__*get*", "mcp__*telegram*__*get*",
+  "mcp__*teams*__*get*", "mcp__*teams*__*list*",
+]
+
+[[source]]
+kind = "tracker"
+untrusted = true
+tools = [
+  "mcp__*github*__get_*", "mcp__*github*__list_*", "mcp__*github*__search_*",
+  "mcp__*gitlab*__get_*", "mcp__*gitlab*__list_*", "mcp__*gitlab*__search_*",
+  "mcp__*jira*__get*", "mcp__*jira*__search*", "mcp__*linear*__get*", "mcp__*linear*__list*",
+]
+
+[[source]]
+kind = "document"
+untrusted = true
+private = true
+tools = [
+  "mcp__*drive*__*read*", "mcp__*drive*__*get*", "mcp__*drive*__*search*",
+  "mcp__*notion*__*get*", "mcp__*notion*__*search*", "mcp__*notion*__*retrieve*",
+  "mcp__*confluence*__*get*", "mcp__*dropbox*__*read*",
+]
+
+[[source]]
+kind = "secret-file"
+private = true
+tools = ["Read", "mcp__*__read_file", "mcp__*__read_text_file", "mcp__*__read_multiple_files"]
+when = { "*" = [
+  "*/.ssh/*", "*/.aws/*", "*/.azure/*", "*/.config/gcloud/*", "*/.kube/*", "*/.docker/config.json",
+  "*/.npmrc", "*/.pypirc", "*/.netrc", "*/.git-credentials", "*/.gnupg/*",
+  "*.pem", "*.key", "*.p12", "*.pfx", "*/.env", "*/.env.*", "*credential*", "*secret*",
+  "*/id_rsa*", "*/id_ed25519*", "*/id_ecdsa*",
+] }
+
+[[source]]
+kind = "secret-command"
+private = true
+tools = ["Bash", "PowerShell"]
+when = { command = [
+  "*/.ssh/*", "*.pem*", "*id_rsa*", "*id_ed25519*", "*/.aws/*", "*credential*", "*printenv*",
+  "*secret*", "*password*", "*.env*", "*gpg*--decrypt*", "*security find-*-password*",
+] }
+
+[[source]]
+kind = "vault"
+private = true
+tools = [
+  "mcp__*1password*__*", "mcp__*bitwarden*__*", "mcp__*keepass*__*", "mcp__*vault*__*read*",
+  "mcp__*vault*__*get*", "mcp__*secret*__*get*",
+]
+
+[[source]]
+kind = "database"
+private = true
+tools = [
+  "mcp__*postgres*__*query*", "mcp__*mysql*__*query*", "mcp__*sqlite*__*query*",
+  "mcp__*mongo*__*find*", "mcp__*supabase*__*query*", "mcp__*bigquery*__*query*",
+]
+
+# ----------------------------------------------------------------- sinks
+# First matching sink wins, so the more specific entries come first.
+
+[[sink]]
+category = "payment"
+egress = true
+critical = [
+  "to", "destination", "recipient", "beneficiary", "iban", "account", "account_number",
+  "address", "wallet", "amount", "currency",
+]
+tools = [
+  "mcp__*__*payment*", "mcp__*__*transfer*", "mcp__*__*payout*", "mcp__*__*charge*",
+  "mcp__*__*refund*", "mcp__*__*withdraw*", "mcp__*__*send_money*", "mcp__*__*send_crypto*",
+  "mcp__*__*trade*", "mcp__*__*place_order*",
+]
+
+[[sink]]
+category = "send"
+egress = true
+critical = [
+  "to", "cc", "bcc", "recipient", "recipients", "channel", "channel_id", "chat_id", "user",
+  "user_id", "email", "address", "phone", "number", "webhook", "url",
+]
+tools = [
+  "mcp__*__send*", "mcp__*__*reply*", "mcp__*__*forward*", "mcp__*__post_message*",
+  "mcp__*__chat_post*", "mcp__*__*_post_message", "mcp__*__*send_message*", "mcp__*__*notify*",
+]
+
+[[sink]]
+category = "shell"
+egress = false
+critical = ["command", "cmd", "script", "code", "args"]
+tools = [
+  "Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
+  "mcp__*__*terminal*", "mcp__*__run_code*", "mcp__*__*execute*",
+]
+
+[[sink]]
+category = "publish"
+egress = true
+critical = ["owner", "repo", "repository", "project_id", "url", "path", "branch"]
+tools = [
+  "mcp__*github*__create_*", "mcp__*github*__update_*", "mcp__*github*__push_*",
+  "mcp__*github*__add_*", "mcp__*github*__merge_*", "mcp__*gitlab*__create_*",
+  "mcp__*gitlab*__update_*", "mcp__*gitlab*__push_*", "mcp__*gitlab*__merge_*",
+  "mcp__*__*publish*", "mcp__*__*tweet*", "mcp__*__create_post*",
+]
+
+[[sink]]
+category = "destructive"
+egress = false
+critical = ["*"]
+tools = ["mcp__*__delete*", "mcp__*__*remove*", "mcp__*__*drop*", "mcp__*__*purge*", "mcp__*__*destroy*"]
+
+[[sink]]
+category = "web"
+egress = true
+critical = ["url"]
+tools = [
+  "WebFetch", "mcp__*fetch*", "mcp__*browser*__*navigate*", "mcp__*playwright*__*navigate*",
+  "mcp__*puppeteer*__*navigate*", "mcp__*__http_request*", "mcp__*__*http_post*",
+]
+
+[[sink]]
+category = "write"
+egress = false
+critical = ["file_path", "path", "notebook_path", "destination", "target"]
+tools = [
+  "Write", "Edit", "MultiEdit", "NotebookEdit", "mcp__*__write_file", "mcp__*__edit_file",
+  "mcp__*__create_file", "mcp__*__move_file", "mcp__*__create_directory",
+]
+
+# ----------------------------------------------------------------- actions
+
+[actions.default]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "block"
+trifecta = "block"
+
+# An attacker-chosen recipient/account blocks outright. Private content or the
+# untrusted+private combination ("reply to this e-mail") needs a human.
+[actions.payment]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "confirm"
+trifecta = "confirm"
+
+[actions.send]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "confirm"
+trifecta = "confirm"
+
+[actions.shell]
+tainted = "confirm"
+untrusted_flow = "confirm"   # the human sees which page/e-mail the command came from
+private_flow = "confirm"
+trifecta = "confirm"
+
+[actions.publish]
+tainted = "confirm"
+untrusted_flow = "confirm"
+private_flow = "block"       # publishing secrets
+trifecta = "confirm"
+
+[actions.destructive]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "confirm"
+trifecta = "confirm"
+
+[actions.web]
+tainted = "allow"            # following links is normal browsing
+untrusted_flow = "allow"
+private_flow = "block"       # secrets in a URL are exfiltration
+trifecta = "confirm"
+
+[actions.write]
+tainted = "allow"
+untrusted_flow = "confirm"   # an attacker-chosen path (e.g. ~/.bashrc) needs a human
+private_flow = "allow"
+trifecta = "allow"
+
+# ----------------------------------------------------------------- self-protection
+# The agent must not be able to approve its own requests, reset the taint
+# state, or edit the policy/hook configuration that enforces this guard.
+
+[[protect]]
+tools = ["Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*", "mcp__*__*terminal*"]
+args = { "*" = ["*toolguard*", "*/.claude/settings*.json*"] }
+message = "agents may not invoke the guard or edit its configuration (self-approval / tampering)"
+
+[[protect]]
+tools = ["Write", "Edit", "MultiEdit", "mcp__*__write_file", "mcp__*__edit_file", "mcp__*__move_file"]
+args = { "*" = ["*/.toolguard/*", "*toolguard*.toml", "*/.claude/settings.json", "*/.claude/settings.local.json"] }
+message = "agents may not modify the guard's state, policy or hook configuration"

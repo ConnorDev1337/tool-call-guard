@@ -1,0 +1,45 @@
+# toolguard "strict" preset: the balanced sources, sinks and self-protection,
+# but any evidence of untrusted data reaching a sink blocks, every sensitive
+# action in a tainted session needs a human, and the shell counts as egress.
+
+extends = "balanced"
+
+[[sink]]
+category = "shell"
+egress = true
+critical = ["*"]
+tools = [
+  "Bash", "PowerShell", "mcp__*__*shell*", "mcp__*__*exec*", "mcp__*__run_command*",
+  "mcp__*__*terminal*", "mcp__*__run_code*", "mcp__*__*execute*",
+]
+
+[actions.shell]
+tainted = "confirm"
+untrusted_flow = "block"
+private_flow = "block"
+trifecta = "block"
+
+[actions.payment]
+private_flow = "block"
+trifecta = "block"
+
+[actions.send]
+private_flow = "block"
+trifecta = "block"
+
+[actions.publish]
+untrusted_flow = "block"
+trifecta = "block"
+
+[actions.destructive]
+trifecta = "block"
+
+[actions.web]
+tainted = "confirm"
+untrusted_flow = "confirm"
+trifecta = "block"
+
+[actions.write]
+tainted = "confirm"
+untrusted_flow = "block"
+trifecta = "confirm"

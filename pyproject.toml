@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tool-call-guard"
+version = "0.1.0"
+description = "Information-flow guard between LLM agents and their tools: taint tracking, policy enforcement, out-of-band approval and tamper-evident audit"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+dependencies = []
+keywords = ["llm", "agents", "prompt-injection", "ai-control", "mcp", "taint-tracking", "audit"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Security",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
+
+[project.scripts]
+toolguard = "toolguard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+toolguard = ["py.typed", "presets/*.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["toolguard"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S108", "S311", "S603"]
