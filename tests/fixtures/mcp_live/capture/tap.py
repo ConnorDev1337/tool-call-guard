@@ -11,6 +11,7 @@ to the process, and the tap exits with its exit code.
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 import signal
 import subprocess
@@ -50,10 +51,8 @@ class Tap:
             except OSError:
                 target = None  # The reader went away; keep draining and logging
         if direction == "in" and target is not None:
-            try:
+            with contextlib.suppress(OSError):
                 target.close()
-            except OSError:
-                pass
             self.record("eof", b"")
 
     def run(self) -> int:
