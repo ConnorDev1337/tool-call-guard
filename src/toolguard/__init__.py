@@ -1,10 +1,12 @@
 """toolguard: an information-flow guard between LLM agents and their tools."""
 
 from .approvals import (
+    ApprovalConfig,
     ApprovalOutcome,
     ApprovalRequest,
     CallbackApprover,
     ChainApprover,
+    ChallengeSettings,
     ConsoleApprover,
     DenyApprover,
     QueueApprover,
@@ -18,10 +20,12 @@ __version__ = "0.1.0"
 
 __all__ = [
     "Action",
+    "ApprovalConfig",
     "ApprovalOutcome",
     "ApprovalRequest",
     "CallbackApprover",
     "ChainApprover",
+    "ChallengeSettings",
     "ConsoleApprover",
     "Decision",
     "DenyApprover",
