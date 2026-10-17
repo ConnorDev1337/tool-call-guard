@@ -69,6 +69,7 @@ class Observation:
     text: str  # Normalized and size-capped; used for provenance matching
     indicators: tuple[Indicator, ...]
     digest: str
+    directed: bool = False  # The user named this exact resource (file, URL, ...) in the prompt
 
     @property
     def label(self) -> str:
@@ -86,6 +87,7 @@ class Evidence:
     observation_id: int
     source: str  # Observation label
     endorsed: bool = False  # The value also appears in trusted (user) input
+    directed: bool = False  # The matched source is one the user named in the prompt
 
 
 @dataclass(frozen=True)

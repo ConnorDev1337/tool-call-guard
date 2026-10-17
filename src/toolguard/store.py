@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS observations (
     trusted INTEGER NOT NULL,
     text TEXT NOT NULL,
     indicators TEXT NOT NULL,
-    digest TEXT NOT NULL
+    digest TEXT NOT NULL,
+    directed INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS observations_session ON observations (session, ts);
 CREATE TABLE IF NOT EXISTS approvals (
@@ -76,6 +77,11 @@ _APPROVAL_COLUMNS = {
     "attempts": "INTEGER NOT NULL DEFAULT 0",
     "channel": "TEXT",
     "decision_mac": "TEXT",
+}
+
+# Columns added to ``observations`` after the first release, for databases created earlier.
+_OBSERVATION_COLUMNS = {
+    "directed": "INTEGER NOT NULL DEFAULT 0",
 }
 
 
@@ -155,12 +161,16 @@ class Store:
         self._migrate()
 
     def _migrate(self) -> None:
-        """Add approval columns missing from databases created by earlier versions."""
+        """Add columns missing from databases created by earlier versions."""
         with self.transaction() as conn:
-            present = {row["name"] for row in conn.execute("PRAGMA table_info(approvals)")}
-            for name, decl in _APPROVAL_COLUMNS.items():
-                if name not in present:
-                    conn.execute(f"ALTER TABLE approvals ADD COLUMN {name} {decl}")
+            for table, columns in (
+                ("approvals", _APPROVAL_COLUMNS),
+                ("observations", _OBSERVATION_COLUMNS),
+            ):
+                present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+                for name, decl in columns.items():
+                    if name not in present:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
 
     def close(self) -> None:
         with self._lock:
@@ -219,17 +229,41 @@ class Store:
         text: str,
         indicators: tuple[Indicator, ...],
         digest: str,
+        directed: bool = False,
     ) -> Observation:
         payload = json.dumps([[i.kind, i.value] for i in indicators])
         with self.transaction() as conn:
             cursor = conn.execute(
                 "INSERT INTO observations (session, ts, tool, kind, untrusted, private, trusted, "
-                "text, indicators, digest) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (session, ts, tool, kind, untrusted, private, trusted, text, payload, digest),
+                "text, indicators, digest, directed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    session,
+                    ts,
+                    tool,
+                    kind,
+                    untrusted,
+                    private,
+                    trusted,
+                    text,
+                    payload,
+                    digest,
+                    directed,
+                ),
             )
             row_id = int(cursor.lastrowid or 0)
         return Observation(
-            row_id, session, ts, tool, kind, untrusted, private, trusted, text, indicators, digest
+            row_id,
+            session,
+            ts,
+            tool,
+            kind,
+            untrusted,
+            private,
+            trusted,
+            text,
+            indicators,
+            digest,
+            directed,
         )
 
     def observations(self, session: str, since: float | None = None) -> list[Observation]:
@@ -253,6 +287,7 @@ class Store:
                 text=row["text"],
                 indicators=tuple(Indicator(k, v) for k, v in json.loads(row["indicators"])),
                 digest=row["digest"],
+                directed=bool(row["directed"]),
             )
             for row in rows
         ]

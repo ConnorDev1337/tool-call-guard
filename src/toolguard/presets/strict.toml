@@ -21,10 +21,32 @@ private_flow = "block"
 trifecta = "block"
 
 [actions.payment]
+directed_flow = "block"
 private_flow = "block"
 trifecta = "block"
 
 [actions.send]
+directed_flow = "block"
+private_flow = "block"
+trifecta = "block"
+
+# Inherited from balanced; strict blocks on any untrusted evidence, directed or not.
+[actions.access]
+untrusted_flow = "block"
+directed_flow = "block"
+private_flow = "block"
+trifecta = "block"
+
+[actions.account]
+untrusted_flow = "block"
+directed_flow = "block"
+private_flow = "block"
+trifecta = "block"
+
+# Auto-executed paths take the strict shell posture.
+[actions.autoexec]
+tainted = "confirm"
+untrusted_flow = "block"
 private_flow = "block"
 trifecta = "block"
 

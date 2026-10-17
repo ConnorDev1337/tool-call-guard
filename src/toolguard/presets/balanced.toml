@@ -41,8 +41,28 @@ tools = [
   "mcp__*slack*__*history*", "mcp__*slack*__*get*", "mcp__*slack*__*search*", "mcp__*slack*__*read*",
   "mcp__*discord*__*read*", "mcp__*discord*__*get*", "mcp__*telegram*__*get*",
   "mcp__*teams*__*get*", "mcp__*teams*__*list*",
+  # Other chat platforms and generic chat readers (any server with these verbs).
+  "mcp__*mattermost*__*get*", "mcp__*mattermost*__*read*", "mcp__*mattermost*__*list*",
+  "mcp__*zulip*__*get*", "mcp__*rocketchat*__*get*", "mcp__*matrix*__*get*",
+  "mcp__*__get_messages*", "mcp__*__read_messages*", "mcp__*__get_channel_messages*",
+  "mcp__*__list_messages*", "mcp__*__get_conversation*",
 ]
 
+# Invitations and events are created by other people and sit in the user's calendar.
+[[source]]
+kind = "calendar"
+untrusted = true
+private = true
+tools = [
+  "mcp__*calendar*__*get*", "mcp__*calendar*__*list*", "mcp__*calendar*__*search*",
+  "mcp__*calendar*__*read*", "mcp__*cal__*get*", "mcp__*cal__*list*",
+  "mcp__*__list_events*", "mcp__*__get_events*", "mcp__*__search_events*",
+  "mcp__*__get_event", "mcp__*__list_calendar_events*", "mcp__*__get_invitation*",
+  "mcp__*__list_invitation*",
+]
+
+# Issues, tickets, pull/merge requests, comments and reviews are written by third
+# parties on any forge or help desk, not only the named vendors.
 [[source]]
 kind = "tracker"
 untrusted = true
@@ -50,8 +70,15 @@ tools = [
   "mcp__*github*__get_*", "mcp__*github*__list_*", "mcp__*github*__search_*",
   "mcp__*gitlab*__get_*", "mcp__*gitlab*__list_*", "mcp__*gitlab*__search_*",
   "mcp__*jira*__get*", "mcp__*jira*__search*", "mcp__*linear*__get*", "mcp__*linear*__list*",
+  "mcp__*gitea*__get_*", "mcp__*forgejo*__get_*", "mcp__*bitbucket*__get_*",
+  "mcp__*zendesk*__*get*", "mcp__*servicenow*__*get*", "mcp__*freshdesk*__*get*",
+  "mcp__*asana*__get*", "mcp__*trello*__get*", "mcp__*shortcut*__get*",
+  "mcp__*__get_issue*", "mcp__*__list_issues*", "mcp__*__get_pull_request*",
+  "mcp__*__get_merge_request*", "mcp__*__get_ticket*", "mcp__*__list_tickets*",
+  "mcp__*__get_comments*", "mcp__*__list_comments*", "mcp__*__get_review*",
 ]
 
+# Files, documents and pages can be shared by, and with, other people.
 [[source]]
 kind = "document"
 untrusted = true
@@ -59,7 +86,10 @@ private = true
 tools = [
   "mcp__*drive*__*read*", "mcp__*drive*__*get*", "mcp__*drive*__*search*",
   "mcp__*notion*__*get*", "mcp__*notion*__*search*", "mcp__*notion*__*retrieve*",
-  "mcp__*confluence*__*get*", "mcp__*dropbox*__*read*",
+  "mcp__*confluence*__*get*", "mcp__*dropbox*__*read*", "mcp__*dropbox*__*get*",
+  "mcp__*box*__*get*", "mcp__*box*__*read*", "mcp__*sharepoint*__*get*",
+  "mcp__*onedrive*__*get*", "mcp__*gdocs*__*get*", "mcp__*quip*__*get*", "mcp__*coda*__*get*",
+  "mcp__*__get_document*", "mcp__*__read_document*", "mcp__*__get_page", "mcp__*__get_file_by_id*",
 ]
 
 [[source]]
@@ -137,6 +167,38 @@ tools = [
   "mcp__*__*terminal*", "mcp__*__run_code*", "mcp__*__*execute*",
 ]
 
+# Granting a party access to data (sharing, invitations, membership, permissions) is a
+# disclosure like sending, so it gets the `send` posture. Precedes `publish` because
+# forge `add_*`/`create_*` patterns would otherwise swallow collaborator grants.
+[[sink]]
+category = "access"
+egress = true
+critical = [
+  "email", "user", "user_email", "username", "recipient", "member", "members",
+  "collaborator", "principal", "grantee", "invitee", "channel", "channel_id", "team",
+]
+tools = [
+  "mcp__*__share_*", "mcp__*__*invite*", "mcp__*__add_user_to_*", "mcp__*__add_member*",
+  "mcp__*__add_collaborator*", "mcp__*__*add_collaborator", "mcp__*__grant_*",
+  "mcp__*__*grant_access*", "mcp__*__set_permission*", "mcp__*__update_permission*",
+  "mcp__*__add_to_channel*", "mcp__*__add_people*",
+]
+
+# Changing credentials, keys or the profile hands over control of the account, so an
+# attacker-chosen value must block like a payment. Precedes `publish` for the same reason.
+[[sink]]
+category = "account"
+egress = false
+critical = ["*"]
+tools = [
+  "mcp__*__update_password*", "mcp__*__change_password*", "mcp__*__reset_password*",
+  "mcp__*__update_recovery*", "mcp__*__set_recovery*", "mcp__*__update_email*",
+  "mcp__*__change_email*", "mcp__*__update_user_info*", "mcp__*__update_profile*",
+  "mcp__*__set_mfa*", "mcp__*__update_mfa*", "mcp__*__disable_mfa*", "mcp__*__add_ssh_key*",
+  "mcp__*__*deploy_key*", "mcp__*__create_api_key*", "mcp__*__create_token*",
+  "mcp__*__add_recovery_phone*", "mcp__*__rotate_*credential*",
+]
+
 [[sink]]
 category = "publish"
 egress = true
@@ -163,6 +225,50 @@ tools = [
   "mcp__*puppeteer*__*navigate*", "mcp__*__http_request*", "mcp__*__*http_post*",
 ]
 
+# Writing to a path the system runs or trusts automatically (start-up files, git hooks,
+# CI configs, build and package scripts, test configuration) is deferred code execution,
+# so it gets the shell posture and EVERY argument is critical (the payload is the content,
+# not the path). Precedes `write`, which keeps the path-only check for ordinary files.
+[[sink]]
+category = "autoexec"
+egress = false
+critical = ["*"]
+tools = ["Write", "Edit", "MultiEdit"]
+when = { file_path = [
+  "*/conftest.py", "conftest.py", "*/.github/workflows/*", "*/.gitea/workflows/*",
+  "*/.gitlab-ci.yml", "*.gitlab-ci.yml", "*/.gitlab/*.yml", "*/Makefile", "Makefile",
+  "*/makefile", "*/GNUmakefile", "*/package.json", "package.json", "*/.git/hooks/*",
+  "*/.githooks/*", "*/.pre-commit-config.yaml", "*/.bashrc", "*/.zshrc", "*/.profile",
+  "*/.bash_profile", "*/.zprofile", "*/.bash_login", "*/.zshenv", "*/.config/fish/*",
+  "*/Dockerfile", "Dockerfile", "*/Dockerfile.*", "*/docker-compose*.yml",
+  "*/docker-compose*.yaml", "*/compose.yml", "*/compose.yaml", "*/.circleci/*",
+  "*/azure-pipelines.yml", "*/Jenkinsfile", "Jenkinsfile", "*/.drone.yml",
+  "*/bitbucket-pipelines.yml", "*/.travis.yml", "*/appveyor.yml", "*/setup.py",
+  "*/noxfile.py", "*/tox.ini", "*/tasks.py", "*/.vscode/tasks.json", "*/.vscode/launch.json",
+  "*/crontab", "*/cron.d/*", "*/.config/autostart/*", "*/.ssh/authorized_keys",
+  "*/.ssh/config",
+] }
+
+[[sink]]
+category = "autoexec"
+egress = false
+critical = ["*"]
+tools = ["mcp__*__write_file", "mcp__*__edit_file", "mcp__*__create_file", "mcp__*__move_file"]
+when = { path = [
+  "*/conftest.py", "conftest.py", "*/.github/workflows/*", "*/.gitea/workflows/*",
+  "*/.gitlab-ci.yml", "*.gitlab-ci.yml", "*/.gitlab/*.yml", "*/Makefile", "Makefile",
+  "*/makefile", "*/GNUmakefile", "*/package.json", "package.json", "*/.git/hooks/*",
+  "*/.githooks/*", "*/.pre-commit-config.yaml", "*/.bashrc", "*/.zshrc", "*/.profile",
+  "*/.bash_profile", "*/.zprofile", "*/.bash_login", "*/.zshenv", "*/.config/fish/*",
+  "*/Dockerfile", "Dockerfile", "*/Dockerfile.*", "*/docker-compose*.yml",
+  "*/docker-compose*.yaml", "*/compose.yml", "*/compose.yaml", "*/.circleci/*",
+  "*/azure-pipelines.yml", "*/Jenkinsfile", "Jenkinsfile", "*/.drone.yml",
+  "*/bitbucket-pipelines.yml", "*/.travis.yml", "*/appveyor.yml", "*/setup.py",
+  "*/noxfile.py", "*/tox.ini", "*/tasks.py", "*/.vscode/tasks.json", "*/.vscode/launch.json",
+  "*/crontab", "*/cron.d/*", "*/.config/autostart/*", "*/.ssh/authorized_keys",
+  "*/.ssh/config",
+] }
+
 [[sink]]
 category = "write"
 egress = false
@@ -181,16 +287,46 @@ private_flow = "block"
 trifecta = "block"
 
 # An attacker-chosen recipient or account blocks outright; private content or the
-# untrusted and private combination ("reply to this e-mail") needs a human.
+# untrusted and private combination ("reply to this e-mail") needs a human. When the
+# value comes from a source the user named (the IBAN on the bill they asked to pay),
+# the guard cannot tell a legitimate value from an injected one, so it asks a human
+# (directed_flow) instead of blocking.
 [actions.payment]
 tainted = "confirm"
 untrusted_flow = "block"
+directed_flow = "confirm"
 private_flow = "confirm"
 trifecta = "confirm"
 
 [actions.send]
 tainted = "confirm"
 untrusted_flow = "block"
+directed_flow = "confirm"
+private_flow = "confirm"
+trifecta = "confirm"
+
+# Sharing/inviting mirrors `send`: an attacker-chosen grantee blocks, a grantee from a
+# source the user named needs a human.
+[actions.access]
+tainted = "confirm"
+untrusted_flow = "block"
+directed_flow = "confirm"
+private_flow = "confirm"
+trifecta = "confirm"
+
+# An account change with an attacker-chosen value blocks like a payment.
+[actions.account]
+tainted = "confirm"
+untrusted_flow = "block"
+directed_flow = "confirm"
+private_flow = "confirm"
+trifecta = "confirm"
+
+# Writing to an auto-executed path takes the shell posture: any untrusted evidence in
+# the content or path is shown to a human.
+[actions.autoexec]
+tainted = "confirm"
+untrusted_flow = "confirm"
 private_flow = "confirm"
 trifecta = "confirm"
 
