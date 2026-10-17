@@ -10,6 +10,7 @@ import pytest
 
 from conftest import ROOT
 from toolguard import Policy
+from toolguard.approvals import ApprovalConfig
 
 SUFFIXES = {".py", ".json", ".toml", ".yml", ".yaml", ".md"}
 FILES = [
@@ -49,3 +50,9 @@ def test_example_policy_is_valid():
     policy = Policy.load(str(path))
     assert policy.sink_for("mcp__deployer__rollout", {}).category == "deploy"
     assert policy.taint_ttl == 28800
+
+
+def test_example_approvals_config_is_valid():
+    config = ApprovalConfig.load(ROOT / "examples" / "approvals.toml")
+    assert [n.name for n in config.notifiers] == ["telegram", "webhook", "desktop", "file"]
+    assert config.settings.length == 12 and config.settings.max_attempts == 5

@@ -1,0 +1,34 @@
+# Out-of-band approvals: copy to ~/.toolguard/approvals.toml (or point
+# TOOLGUARD_APPROVALS_CONFIG at it). Keep it where the agent cannot write: whoever
+# edits it chooses where approval codes are sent.
+#
+# Secrets never go in this file. They are read from environment variables when a
+# code is sent: TOOLGUARD_TELEGRAM_TOKEN, TOOLGUARD_WEBHOOK_SECRET and, to key the
+# stored code hashes and approval records, TOOLGUARD_APPROVAL_KEY.
+
+[challenge]
+code_ttl = 300        # seconds a code stays valid
+max_attempts = 5      # wrong codes before the approval is locked
+length = 12           # base32 characters (60 bits)
+key_env = "TOOLGUARD_APPROVAL_KEY"
+
+# Notifiers are tried in order; the first that delivers the code wins. If none
+# does, the call is denied (fail closed) and the failures are audited.
+
+[[notifier]]
+type = "telegram"
+chat_id = "123456789"           # your chat with the bot; not a secret
+token_env = "TOOLGUARD_TELEGRAM_TOKEN"
+
+[[notifier]]
+type = "webhook"
+url = "https://hooks.example.com/toolguard"   # https, or http only to loopback
+secret_env = "TOOLGUARD_WEBHOOK_SECRET"     # HMAC-SHA256 of the body, X-Toolguard-Signature
+details = false                             # send the code without the evidence
+
+[[notifier]]
+type = "desktop"      # Windows toast, macOS Notification Center, notify-send
+
+[[notifier]]
+type = "file"         # headless operators: a file, FIFO or tty they watch
+path = "/var/lib/toolguard-operator/approvals.log"
