@@ -15,18 +15,24 @@ import contextlib
 import hashlib
 import hmac
 import os
+import re
 import secrets
 import time
 import tomllib
-from collections.abc import Callable, Iterator, Mapping, Sequence
+import unicodedata
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, TextIO
+from urllib.parse import unquote
 
 from .audit import AuditLog
 from .audit import key_from_env as audit_key_from_env
 from .model import Action, Decision, Reason, canonical_json
 from .notifiers import ConfigError, Notice, Notifier, build_notifier, deliver
+from .policy import iter_strings, select_args
+from .provenance import extract_indicators, secret_tokens
+from .redact import mask_secrets, redact_args, short_hash
 from .store import Approval, Store, default_home
 
 APPROVAL_TTL = 600.0  # Seconds an approval stays usable after a human decides
@@ -244,6 +250,99 @@ class ApprovalConfig:
         return cls(settings, notifiers, path)
 
 
+# --------------------------------------------------------------------------- the brief
+
+BRIEF_ARGS = 6  # Argument values listed in a brief
+BRIEF_EVIDENCE = 6  # Evidence lines listed in a brief
+BRIEF_VALUE_CHARS = 160  # Characters shown per value
+_PAYEES = ("iban", "crypto")  # Indicators shown even though they look like secrets
+_REDACTED = re.compile(r"\[redacted:([0-9a-f]{12})\]")
+_ORIGIN = {
+    "untrusted_flow": "untrusted; you did not name this source",
+    "directed_flow": "untrusted; a source you named, which may still carry injected text",
+    "private_flow": "private",
+    "endorsed_flow": "also in your own input",
+}
+
+
+def visible(text: str) -> str:
+    """Escape control, format (bidi, zero-width) and line-separator characters.
+
+    Arguments and evidence are attacker-influenced; escaping keeps them on one line
+    and stops reordering tricks from changing what the human reads.
+    """
+    return "".join(
+        f"\\u{ord(ch):04x}" if unicodedata.category(ch) in {"Cc", "Cf", "Zl", "Zp"} else ch
+        for ch in text
+    )
+
+
+def display_value(value: str, limit: int = BRIEF_VALUE_CHARS, leaked: Collection[str] = ()) -> str:
+    """Return ``value`` for a human: percent-decoded, secrets masked, invisible escaped.
+
+    Known credential formats and secret-shaped (high-entropy) tokens become
+    ``[secret:<sha256 prefix>]``, the prefix that also identifies them in evidence.
+    IBANs and crypto addresses stay readable, since they are what the human must
+    check, unless their hash prefix is in ``leaked`` (a private secret match).
+    """
+    text = unquote(value) if "%" in value else value
+    text = mask_secrets(text)
+    payees = {i.value.lower() for i in extract_indicators(text) if i.kind in _PAYEES}
+    for token in sorted(secret_tokens(text), key=lambda t: (-len(t), t)):
+        digest = short_hash(token)
+        if token.lower() not in payees or digest in leaked:
+            text = text.replace(token, f"[secret:{digest}]")
+    text = visible(text)
+    if len(text) > limit:
+        text = f"{text[:limit]}...[{len(value)} chars]"
+    return text
+
+
+def brief(decision: Decision) -> str:
+    """Return what a human needs to decide on ``decision``, concisely and without secrets.
+
+    The first line names the call, its sink and the rules that ask for approval; then
+    come the critical and flagged argument values (masked by :func:`display_value`),
+    the rules and where each flagged value came from: the source tool or resource,
+    whether it is untrusted or private and whether the user named that source. It is
+    meant for out-of-band channels; it never contains the one-time code.
+    """
+    asking = [r for r in decision.reasons if r.action != Action.ALLOW]
+    head = visible(decision.tool)
+    if decision.category:
+        head += f" (sink: {decision.category})"
+    if asking:
+        head += " flagged by " + ", ".join(dict.fromkeys(r.rule for r in asking))
+    lines = [head]
+    evidence = [(r.rule, e) for r in decision.reasons for e in r.evidence]
+    flagged = {e.arg for _, e in evidence}
+    leaked = {m for _, e in evidence for m in _REDACTED.findall(e.matched)}
+    critical = {path for path, _ in select_args(decision.args, decision.critical or ("*",))}
+    shown = [(p, v) for p, v in iter_strings(decision.args) if p in critical or p in flagged]
+    if shown:
+        lines.append("Arguments:")
+        lines += [
+            f"  {visible(p)} = {display_value(v, leaked=leaked)}" for p, v in shown[:BRIEF_ARGS]
+        ]
+        if len(shown) > BRIEF_ARGS:
+            lines.append(f"  (+{len(shown) - BRIEF_ARGS} more)")
+    if asking:
+        lines.append("Rules:")
+        lines += [f"  {r.rule}: {visible(r.message)}" for r in asking]
+    if evidence:
+        lines.append("Where the flagged values come from:")
+        for rule, e in evidence[:BRIEF_EVIDENCE]:
+            origin = _ORIGIN.get(rule, rule)
+            lines.append(
+                f"  {visible(e.arg)}: {e.method} match "
+                f"'{display_value(e.matched, 60, leaked)}' "
+                f"from {visible(e.source)} ({origin})"
+            )
+        if len(evidence) > BRIEF_EVIDENCE:
+            lines.append(f"  (+{len(evidence) - BRIEF_EVIDENCE} more)")
+    return "\n".join(lines)
+
+
 @dataclass(frozen=True)
 class ApprovalRequest:
     """A tool call submitted for human approval."""
@@ -253,6 +352,19 @@ class ApprovalRequest:
     fingerprint: str
     summary: str  # Decision.explain(): rules and evidence, no raw secrets
     args_preview: Any  # Redacted arguments
+    brief: str = ""  # :func:`brief`: for the approving human only, never the model
+
+    @classmethod
+    def for_decision(cls, session: str, decision: Decision) -> ApprovalRequest:
+        """Return the request that asks a human to approve ``decision``."""
+        return cls(
+            session=session,
+            tool=decision.tool,
+            fingerprint=decision.fingerprint,
+            summary=decision.explain(),
+            args_preview=redact_args(decision.args, 200),
+            brief=brief(decision),
+        )
 
 
 @dataclass(frozen=True)
@@ -339,8 +451,9 @@ class ConsoleApprover:
             if console is None:
                 return ApprovalOutcome("denied", note="no interactive terminal available")
             reader, writer = console
-            writer.write("\n" + "=" * 72 + "\n" + req.summary + "\n")
-            writer.write(f"Arguments (redacted): {req.args_preview}\n")
+            writer.write("\n" + "=" * 72 + "\n" + (req.brief or req.summary) + "\n")
+            if not req.brief:
+                writer.write(f"Arguments (redacted): {req.args_preview}\n")
             writer.write("Allow this tool call? [y/N] ")
             writer.flush()
             answer = reader.readline().strip().lower()
@@ -487,6 +600,7 @@ class QueueApprover:
             now + settings.code_ttl,
             req.summary,
             req.args_preview,
+            brief=req.brief,
         )
         failed = []
         for channel, error in deliver(self.notifiers, notice):

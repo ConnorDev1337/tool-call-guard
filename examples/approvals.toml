@@ -24,7 +24,7 @@ token_env = "TOOLGUARD_TELEGRAM_TOKEN"
 type = "webhook"
 url = "https://hooks.example.com/toolguard"   # https, or http only to loopback
 secret_env = "TOOLGUARD_WEBHOOK_SECRET"     # HMAC-SHA256 of the body, X-Toolguard-Signature
-details = false                             # send the code without the evidence
+details = false                             # the code and only the brief's first line
 
 [[notifier]]
 type = "desktop"      # Windows toast, macOS Notification Center, notify-send

@@ -351,6 +351,28 @@ the model never sees**, so a forged command fails even if it runs:
    lock the approval after 5 wrong attempts. `toolguard deny <id>` needs no code.
 5. The agent retries the **identical call**, which is allowed once within 10 minutes.
 
+Each notice also carries a short **brief** of what you are approving: the tool and its sink, the
+critical argument values and any other flagged ones, the rules that fired, and where each flagged
+value came from (source tool or resource, untrusted or private, and whether you named that source
+in your prompt). Secret-shaped tokens and known credential formats are masked as
+`[secret:<sha256 prefix>]`, the same prefix the evidence uses; IBANs and crypto addresses stay
+readable unless they are the leaked secret; percent-encoding is decoded and invisible or bidi
+characters are escaped. The brief goes to the notifier (and the terminal approver), never to the
+model:
+
+```text
+mcp__slack__send_message (sink: send) flagged by tainted, private_flow, trifecta
+Arguments:
+  channel = #general
+  text = token: [secret:bf378b65c7fd]
+Rules:
+  tainted: the session has read untrusted data from WebFetch [web; untrusted]
+  private_flow: argument(s) text carry private data
+  trifecta: untrusted input and private data are both in context and this action sends ...
+Where the flagged values come from:
+  text: secret match '[redacted:bf378b65c7fd]' from Read [secret-file; private] (private)
+```
+
 If no notifier delivers the code, the call is denied (**fail closed**) and each failure is audited.
 Without an `approvals.toml` there is no notifier, so queued approvals are refused. This mirrors the
 AI-control setting: an untrusted model, a deterministic monitor, and a human reached through a
@@ -387,7 +409,8 @@ path = "/var/lib/toolguard-operator/approvals.log"
 | `terminal` | The guard's controlling terminal | For an operator watching that terminal |
 
 Secrets are never accepted in the file: `token`, `secret`, `key` and similar keys are rejected.
-`details = false` sends the code without the evidence (useful for third-party channels).
+`details = false` sends the code with only the first line of the brief (the call, its sink and the
+rules), useful for third-party channels.
 `toolguard notifiers --test` sends a test notice through each channel. From Python, pass
 `QueueApprover(store, notifiers=[...], audit=guard.audit)` or wrap your own channel in
 `CallbackNotifier`.

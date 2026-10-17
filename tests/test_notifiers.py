@@ -345,3 +345,13 @@ def test_build_notifier_from_config(tmp_path):
 def test_build_notifier_rejects_bad_config(table, message):
     with pytest.raises(ConfigError, match=message):
         build_notifier(table)
+
+
+def test_notice_prefers_the_brief():
+    brief = "Bash (sink: shell) flagged by tainted\nArguments:\n  command = make deploy"
+    notice = Notice("ab12cd34", "Bash", "s1", CODE, 0.0, NOTICE.summary, {"x": 1}, brief=brief)
+    text = notice.text()
+    assert text.endswith(brief) and "[tainted] web page read" not in text and CODE in text
+    short = notice.text(details=False)
+    assert short.endswith("Bash (sink: shell) flagged by tainted") and "make deploy" not in short
+    assert notice.payload()["brief"] == brief

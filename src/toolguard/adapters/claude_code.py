@@ -22,7 +22,6 @@ from typing import Any, BinaryIO, TextIO
 from ..approvals import ApprovalRequest, Approver, apply_outcome
 from ..guard import Guard
 from ..model import Action
-from ..redact import redact_args
 
 # Permission modes in which "ask" reaches a human. In other modes (bypassPermissions,
 # dontAsk, auto, ...) nobody or a model would answer, so CONFIRM becomes a denial.
@@ -77,13 +76,7 @@ def _pre_tool_use(
     elif approver is not None:
         # Nobody answers "ask" in this mode: ask a human out of band instead. Only the
         # notifier sees the code; the model gets the explanation and retries later.
-        request = ApprovalRequest(
-            session=session,
-            tool=tool,
-            fingerprint=decision.fingerprint,
-            summary=decision.explain(),
-            args_preview=redact_args(args, 200),
-        )
+        request = ApprovalRequest.for_decision(session, decision)
         apply_outcome(decision, approver(guard).request(request))
         if not decision.allowed:
             output = {"permissionDecision": "deny", "permissionDecisionReason": decision.explain()}
