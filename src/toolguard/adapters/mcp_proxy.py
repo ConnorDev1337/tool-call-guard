@@ -33,6 +33,9 @@ from ..redact import redact_args
 ELICITATION_TIMEOUT = 300.0  # Seconds to wait for the user's answer
 SHUTDOWN_GRACE = 5.0  # Seconds the server gets to exit at each step of the shutdown
 
+# Request metadata that marks the stateless revision (2026-07-28), which has no initialize.
+PROTOCOL_VERSION_META = "io.modelcontextprotocol/protocolVersion"
+
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
 INVALID_PARAMS = -32602
@@ -307,16 +310,16 @@ class McpProxy:
         self._send_server(message)
 
     def _refuse(self, message: dict[str, Any], decision: Decision) -> None:
-        self._send_client(
-            {
-                "jsonrpc": "2.0",
-                "id": message["id"],
-                "result": {
-                    "content": [{"type": "text", "text": decision.explain()}],
-                    "isError": True,
-                },
-            }
-        )
+        result: dict[str, Any] = {
+            "content": [{"type": "text", "text": decision.explain()}],
+            "isError": True,
+        }
+        params = message.get("params")
+        meta = params.get("_meta") if isinstance(params, dict) else None
+        if isinstance(meta, dict) and PROTOCOL_VERSION_META in meta:
+            # A per-request envelope (protocol 2026-07-28 and later) requires resultType.
+            result["resultType"] = "complete"
+        self._send_client({"jsonrpc": "2.0", "id": message["id"], "result": result})
 
     def _audit(self, decision: Decision, **extra: Any) -> None:
         record = self.guard.decision_record(decision)

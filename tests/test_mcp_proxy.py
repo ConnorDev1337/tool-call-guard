@@ -480,6 +480,20 @@ def test_batch_launcher_on_path_starts_on_windows(harness, tmp_path, monkeypatch
     assert h.initialize()["result"]["serverInfo"]["name"] == "fake-mail"
 
 
+def test_refusals_follow_the_protocol_revision_of_the_request(harness):
+    # Protocol 2026-07-28 requires resultType on every result; the SDK 2.x client
+    # rejected a refusal without it and closed the connection.
+    h = harness()
+    h.initialize()
+    taint(h)
+    meta = {"io.modelcontextprotocol/protocolVersion": "2026-07-28"}
+    arguments = {"to": ATTACKER}
+    h.request("tools/call", {"name": "send_email", "arguments": arguments, "_meta": meta})
+    assert h.recv()["result"]["resultType"] == "complete"
+    h.call("send_email", arguments)
+    assert "resultType" not in h.recv()["result"]
+
+
 def test_proxy_process_exits_with_the_server_while_the_client_is_connected(tmp_path):
     # The client pump is still blocked reading stdin when the server exits; a normal
     # interpreter shutdown then aborted with "could not acquire lock for <stdin>".
