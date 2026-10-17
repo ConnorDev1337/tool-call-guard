@@ -26,6 +26,7 @@ from toolguard.notifiers import (
     deliver,
     is_loopback,
 )
+from toolguard.notifiers import alert as alert_all
 
 CODE = "K7QF-2M9X-HB4T"
 NOTICE = Notice(
@@ -247,7 +248,9 @@ def which_all(name):
 @pytest.mark.parametrize("platform", ["win32", "darwin", "linux"])
 def test_desktop_notifier_per_platform(platform):
     runner = Runner()
-    DesktopNotifier(platform=platform, runner=runner, which=which_all).send(NOTICE)
+    notifier = DesktopNotifier(platform=platform, runner=runner, which=which_all)
+    assert notifier.carries_code == (platform != "linux")
+    notifier.send(NOTICE if notifier.carries_code else NOTICE.alert("telegram"))
     ((argv, kwargs),) = runner.calls
     if platform == "win32":
         assert argv[0].endswith("powershell.exe") and "-NonInteractive" in argv
@@ -258,8 +261,45 @@ def test_desktop_notifier_per_platform(platform):
         assert kwargs["input"].startswith("display notification")
     else:
         assert "notify-send" in argv[0] and "--" in argv and kwargs["input"] is None
-        assert CODE in argv[-1]
+        assert CODE not in " ".join(argv) and "sent via telegram" in argv[-1]
+        assert "toolguard approve ab12cd34" in argv[-1]
     assert kwargs["timeout"] == 10.0 and kwargs["check"] is False
+
+
+def test_desktop_never_puts_the_code_on_a_command_line():
+    runner = Runner()
+    linux = DesktopNotifier(platform="linux", runner=runner, which=which_all)
+    with pytest.raises(NotifyError, match="only sends alerts"):
+        linux.send(NOTICE)
+    assert runner.calls == []
+    with pytest.raises(ConfigError, match="command line"):
+        DesktopNotifier(platform="linux", send_code=True)
+    quiet = DesktopNotifier(platform="win32", send_code=False, runner=runner, which=which_all)
+    assert not quiet.carries_code  # An alert on every platform when asked
+    with pytest.raises(NotifyError, match="only sends alerts"):
+        quiet.send(NOTICE)
+    assert build_notifier({"type": "desktop", "send_code": False}).carries_code is False
+    with pytest.raises(ConfigError, match="wrong type"):
+        build_notifier({"type": "desktop", "send_code": "no"})
+
+
+def test_alerts_skip_the_code_and_name_its_channel():
+    alert = Notice("ab12cd34", "Bash", "s1", CODE, 0.0, "why", {"a": 1}, brief="Bash\nArgs").alert(
+        "telegram"
+    )
+    assert alert.code == "" and alert.summary == "" and alert.args_preview is None
+    text = alert.text()
+    assert CODE not in text and "sent via telegram" in text and text.endswith("Bash")
+    assert "Args" not in text and "toolguard deny ab12cd34" in text
+    seen = []
+    chain = [
+        CallbackNotifier(seen.append, "phone"),
+        DesktopNotifier(platform="linux", runner=Runner(), which=which_all),
+    ]
+    assert list(deliver(chain, NOTICE)) == [("phone", None)]  # The alert is not a carrier
+    assert [n.code for n in seen] == [CODE]
+    assert list(alert_all(chain, NOTICE, "phone")) == [("desktop", None)]
+    assert list(deliver(chain[1:], NOTICE)) == []
 
 
 def test_desktop_escapes_applescript():
@@ -274,16 +314,17 @@ def test_desktop_failures_raise_without_leaking():
     def which_none(name):
         return None
 
+    alert = NOTICE.alert("file")
     for platform, missing in (("win32", "PowerShell"), ("darwin", "osascript"), ("linux", "")):
         with pytest.raises(NotifyError, match=missing or "notify-send"):
-            DesktopNotifier(platform=platform, runner=Runner(), which=which_none).send(NOTICE)
+            DesktopNotifier(platform=platform, runner=Runner(), which=which_none).send(alert)
     failing = DesktopNotifier(platform="linux", runner=Runner(returncode=1), which=which_all)
     with pytest.raises(NotifyError, match="exit code 1") as failure:
-        failing.send(NOTICE)
+        failing.send(alert)
     assert "secret stderr" not in str(failure.value)
     timeout = Runner(error=subprocess.TimeoutExpired(["x"], 10))
     with pytest.raises(NotifyError, match="TimeoutExpired"):
-        DesktopNotifier(platform="linux", runner=timeout, which=which_all).send(NOTICE)
+        DesktopNotifier(platform="linux", runner=timeout, which=which_all).send(alert)
 
 
 def test_deliver_falls_back_in_order():

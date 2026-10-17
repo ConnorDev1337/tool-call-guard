@@ -29,7 +29,15 @@ from urllib.parse import unquote
 from .audit import AuditLog
 from .audit import key_from_env as audit_key_from_env
 from .model import Action, Decision, Reason, canonical_json
-from .notifiers import ConfigError, Notice, Notifier, build_notifier, deliver
+from .notifiers import (
+    ConfigError,
+    Notice,
+    Notifier,
+    alert,
+    build_notifier,
+    carries_code,
+    deliver,
+)
 from .policy import iter_strings, select_args
 from .provenance import extract_indicators, secret_tokens
 from .redact import mask_secrets, redact_args, short_hash
@@ -467,7 +475,8 @@ class QueueApprover:
     """Queue requests for a human who approves with a one-time code sent out of band.
 
     Each new request gets a code from the CSPRNG that is handed only to the
-    ``notifiers``, tried in order until one delivers it; the store keeps a hash. The
+    ``notifiers``, tried in order until one delivers it, after which alert-only
+    notifiers are told which channel has it; the store keeps a hash. The
     human runs ``toolguard approve <id>`` and enters the code. If no notifier
     delivers it, the request is closed as undeliverable and denied (fail closed).
     The agent retries the identical call to use an approval, which is bound to the
@@ -607,6 +616,12 @@ class QueueApprover:
             if error is None:
                 self.store.set_approval_channel(approval.id, channel)
                 self.record_event(req.session, id=approval.id, status="notified", channel=channel)
+                for name, error in alert(self.notifiers, notice, channel):
+                    status = "alerted" if error is None else "alert_failed"
+                    extra = {"error": error} if error else {}
+                    self.record_event(
+                        req.session, id=approval.id, status=status, channel=name, **extra
+                    )
                 return ApprovalOutcome("pending", approval_id=approval.id, channel=channel)
             failed.append(channel)
             self.record_event(
@@ -614,11 +629,12 @@ class QueueApprover:
             )
         self.store.close_approval(approval.id, "undeliverable", now)
         self.record_event(req.session, id=approval.id, status="undeliverable", channels=failed)
-        why = (
-            "the approval code could not be delivered out of band"
-            if self.notifiers
-            else "no out-of-band notifier is configured for approval codes"
-        )
+        if not self.notifiers:
+            why = "no out-of-band notifier is configured for approval codes"
+        elif not any(carries_code(n) for n in self.notifiers):
+            why = "no configured notifier can carry the approval code (alerts never do)"
+        else:
+            why = "the approval code could not be delivered out of band"
         return ApprovalOutcome(
             "denied", approval_id=approval.id, note=f"{why}, so nobody can approve this call"
         )

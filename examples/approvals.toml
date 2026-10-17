@@ -26,8 +26,11 @@ url = "https://hooks.example.com/toolguard"   # https, or http only to loopback
 secret_env = "TOOLGUARD_WEBHOOK_SECRET"     # HMAC-SHA256 of the body, X-Toolguard-Signature
 details = false                             # the code and only the brief's first line
 
+# Windows toast or macOS Notification Center. With notify-send (Linux) it is an alert
+# without the code, sent after a channel above delivered it: notify-send would put the
+# code on its command line. send_code = false makes it an alert everywhere.
 [[notifier]]
-type = "desktop"      # Windows toast, macOS Notification Center, notify-send
+type = "desktop"
 
 [[notifier]]
 type = "file"         # headless operators: a file, FIFO or tty they watch

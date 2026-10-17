@@ -7,6 +7,11 @@ next channel or, if none works, refuse the approval (fail closed). Error
 messages never contain the code or a secret. Secrets (webhook signing key,
 Telegram bot token) are read from environment variables at send time and are
 never stored or logged.
+
+A notifier whose ``carries_code`` attribute is false only alerts: it never receives
+the code, which goes to the first channel that carries codes; the alert then names
+that channel. The desktop notifier works this way where the platform would put the
+text on a command line (``notify-send``).
 """
 
 from __future__ import annotations
@@ -25,7 +30,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
 ENV_WEBHOOK_SECRET = "TOOLGUARD_WEBHOOK_SECRET"  # noqa: S105 - a variable name
@@ -56,6 +61,18 @@ class Notice:
     args_preview: Any = None
     test: bool = False
     brief: str = ""  # What the human approves (call, values, rules, provenance)
+    via: str = ""  # In an alert (no code): the channel that carries the code
+
+    def alert(self, via: str) -> Notice:
+        """Return this notice without the code or evidence, naming the channel ``via``."""
+        return replace(
+            self,
+            code="",
+            summary="",
+            args_preview=None,
+            brief=self.brief.split("\n", 1)[0],
+            via=via,
+        )
 
     @property
     def title(self) -> str:
@@ -71,6 +88,13 @@ class Notice:
         """
         if self.test:
             return "This is a test of the toolguard approval channel; no action is needed."
+        if not self.code:
+            lines = [
+                f"Approval {self.approval_id} requested for {self.tool} (session {self.session}).",
+                f"The one-time code was sent via {self.via or 'another channel'}. Approve: "
+                f"toolguard approve {self.approval_id}; deny: toolguard deny {self.approval_id}.",
+            ]
+            return "\n".join([*lines, self.brief.split("\n", 1)[0]]).rstrip()
         expires = _dt.datetime.fromtimestamp(self.expires).isoformat(sep=" ", timespec="seconds")
         lines = [
             f"Approval {self.approval_id} requested for {self.tool} (session {self.session}).",
@@ -108,11 +132,19 @@ class Notice:
 
 
 class Notifier(Protocol):
-    """A channel that delivers notices to a human; ``name`` is recorded in the audit."""
+    """A channel that delivers notices to a human; ``name`` is recorded in the audit.
+
+    An optional ``carries_code`` attribute set to false makes it an alert-only channel.
+    """
 
     name: str
 
     def send(self, notice: Notice) -> None: ...
+
+
+def carries_code(notifier: Notifier) -> bool:
+    """Return whether ``notifier`` may receive the one-time code (alerts do not)."""
+    return bool(getattr(notifier, "carries_code", True))
 
 
 class CallbackNotifier:
@@ -218,10 +250,12 @@ class DesktopNotifier:
     """Show a desktop notification: Windows toast, macOS Notification Center or notify-send.
 
     Best effort: a toast cannot confirm that someone saw it, so configure another
-    channel after it as a fallback. The text is passed on stdin where the platform
-    allows it (PowerShell, osascript), not on the command line; ``notify-send`` only
-    takes arguments, so on Linux the code is briefly visible in the process list to
-    processes of the same user.
+    channel after it as a fallback. On Windows and macOS the text, code included, is
+    passed on stdin (PowerShell, osascript), never on the command line. ``notify-send``
+    only takes arguments, which other processes of the same user can read in the
+    process list, so there the notifier is an alert: it never receives the code and
+    points to the channel that does. ``send_code=False`` makes it an alert everywhere;
+    ``send_code=True`` where the text would be on a command line is a ConfigError.
     """
 
     def __init__(
@@ -230,6 +264,7 @@ class DesktopNotifier:
         timeout: float = 10.0,
         details: bool = False,
         name: str = "desktop",
+        send_code: bool | None = None,
         platform: str | None = None,
         runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
         which: Callable[[str], str | None] = shutil.which,
@@ -238,6 +273,13 @@ class DesktopNotifier:
         self.details = details
         self.name = name
         self.platform = platform or sys.platform
+        on_stdin = self.platform in ("win32", "darwin")
+        if send_code and not on_stdin:
+            raise ConfigError(
+                "send_code: notify-send takes its text on the command line, where other "
+                "processes of the same user can read it, so the code is never sent there"
+            )
+        self.carries_code = on_stdin if send_code is None else send_code
         self.runner = runner
         self.which = which
 
@@ -265,6 +307,8 @@ class DesktopNotifier:
         return [exe, "--urgency=critical", "--app-name=toolguard", "--", title, body], None
 
     def send(self, notice: Notice) -> None:
+        if notice.code and not self.carries_code:
+            raise NotifyError("this desktop notifier only sends alerts, never the code")
         argv, stdin = self.command(notice)
         try:
             result = self.runner(
@@ -438,7 +482,7 @@ class TelegramNotifier:
 _SECRET_KEYS = {"token", "bot_token", "secret", "password", "api_key", "key"}
 _COMMON = {"type", "name", "details", "timeout"}
 _FIELDS = {
-    "desktop": set(),
+    "desktop": {"send_code"},
     "terminal": set(),
     "file": {"path"},
     "webhook": {"url", "secret_env"},
@@ -482,6 +526,8 @@ def build_notifier(table: Mapping[str, Any], where: str = "notifier") -> Notifie
             options["timeout"] = float(timeout)
     try:
         if kind == "desktop":
+            if "send_code" in table:
+                options["send_code"] = _option(table, "send_code", bool, where)
             return DesktopNotifier(**options)
         if kind == "terminal":
             options.pop("timeout", None)
@@ -501,20 +547,37 @@ def build_notifier(table: Mapping[str, Any], where: str = "notifier") -> Notifie
         raise ConfigError(f"{where}: {exc}") from None
 
 
-def deliver(notifiers: list[Notifier], notice: Notice) -> Iterator[tuple[str, str | None]]:
-    """Try ``notifiers`` in order; yield ``(name, error)`` per attempt until one succeeds.
+def attempt(notifier: Notifier, notice: Notice) -> str | None:
+    """Send ``notice`` through ``notifier``; return ``None`` or an error safe to log.
 
-    ``error`` is ``None`` for the channel that delivered the notice. Unexpected
-    exceptions are reported by type only, so their text cannot leak a secret.
+    Unexpected exceptions are reported by type only, so their text cannot leak a secret.
+    """
+    try:
+        notifier.send(notice)
+    except NotifyError as exc:
+        return str(exc) or "delivery failed"
+    except Exception as exc:
+        return f"delivery failed ({type(exc).__name__})"
+    return None
+
+
+def deliver(notifiers: list[Notifier], notice: Notice) -> Iterator[tuple[str, str | None]]:
+    """Try the code-carrying ``notifiers`` in order; yield ``(name, error)`` until one works.
+
+    ``error`` is ``None`` for the channel that delivered the notice. Alert-only
+    notifiers are skipped; :func:`alert` notifies them afterwards.
     """
     for notifier in notifiers:
-        try:
-            notifier.send(notice)
-        except NotifyError as exc:
-            yield notifier.name, str(exc) or "delivery failed"
+        if not carries_code(notifier):
             continue
-        except Exception as exc:
-            yield notifier.name, f"delivery failed ({type(exc).__name__})"
-            continue
-        yield notifier.name, None
-        return
+        error = attempt(notifier, notice)
+        yield notifier.name, error
+        if error is None:
+            return
+
+
+def alert(notifiers: list[Notifier], notice: Notice, via: str) -> Iterator[tuple[str, str | None]]:
+    """Send each alert-only notifier ``notice`` without its code, naming the channel ``via``."""
+    for notifier in notifiers:
+        if not carries_code(notifier):
+            yield notifier.name, attempt(notifier, notice.alert(via))

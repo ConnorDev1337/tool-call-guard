@@ -30,7 +30,7 @@ from .approvals import (
 )
 from .audit import AuditError, AuditLog, key_from_env
 from .guard import Guard
-from .notifiers import ConfigError, Notice, deliver
+from .notifiers import ConfigError, Notice, attempt, carries_code
 from .policy import Policy, PolicyError
 from .store import Store, default_home
 
@@ -278,12 +278,16 @@ def cmd_notifiers(args: argparse.Namespace) -> int:
     failed = 0
     for notifier in config.notifiers:
         line = f"  - {notifier.name} ({type(notifier).__name__})"
+        if not carries_code(notifier):
+            line += " [alert only: never receives the code]"
         if args.test:
-            notice = Notice("test", "-", "-", "", time.time(), test=True)
-            ((_, error),) = deliver([notifier], notice)
+            error = attempt(notifier, Notice("test", "-", "-", "", time.time(), test=True))
             failed += error is not None
             line += f": {'FAILED, ' + error if error else 'sent'}"
         print(line)
+    if not any(carries_code(n) for n in config.notifiers):
+        print("  no notifier carries the code: queued approvals are refused (fail closed)")
+        return 1 if args.test else 0
     return 1 if failed else 0
 
 
