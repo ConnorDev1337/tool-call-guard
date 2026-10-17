@@ -23,6 +23,37 @@ def test_strict_extends_balanced():
     assert strict.actions_for("publish").tainted == Action.CONFIRM
 
 
+def test_extends_resolves_the_whole_preset_chain(tmp_path):
+    """A policy extending ``strict`` also inherits what ``strict`` takes from ``balanced``."""
+    path = tmp_path / "p.toml"
+    path.write_text(
+        'extends = "strict"\n[actions.web]\ntainted = "allow"\n'
+        '[[sink]]\ntools = ["mcp__crm__export_contacts"]\ncategory = "send"\negress = true\n',
+        encoding="utf-8",
+    )
+    policy, strict = Policy.load(str(path)), Policy.preset("strict")
+    assert policy.sources == strict.sources
+    assert policy.protect == strict.protect and policy.protect
+    assert policy.sinks[1:] == strict.sinks
+    assert policy.sink_for("mcp__crm__export_contacts", {}).category == "send"
+    assert policy.sink_for("Bash", {"command": "ls"}).egress is True  # From strict
+    assert policy.sink_for("Write", {}).category == "write"  # From balanced
+    assert policy.actions_for("default") == strict.actions_for("default")
+    assert policy.actions_for("web").tainted == Action.ALLOW
+    assert policy.actions_for("web").trifecta == Action.BLOCK  # From strict
+    assert policy.actions_for("web").private_flow == Action.BLOCK  # From balanced
+
+
+def test_extends_detects_cycles(monkeypatch):
+    presets = {"balanced": {"extends": "strict"}, "strict": {"extends": "balanced"}}
+    monkeypatch.setattr("toolguard.policy._preset_dict", presets.__getitem__)
+    with pytest.raises(PolicyError, match="cycle between presets"):
+        Policy.from_dict({"extends": "strict"})
+    presets["balanced"] = {"extends": "balanced"}
+    with pytest.raises(PolicyError, match="balanced -> balanced"):
+        Policy.preset("balanced")
+
+
 def test_load_by_name_path_and_default(tmp_path):
     path = tmp_path / "p.toml"
     path.write_text(
