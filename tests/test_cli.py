@@ -378,6 +378,21 @@ def test_mcp_proxy_reports_a_server_that_cannot_start(capsys, tmp_path):
     assert code == 127 and "cannot start the MCP server 'no-such-mcp-server-x9'" in err
 
 
+@pytest.mark.parametrize(("server_code", "exit_code"), [(0, 0), (3, 3), (-9, 137)])
+def test_mcp_proxy_exits_with_the_server_code(
+    capsys, monkeypatch, tmp_path, server_code, exit_code
+):
+    def fake_exit(code):
+        raise SystemExit(code)
+
+    monkeypatch.setattr(cli.McpProxy, "run", lambda self: server_code)
+    monkeypatch.setattr(cli.os, "_exit", fake_exit)
+    db = str(tmp_path / "guard.db")
+    with pytest.raises(SystemExit) as exited:
+        cli.main(["mcp-proxy", "--server-name", "x", "--db", db, "--", "server"])
+    assert exited.value.code == exit_code
+
+
 def test_help_and_bad_policy(capsys):
     assert run(capsys)[0] == 2
     code, _, err = run(capsys, "check", "Bash", "--policy", "nope")

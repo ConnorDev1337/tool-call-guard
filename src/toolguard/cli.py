@@ -408,10 +408,16 @@ def cmd_mcp_proxy(args: argparse.Namespace) -> int:
         return 2
     guard = _guard(args)
     try:
-        return McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
+        code = McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
     except OSError as exc:
         print(f"error: cannot start the MCP server {command[0]!r}: {exc}", file=sys.stderr)
         return 127
+    # The client pump may still be blocked reading stdin, and a normal interpreter
+    # shutdown would then abort while it holds the stdin lock. State is already
+    # committed, so exit at once; a server killed by signal N exits with 128 + N.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(code if code >= 0 else 128 - code)
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
