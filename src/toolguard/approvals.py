@@ -285,21 +285,36 @@ def visible(text: str) -> str:
     )
 
 
+def _encodings(token: str) -> re.Pattern[str]:
+    """Return a pattern for ``token`` with any of its characters percent-encoded."""
+    return re.compile(
+        "".join(f"(?:{re.escape(ch)}|%{ord(ch):02x})" for ch in token), re.IGNORECASE
+    )
+
+
 def display_value(value: str, limit: int = BRIEF_VALUE_CHARS, leaked: Collection[str] = ()) -> str:
-    """Return ``value`` for a human: percent-decoded, secrets masked, invisible escaped.
+    """Return ``value`` for a human: secrets masked and invisible characters escaped.
 
     Known credential formats and secret-shaped (high-entropy) tokens become
-    ``[secret:<sha256 prefix>]``, the prefix that also identifies them in evidence.
-    IBANs and crypto addresses stay readable, since they are what the human must
-    check, unless their hash prefix is in ``leaked`` (a private secret match).
+    ``[secret:<sha256 prefix>]``, the prefix that also identifies them in evidence,
+    also where they are percent-encoded. The value is otherwise shown as sent, not
+    decoded, so an encoded character cannot make a URL's host look different. IBANs
+    and crypto addresses stay readable, since they are what the human must check,
+    unless their hash prefix is in ``leaked`` (a private secret match).
     """
-    text = unquote(value) if "%" in value else value
-    text = mask_secrets(text)
-    payees = {i.value.lower() for i in extract_indicators(text) if i.kind in _PAYEES}
-    for token in sorted(secret_tokens(text), key=lambda t: (-len(t), t)):
+    text = mask_secrets(value)
+    decoded = unquote(text) if "%" in text else text
+    payees = {
+        i.value.lower()
+        for t in {text, decoded}
+        for i in extract_indicators(t)
+        if i.kind in _PAYEES
+    }
+    tokens = secret_tokens(text) | secret_tokens(decoded)
+    for token in sorted(tokens, key=lambda t: (-len(t), t)):
         digest = short_hash(token)
         if token.lower() not in payees or digest in leaked:
-            text = text.replace(token, f"[secret:{digest}]")
+            text = _encodings(token).sub(f"[secret:{digest}]", text)
     text = visible(text)
     if len(text) > limit:
         text = f"{text[:limit]}...[{len(value)} chars]"

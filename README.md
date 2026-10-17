@@ -357,9 +357,9 @@ argument values (critical and flagged ones first), the rules that fired, and whe
 value came from (source tool or resource, untrusted or private, and whether you named that source
 in your prompt). Secret-shaped tokens and known credential formats are masked as
 `[secret:<sha256 prefix>]`, the same prefix the evidence uses; IBANs and crypto addresses stay
-readable unless they are the leaked secret; percent-encoding is decoded and invisible or bidi
-characters are escaped. The brief goes to the notifier (and the terminal approver), never to the
-model:
+readable unless they are the leaked secret; secrets are found even when percent-encoded, values
+are otherwise shown as sent, and invisible or bidi characters are escaped. The brief goes to the
+notifier (and the terminal approver), never to the model:
 
 ```text
 mcp__slack__send_message (sink: send) flagged by tainted, private_flow, trifecta

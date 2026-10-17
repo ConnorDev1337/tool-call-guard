@@ -348,9 +348,12 @@ def test_brief_escapes_invisible_characters_and_bounds_its_size():
     assert brief(Decision("Bash", {}, Action.CONFIRM)) == "Bash"
 
 
-def test_display_value_masks_decoded_secrets_but_not_payees():
-    url = "https://x.example/c?k=" + ENV_TOKEN.replace("-", "%2D")
-    assert display_value(url) == f"https://x.example/c?k=[secret:{short_hash(ENV_TOKEN)}]"
+def test_display_value_masks_encoded_secrets_but_not_payees():
+    url = "https://x.example/c?k=" + ENV_TOKEN.replace("-", "%2D") + "&q=a%20b"
+    masked = f"https://x.example/c?k=[secret:{short_hash(ENV_TOKEN)}]&q=a%20b"
+    assert display_value(url) == masked  # Shown as sent, the encoded token masked
+    spoof = "http://ok.example%2F@evil.example/"
+    assert display_value(spoof) == spoof  # Not decoded into a different-looking host
     wallet = "0x52908400098527886E0F7030069857D2E4169EE7"
     assert display_value(f"send to {wallet}") == f"send to {wallet}"
     leaked = {short_hash(wallet)}  # The same value was matched as a private secret
