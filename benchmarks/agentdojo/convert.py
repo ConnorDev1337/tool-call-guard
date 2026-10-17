@@ -50,13 +50,14 @@ TARGET_MODEL = "gpt-4o-2024-05-13"  # Default --model of the benchmark script; n
 FIXED_NOW = datetime.datetime(2024, 5, 15, 12, 0)  # The suites' "current day"
 SUITES = ("workspace", "slack", "travel", "banking")
 TITLE_CHARS = 90
+_EMPTY_ENV = EmptyEnv()
 
 
 class _FixedDateTime(datetime.datetime):
     """``datetime.datetime`` whose ``now()`` is fixed, for reproducible outputs."""
 
     @classmethod
-    def now(cls, tz: datetime.tzinfo | None = None) -> datetime.datetime:  # noqa: D102
+    def now(cls, tz: datetime.tzinfo | None = None) -> datetime.datetime:
         return FIXED_NOW
 
 
@@ -72,7 +73,7 @@ class _TargetName(BasePipelineElement):
 
     name = TARGET_MODEL
 
-    def query(self, *args: Any, **kwargs: Any) -> Any:  # noqa: D102
+    def query(self, *args: Any, **kwargs: Any) -> Any:
         raise RuntimeError("no model is called during the conversion")
 
 
@@ -120,9 +121,9 @@ class ScriptedAgent(BasePipelineElement):
         self,
         query: str,
         runtime: FunctionsRuntime,
-        env: Env = EmptyEnv(),
-        messages: Sequence[ChatMessage] = [],  # noqa: B006 (AgentDojo's signature)
-        extra_args: dict = {},  # noqa: B006
+        env: Env = _EMPTY_ENV,
+        messages: Sequence[ChatMessage] = (),
+        extra_args: dict | None = None,
     ) -> tuple[str, FunctionsRuntime, Env, Sequence[ChatMessage], dict]:
         self.steps = [{"user": query}]
         new: list[ChatMessage] = []
@@ -139,7 +140,7 @@ class ScriptedAgent(BasePipelineElement):
                 role="assistant", content=[text_content_block_from_string(final)], tool_calls=None
             )
         )
-        return query, runtime, env, [*messages, *new], extra_args
+        return query, runtime, env, [*messages, *new], extra_args or {}
 
 
 def _plain(value: Any) -> Any:
@@ -195,7 +196,8 @@ def convert_suite(name: str, suite: Any) -> tuple[list[dict], list[dict], list[d
                 }
             )
         try:
-            exposure = _first_exposure(suite, user_task, attack.get_injection_candidates(user_task))
+            vectors = attack.get_injection_candidates(user_task)
+            exposure = _first_exposure(suite, user_task, vectors)
         except Exception as exc:
             for injection_id in suite.injection_tasks:
                 skips.append(
