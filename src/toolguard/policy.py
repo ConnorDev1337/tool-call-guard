@@ -195,12 +195,7 @@ class Policy:
     @classmethod
     def from_dict(cls, data: dict[str, Any], name: str = "custom") -> Policy:
         """Validate ``data``, resolving ``extends``; raise :class:`PolicyError` if invalid."""
-        raw = data
-        if "extends" in data:
-            base_name = data["extends"]
-            if base_name not in PRESETS:
-                raise PolicyError(f"extends: unknown preset {base_name!r} ({', '.join(PRESETS)})")
-            raw = _merge(_preset_dict(base_name), data)
+        raw = _resolve(data)
         unknown = set(raw) - _TOP_KEYS
         if unknown:
             raise PolicyError(f"unknown top-level key(s): {', '.join(sorted(unknown))}")
@@ -298,9 +293,27 @@ def _preset_dict(name: str) -> dict[str, Any]:
     return tomllib.loads(text)
 
 
+def _resolve(data: dict[str, Any], chain: tuple[str, ...] = ()) -> dict[str, Any]:
+    """Return ``data`` merged over the full chain of presets it ``extends``.
+
+    A preset may itself extend another preset, so the chain is resolved
+    recursively; ``chain`` holds the presets already visited to detect cycles.
+    """
+    if "extends" not in data:
+        return data
+    base_name = data["extends"]
+    if base_name not in PRESETS:
+        raise PolicyError(f"extends: unknown preset {base_name!r} ({', '.join(PRESETS)})")
+    if base_name in chain:
+        cycle = " -> ".join((*chain, base_name))
+        raise PolicyError(f"extends: cycle between presets ({cycle})")
+    base = _resolve(_preset_dict(base_name), (*chain, base_name))
+    return _merge(base, data)
+
+
 def _merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     """Merge ``override`` into ``base``: lists are prepended, tables merged recursively."""
-    merged = dict(base)
+    merged = {key: value for key, value in base.items() if key != "extends"}
     for key, value in override.items():
         if key == "extends":
             continue
