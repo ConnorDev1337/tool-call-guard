@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 import sys
 import types
 from collections.abc import Sequence
@@ -269,6 +270,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", default=".", help="benchmark directory (default: .)")
     parser.add_argument("--suite", action="append", choices=SUITES, help="suite(s) to convert")
     args = parser.parse_args(argv)
+    if sys.flags.hash_randomization:
+        # AgentDojo builds some lists from sets (e.g. event participants), so the
+        # output depends on the hash seed: restart with a fixed one (-I ignores it).
+        env = dict(os.environ, PYTHONHASHSEED="0")
+        os.execve(sys.executable, [sys.executable, "-P", *sys.argv], env)  # noqa: S606
     _freeze_clock()
     out = Path(args.out)
     (out / "scenarios").mkdir(parents=True, exist_ok=True)
