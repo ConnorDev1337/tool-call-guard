@@ -380,3 +380,41 @@ def test_console_shows_the_brief():
     )
     ConsoleApprover(opener).request(request)
     assert "Bash" in writer.getvalue() and "why" not in writer.getvalue()
+
+
+class Toaster:
+    """An alert-only notifier, like the desktop notifier where notify-send is used."""
+
+    name = "desktop"
+    carries_code = False
+
+    def __init__(self, fail=False):
+        self.notices = []
+        self.fail = fail
+
+    def send(self, notice):
+        if self.fail:
+            raise NotifyError("notify-send failed (exit code 1)")
+        self.notices.append(notice)
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_alerts_follow_the_code_channel(store, clock, inbox, fail):
+    toaster = Toaster(fail)
+    queue = QueueApprover(store, clock=clock, notifiers=[toaster, inbox])
+    outcome = queue.request(REQ)
+    assert outcome.status == "pending" and outcome.channel == "inbox"
+    assert len(inbox.notices) == 1 and inbox.code
+    if not fail:
+        (shown,) = toaster.notices
+        assert shown.code == "" and shown.via == "inbox" and inbox.code not in shown.text()
+    statuses = [(e["status"], e.get("channel")) for e in _events(store)]
+    final = ("alert_failed" if fail else "alerted", "desktop")
+    assert statuses == [("created", None), ("notified", "inbox"), final]
+
+
+def test_alerts_alone_cannot_carry_a_code(store, clock):
+    toaster = Toaster()
+    outcome = QueueApprover(store, clock=clock, notifiers=[toaster]).request(REQ)
+    assert outcome.status == "denied" and "no configured notifier can carry" in outcome.note
+    assert toaster.notices == []  # Nothing to approve, so no alert either

@@ -341,9 +341,10 @@ the model never sees**, so a forged command fails even if it runs:
 
 1. A call needs confirmation. The guard creates a pending approval bound to the exact call
    (tool + arguments, single use) and draws a 12-character base32 code (60 bits) from the CSPRNG.
-2. The code goes **only** to a notifier: your phone (Telegram), a webhook, a desktop notification,
-   or a file or terminal the operator watches. It never appears in hook output, tool results, MCP
-   error text, the audit log or the database, which keeps only a salted HMAC of it.
+2. The code goes **only** to a notifier: your phone (Telegram), a webhook, a desktop notification
+   (Windows, macOS), or a file or terminal the operator watches. It never appears in hook output,
+   tool results, MCP error text, the audit log, the database (which keeps only a salted HMAC of
+   it) or a command line.
 3. The model is told that approval `<id>` is pending out of band and how the human gives it,
    without the code. The call is refused for now.
 4. You run `toolguard approvals -v` to read the evidence, then `toolguard approve <id>` and type
@@ -404,9 +405,21 @@ path = "/var/lib/toolguard-operator/approvals.log"
 |---|---|---|
 | `telegram` | Bot API `sendMessage` | Token only from the environment; never logged or stored |
 | `webhook` | `POST` JSON, `X-Toolguard-Signature: sha256=<HMAC of the body>` | `https` required (plain `http` only to loopback); redirects are refused; secret from `secret_env` |
-| `desktop` | Windows toast (PowerShell, balloon-tip fallback), macOS `osascript`, Linux `notify-send` | Best effort: configure another channel after it |
+| `desktop` | Windows toast (PowerShell, balloon-tip fallback), macOS `osascript`, Linux `notify-send` | Best effort: configure another channel after it. On Linux it is an **alert only** (see below); `send_code = false` makes it one everywhere |
 | `file` | Appends to a file, FIFO or tty | Put it where the agent cannot read it |
 | `terminal` | The guard's controlling terminal | For an operator watching that terminal |
+
+**Desktop notifications and the code.** `notify-send` takes its text only as command-line
+arguments, which every process of the same user can read in the process list while it runs (an
+agent can poll `ps` for it), and neither `gdbus` nor `dbus-send` reads the message from stdin. So
+on Linux the desktop notifier never receives the code: it is an *alert* that says an approval is
+pending and names the channel that has the code, sent after that channel delivered it. Configure
+a code channel too (Telegram, a webhook, or a file or terminal the operator watches); if alerts
+are the only notifiers, queued approvals fail closed and `toolguard notifiers` says so. On Windows
+(PowerShell gets a constant script as its argument and the text on stdin) and macOS (`osascript`
+reads its script from stdin) the code is never on a command line, but the notification is kept in
+the notification center's history, which programs of the same user can read; `send_code = false`
+keeps the code off the desktop there as well.
 
 Secrets are never accepted in the file: `token`, `secret`, `key` and similar keys are rejected.
 `details = false` sends the code with only the first line of the brief (the call, its sink and the
@@ -424,8 +437,8 @@ rules), useful for third-party channels.
   Keep it, like the policy, out of the agent's reach.
 - **Same OS user**: an agent running as the same user as the guard can, in principle, read the
   notifier's file or desktop notification history, eavesdrop on the session bus or a terminal
-  multiplexer (`tmux capture-pane`), see `notify-send` arguments in the process list, or write
-  the SQLite store. Set `TOOLGUARD_APPROVAL_KEY`: code hashes become keyed and every approval
+  multiplexer (`tmux capture-pane`), or write the SQLite store. The code is never put on a
+  command line (`notify-send` only gets a code-less alert). Set `TOOLGUARD_APPROVAL_KEY`: code hashes become keyed and every approval
   carries an HMAC, so a row flipped to `approved` without the key is rejected and audited. For a
   real boundary, run the guard and its store under a **separate OS user** (or container) that
   holds the key, and send codes to a device the agent cannot reach (Telegram, a webhook).
@@ -436,8 +449,9 @@ rules), useful for third-party channels.
 
 Every decision, observation, approval and reset is recorded with **redacted** arguments (known
 tokens masked, long values truncated with a hash). Approvals are recorded step by step as
-`approval` events (`created`, `notified` with the channel, `notify_failed`, `undeliverable`,
-`approved`, `denied`, `expired`, `failed_attempt`, `locked`, `rejected`), never with the code.
+`approval` events (`created`, `notified` with the channel, `notify_failed`, `alerted`,
+`alert_failed`, `undeliverable`, `approved`, `denied`, `expired`, `failed_attempt`, `locked`,
+`rejected`), never with the code.
 Each record includes the hash of the previous one:
 
 ```bash

@@ -198,6 +198,11 @@ def test_notifiers_command(capsys, tmp_path, monkeypatch, operator):
     )
     code, out, _ = run(capsys, "notifiers", "--test", "--approvals", str(broken))
     assert code == 1 and "FAILED, webhook: environment variable UNSET_X is not set" in out
+    alerts = tmp_path / "alerts.toml"
+    alerts.write_text('[[notifier]]\ntype = "desktop"\nsend_code = false\n', encoding="utf-8")
+    code, out, _ = run(capsys, "notifiers", "--approvals", str(alerts))
+    assert code == 0 and "[alert only: never receives the code]" in out
+    assert "no notifier carries the code" in out
     monkeypatch.delenv("TOOLGUARD_APPROVALS_CONFIG")
     code, out, _ = run(capsys, "notifiers")
     assert code == 0 and "no notifier" in out
