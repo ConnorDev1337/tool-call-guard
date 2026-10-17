@@ -548,6 +548,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--markdown", action="store_true", help="print summary as Markdown tables (for the README)"
     )
+    p.add_argument(
+        "--toolset",
+        metavar="FILE",
+        help="TOML with the sources and sinks of the scenarios' tools (added to each policy)",
+    )
     p.add_argument("-v", "--verbose", action="store_true", help="per-call decisions")
     p.set_defaults(func=cmd_eval)
     return parser

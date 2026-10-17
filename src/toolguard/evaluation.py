@@ -19,8 +19,10 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import hashlib
 import json
 import sys
+import tomllib
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
@@ -29,10 +31,11 @@ from typing import Any
 from .approvals import CallbackApprover
 from .guard import Guard
 from .model import Action
-from .policy import ActionTable, Policy
+from .policy import ActionTable, Policy, PolicyError
 from .store import Store
 
 DEFAULT_POLICIES = ("allow-all", "taint-only", "balanced", "strict")
+TOOLSET_KEYS = frozenset({"version", "source", "sink", "protect"})
 ATTACK_OUTCOMES = ("prevented", "flagged", "missed")
 BENIGN_OUTCOMES = ("autonomous", "needs-human", "broken")
 
@@ -146,13 +149,56 @@ def taint_only(base: Policy) -> Policy:
     return dataclasses.replace(base, name="taint-only", actions=actions)
 
 
-def resolve_policy(name: str) -> tuple[str, Policy]:
-    """Return ``(label, policy)`` for a reference policy, a preset or a TOML path."""
+def load_toolset(path: str) -> Policy:
+    """Load a toolset mapping: the sources, sinks and protect rules of one set of tools.
+
+    A toolset describes tools, not posture, so it may not set actions, the mode
+    or other policy options; those come from the policy it is combined with.
+    """
+    file = Path(path)
+    try:
+        data = tomllib.loads(file.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise PolicyError(f"cannot read toolset {file}: {exc}") from exc
+    extra = set(data) - TOOLSET_KEYS
+    if extra:
+        raise PolicyError(
+            f"toolset {file}: only {', '.join(sorted(TOOLSET_KEYS))} are allowed, "
+            f"not {', '.join(sorted(extra))}"
+        )
+    return Policy.from_dict(data, name=str(file))
+
+
+def with_toolset(policy: Policy, toolset: Policy) -> Policy:
+    """Return ``policy`` with the toolset's rules ahead of its own.
+
+    This is equivalent to writing the toolset's entries into a policy file that
+    ``extends`` the policy: they take precedence and the actions stay unchanged.
+    """
+    digest = hashlib.sha256(f"{toolset.digest}:{policy.digest}".encode()).hexdigest()
+    return dataclasses.replace(
+        policy,
+        sources=toolset.sources + policy.sources,
+        sinks=toolset.sinks + policy.sinks,
+        protect=toolset.protect + policy.protect,
+        digest=digest,
+    )
+
+
+def resolve_policy(name: str, toolset: Policy | None = None) -> tuple[str, Policy]:
+    """Return ``(label, policy)`` for a reference policy, a preset or a TOML path.
+
+    A ``toolset`` is added to every policy except ``allow-all``, which stays unguarded.
+    """
     if name == "allow-all":
         return name, Policy.from_dict({}, name="allow-all")
+
+    def extend(policy: Policy) -> Policy:
+        return with_toolset(policy, toolset) if toolset is not None else policy
+
     if name == "taint-only":
-        return name, taint_only(Policy.preset("balanced"))
-    policy = Policy.load(name)
+        return name, taint_only(extend(Policy.preset("balanced")))
+    policy = extend(Policy.load(name))
     return (Path(name).stem if Path(name).suffix else name), policy
 
 
@@ -212,17 +258,36 @@ def run_scenario(scenario: Scenario, label: str, policy: Policy) -> ScenarioResu
     return result
 
 
-def evaluate(scenarios: list[Scenario], policies: list[str]) -> list[ScenarioResult]:
+def evaluate(
+    scenarios: list[Scenario], policies: list[str], toolset: Policy | None = None
+) -> list[ScenarioResult]:
     results = []
     for name in policies:
-        label, policy = resolve_policy(name)
+        label, policy = resolve_policy(name, toolset)
         results.extend(run_scenario(s, label, policy) for s in scenarios)
     return results
+
+
+def _category_keys(results: list[ScenarioResult]) -> dict[tuple[str, str], str]:
+    """Map ``(kind, category)`` to its key in ``by_category``.
+
+    A category used by attack and benign scenarios alike (e.g. a suite name) is
+    qualified with the kind, since the two kinds have different outcomes.
+    """
+    kinds: dict[str, set[str]] = {}
+    for result in results:
+        kinds.setdefault(result.scenario.category, set()).add(result.scenario.kind)
+    return {
+        (kind, category): category if len(used) == 1 else f"{category} ({kind})"
+        for category, used in kinds.items()
+        for kind in used
+    }
 
 
 def summarize(results: list[ScenarioResult]) -> dict[str, dict[str, Any]]:
     """Count outcomes per policy and derive safety, usefulness and review-load rates."""
     summary: dict[str, dict[str, Any]] = {}
+    keys = _category_keys(results)
     for result in results:
         entry = summary.setdefault(
             result.policy,
@@ -239,7 +304,7 @@ def summarize(results: list[ScenarioResult]) -> dict[str, dict[str, Any]]:
         entry["scenarios"] += 1
         outcomes = ATTACK_OUTCOMES if result.scenario.kind == "attack" else BENIGN_OUTCOMES
         cat = entry["by_category"].setdefault(
-            result.scenario.category,
+            keys[(result.scenario.kind, result.scenario.category)],
             {"kind": result.scenario.kind, "counts": dict.fromkeys(outcomes, 0)},
         )
         cat["counts"][result.outcome] += 1
@@ -259,11 +324,12 @@ def summarize(results: list[ScenarioResult]) -> dict[str, dict[str, Any]]:
 
 
 def _ordered_categories(results: list[ScenarioResult], kind: str) -> list[str]:
-    """Return the categories of ``kind`` in first-seen order."""
+    """Return the ``by_category`` keys of ``kind`` in first-seen order."""
+    keys = _category_keys(results)
     seen: dict[str, None] = {}
     for result in results:
         if result.scenario.kind == kind:
-            seen.setdefault(result.scenario.category, None)
+            seen.setdefault(keys[(kind, result.scenario.category)], None)
     return list(seen)
 
 
@@ -400,11 +466,12 @@ def main(args: argparse.Namespace) -> int:
     """Run ``toolguard eval`` and return the exit code."""
     try:
         scenarios = load_scenarios(args.paths)
+        toolset = load_toolset(args.toolset) if getattr(args, "toolset", None) else None
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     policies = args.policies or list(DEFAULT_POLICIES)
-    results = evaluate(scenarios, policies)
+    results = evaluate(scenarios, policies, toolset)
     summary = summarize(results)
     if args.markdown:
         sys.stdout.write(render_markdown(summary, results))
