@@ -407,7 +407,11 @@ def cmd_mcp_proxy(args: argparse.Namespace) -> int:
         print("error: missing server command after --", file=sys.stderr)
         return 2
     guard = _guard(args)
-    return McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
+    try:
+        return McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
+    except OSError as exc:
+        print(f"error: cannot start the MCP server {command[0]!r}: {exc}", file=sys.stderr)
+        return 127
 
 
 def cmd_eval(args: argparse.Namespace) -> int:

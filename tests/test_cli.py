@@ -371,6 +371,13 @@ def test_mcp_proxy_requires_command(capsys):
     assert code == 2 and "missing server command" in err
 
 
+def test_mcp_proxy_reports_a_server_that_cannot_start(capsys, tmp_path):
+    db = str(tmp_path / "guard.db")
+    argv = ("mcp-proxy", "--server-name", "x", "--db", db, "--", "no-such-mcp-server-x9")
+    code, _, err = run(capsys, *argv)
+    assert code == 127 and "cannot start the MCP server 'no-such-mcp-server-x9'" in err
+
+
 def test_help_and_bad_policy(capsys):
     assert run(capsys)[0] == 2
     code, _, err = run(capsys, "check", "Bash", "--policy", "nope")
