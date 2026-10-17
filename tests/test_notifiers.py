@@ -182,6 +182,17 @@ def test_telegram_requires_token_and_truncates(server, monkeypatch):
         TelegramNotifier("7", api_url="http://api.telegram.example")
 
 
+def test_telegram_scrubs_the_url_quoted_token(server, monkeypatch):
+    odd = "123:ab cd"
+    monkeypatch.setenv("TEST_TG_TOKEN", odd)
+    notifier = TelegramNotifier("7", token_env="TEST_TG_TOKEN", api_url=server.url)
+    server.reply = (404, {"ok": False, "description": "no route /bot123:ab%20cd/x"}, {})
+    with pytest.raises(NotifyError) as failure:
+        notifier.send(NOTICE)
+    assert server.requests[0][0] == "/bot123:ab%20cd/sendMessage"
+    assert str(failure.value) == "telegram answered HTTP 404: no route /bot***/x"
+
+
 def test_file_notifier_appends_private_file(tmp_path):
     target = tmp_path / "operator" / "approvals.log"
     with pytest.raises(NotifyError, match="cannot write"):
