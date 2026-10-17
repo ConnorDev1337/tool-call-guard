@@ -15,9 +15,9 @@ import os
 import secrets
 import sqlite3
 import threading
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .model import Indicator, Observation
@@ -48,7 +48,14 @@ CREATE TABLE IF NOT EXISTS approvals (
     status TEXT NOT NULL,
     created REAL NOT NULL,
     decided REAL,
-    decided_by TEXT
+    decided_by TEXT,
+    expires REAL,
+    code_hash TEXT,
+    code_salt TEXT,
+    code_alg TEXT,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    channel TEXT,
+    decision_mac TEXT
 );
 CREATE INDEX IF NOT EXISTS approvals_fingerprint ON approvals (fingerprint, session);
 CREATE TABLE IF NOT EXISTS audit (
@@ -60,6 +67,17 @@ CREATE TABLE IF NOT EXISTS audit (
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 """
 
+# Columns added to ``approvals`` after the first release, for databases created earlier.
+_APPROVAL_COLUMNS = {
+    "expires": "REAL",
+    "code_hash": "TEXT",
+    "code_salt": "TEXT",
+    "code_alg": "TEXT",
+    "attempts": "INTEGER NOT NULL DEFAULT 0",
+    "channel": "TEXT",
+    "decision_mac": "TEXT",
+}
+
 
 def default_home() -> Path:
     """Return ``$TOOLGUARD_HOME`` if set, otherwise ``~/.toolguard``."""
@@ -69,17 +87,28 @@ def default_home() -> Path:
 
 @dataclass(frozen=True)
 class Approval:
-    """A stored approval request and its decision."""
+    """A stored approval request, its one-time code challenge and its decision.
+
+    Only a salted (and, with a key, keyed) hash of the code is stored, never the code.
+    """
 
     id: str
     session: str
     fingerprint: str
     tool: str
     summary: str
-    status: str  # "pending" | "approved" | "denied" | "consumed"
+    # "pending" | "approved" | "denied" | "consumed" | "expired" | "locked" | "undeliverable"
+    status: str
     created: float
     decided: float | None
     decided_by: str | None
+    expires: float | None = None
+    code_hash: str | None = field(default=None, repr=False)
+    code_salt: str | None = field(default=None, repr=False)
+    code_alg: str | None = None
+    attempts: int = 0
+    channel: str | None = None  # Notifier that delivered the code
+    decision_mac: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True)
@@ -123,6 +152,15 @@ class Store:
         self.conn.execute("PRAGMA busy_timeout=30000")
         with self._lock:
             self.conn.executescript(_SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """Add approval columns missing from databases created by earlier versions."""
+        with self.transaction() as conn:
+            present = {row["name"] for row in conn.execute("PRAGMA table_info(approvals)")}
+            for name, decl in _APPROVAL_COLUMNS.items():
+                if name not in present:
+                    conn.execute(f"ALTER TABLE approvals ADD COLUMN {name} {decl}")
 
     def close(self) -> None:
         with self._lock:
@@ -242,17 +280,51 @@ class Store:
         return Approval(**{key: row[key] for key in row.keys()})  # noqa: SIM118
 
     def create_approval(
-        self, *, session: str, fingerprint: str, tool: str, summary: str, now: float
+        self,
+        *,
+        session: str,
+        fingerprint: str,
+        tool: str,
+        summary: str,
+        now: float,
+        expires: float | None = None,
+        code_hash: str | None = None,
+        code_salt: str | None = None,
+        code_alg: str | None = None,
     ) -> Approval:
         approval_id = secrets.token_hex(4)
         with self.transaction() as conn:
             conn.execute(
-                "INSERT INTO approvals (id, session, fingerprint, tool, summary, status, created) "
-                "VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-                (approval_id, session, fingerprint, tool, summary, now),
+                "INSERT INTO approvals (id, session, fingerprint, tool, summary, status, created, "
+                "expires, code_hash, code_salt, code_alg) "
+                "VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)",
+                (
+                    approval_id,
+                    session,
+                    fingerprint,
+                    tool,
+                    summary,
+                    now,
+                    expires,
+                    code_hash,
+                    code_salt,
+                    code_alg,
+                ),
             )
         return Approval(
-            approval_id, session, fingerprint, tool, summary, "pending", now, None, None
+            approval_id,
+            session,
+            fingerprint,
+            tool,
+            summary,
+            "pending",
+            now,
+            None,
+            None,
+            expires,
+            code_hash,
+            code_salt,
+            code_alg,
         )
 
     def latest_approval(self, fingerprint: str, session: str) -> Approval | None:
@@ -279,20 +351,108 @@ class Store:
             rows = self.conn.execute(query + " ORDER BY created", params).fetchall()
         return [self._approval(r) for r in rows]
 
-    def decide_approval(self, approval_id: str, status: str, by: str, now: float) -> bool:
+    def decide_approval(
+        self, approval_id: str, status: str, by: str, now: float, mac: str | None = None
+    ) -> bool:
         """Record a human decision; return ``False`` if the approval is not pending.
 
-        Raises ValueError unless ``status`` is ``"approved"`` or ``"denied"``.
+        ``mac`` authenticates the decision when a key is configured. Raises ValueError
+        unless ``status`` is ``"approved"`` or ``"denied"``.
         """
         if status not in {"approved", "denied"}:
             raise ValueError(status)
         with self.transaction() as conn:
             changed = conn.execute(
-                "UPDATE approvals SET status = ?, decided = ?, decided_by = ? "
+                "UPDATE approvals SET status = ?, decided = ?, decided_by = ?, decision_mac = ? "
                 "WHERE id = ? AND status = 'pending'",
-                (status, now, by, approval_id),
+                (status, now, by, mac, approval_id),
             ).rowcount
         return changed == 1
+
+    def close_approval(self, approval_id: str, status: str, now: float) -> bool:
+        """Close a pending approval without a human decision; return whether it was pending.
+
+        Raises ValueError unless ``status`` is ``"expired"``, ``"locked"`` or
+        ``"undeliverable"``.
+        """
+        if status not in {"expired", "locked", "undeliverable"}:
+            raise ValueError(status)
+        with self.transaction() as conn:
+            changed = conn.execute(
+                "UPDATE approvals SET status = ?, decided = ? WHERE id = ? AND status = 'pending'",
+                (status, now, approval_id),
+            ).rowcount
+        return changed == 1
+
+    def set_approval_channel(self, approval_id: str, channel: str) -> None:
+        """Record which notifier delivered the approval's code."""
+        with self.transaction() as conn:
+            conn.execute("UPDATE approvals SET channel = ? WHERE id = ?", (channel, approval_id))
+
+    def expire_approvals(self, now: float) -> list[Approval]:
+        """Mark pending approvals whose code has expired and return them."""
+        with self.transaction() as conn:
+            rows = conn.execute(
+                "SELECT * FROM approvals WHERE status = 'pending' "
+                "AND expires IS NOT NULL AND expires < ?",
+                (now,),
+            ).fetchall()
+            conn.execute(
+                "UPDATE approvals SET status = 'expired', decided = ? WHERE status = 'pending' "
+                "AND expires IS NOT NULL AND expires < ?",
+                (now, now),
+            )
+        return [self._approval(row) for row in rows]
+
+    def answer_challenge(
+        self,
+        approval_id: str,
+        *,
+        check: Callable[[Approval], bool | None],
+        now: float,
+        max_attempts: int,
+        by: str,
+        sign: Callable[[Approval, float, str], str | None],
+    ) -> tuple[str, Approval | None]:
+        """Check a one-time code against a pending approval, atomically across processes.
+
+        ``check`` returns whether the code matches, or ``None`` if it cannot be
+        verified (e.g. the key is missing); ``sign`` returns the decision MAC. Returns
+        ``(result, approval)``: ``result`` is ``"approved"``, ``"wrong"``, ``"locked"``,
+        ``"expired"``, ``"not_pending"``, ``"no_code"`` or ``"unverifiable"``, and
+        ``approval`` is the row as it was before the answer. Each wrong code counts as
+        an attempt; at ``max_attempts`` the approval is locked.
+        """
+        with self.transaction() as conn:
+            row = conn.execute("SELECT * FROM approvals WHERE id = ?", (approval_id,)).fetchone()
+            approval = self._approval(row) if row else None
+            if approval is None or approval.status != "pending":
+                return "not_pending", approval
+            if approval.expires is not None and now > approval.expires:
+                conn.execute(
+                    "UPDATE approvals SET status = 'expired', decided = ? WHERE id = ?",
+                    (now, approval_id),
+                )
+                return "expired", approval
+            if not approval.code_hash:
+                return "no_code", approval
+            verdict = check(approval)
+            if verdict is None:
+                return "unverifiable", approval
+            if verdict:
+                conn.execute(
+                    "UPDATE approvals SET status = 'approved', decided = ?, decided_by = ?, "
+                    "decision_mac = ? WHERE id = ?",
+                    (now, by, sign(approval, now, by), approval_id),
+                )
+                return "approved", approval
+            attempts = approval.attempts + 1
+            status = "locked" if attempts >= max_attempts else "pending"
+            conn.execute(
+                "UPDATE approvals SET status = ?, attempts = ?, decided = ? WHERE id = ?",
+                (status, attempts, now if status == "locked" else None, approval_id),
+            )
+            return ("locked" if status == "locked" else "wrong"), approval
 
     def consume_approval(self, approval_id: str) -> bool:
         """Mark an approval as used; return ``False`` if it is not (or no longer) approved."""
