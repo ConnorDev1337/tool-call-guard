@@ -2,7 +2,8 @@
 
 Usage: ``python tap.py LOG -- COMMAND [ARGS...]``
 
-Each line goes to LOG as one JSON object: ``t`` (seconds since the tap started), ``dir``
+Each line goes to LOG as one JSON object: ``t`` (``CLOCK_MONOTONIC`` seconds, shared by all
+processes on the host, so the logs of several taps can be merged), ``dir``
 (``in`` for lines read by the process, ``out`` for lines it wrote) and either ``line``
 (UTF-8 text) or ``b64`` (bytes that are not valid UTF-8). SIGTERM and SIGINT are passed on
 to the process, and the tap exits with its exit code.
@@ -27,11 +28,10 @@ class Tap:
     def __init__(self, log_path: str, command: list[str]) -> None:
         self.log = open(log_path, "a", encoding="utf-8")  # noqa: SIM115
         self.lock = threading.Lock()
-        self.start = time.monotonic()
         self.child = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def record(self, direction: str, line: bytes) -> None:
-        entry: dict[str, object] = {"t": round(time.monotonic() - self.start, 6), "dir": direction}
+        entry: dict[str, object] = {"t": round(time.monotonic(), 6), "dir": direction}
         try:
             entry["line"] = line.decode("utf-8")
         except UnicodeDecodeError:
