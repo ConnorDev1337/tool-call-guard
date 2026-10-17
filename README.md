@@ -238,6 +238,41 @@ Replace each server's command with the proxy (full example in
   below); without a configured notifier it is refused.
 - All proxies with the same `--session` share taint: an e-mail read through one server counts when
   its data reaches another.
+- The proxy forwards only what it has inspected: a client line that is not JSON gets a parse
+  error, a line that is not valid UTF-8 is guarded and forwarded as decoded, batches are split and
+  every `tools/call` in them is guarded, and a `tools/call` with malformed parameters is refused.
+- When the client closes its stdin the proxy closes the server's, then terminates and kills it if
+  it does not exit (the MCP stdio shutdown sequence). The proxy exits with the server's exit code
+  (128 + N if a signal N killed it).
+- The server command is looked up on `PATH`, so `npx` (`npx.cmd`) works on Windows.
+
+#### Verified behaviour (real MCP servers)
+
+Verified on 2026-10-17 in a throwaway container (`--network none`, unprivileged user) with the
+official MCP Python SDK 2.3.0 as the client and `@modelcontextprotocol/server-everything`,
+`server-filesystem` and `server-memory` 1.0.0 (TypeScript SDK 1.32.1), `mcp-server-fetch` and
+`mcp-server-git` 2026.10.10 (Python SDK 1.30.0), plus a toy server on SDK 2.3.0 for protocol
+2026-07-28. Sanitized traffic is replayed by
+[`tests/test_mcp_proxy_live.py`](tests/test_mcp_proxy_live.py); the recipe and the scenarios are in
+[`tests/fixtures/mcp_live`](tests/fixtures/mcp_live/README.md).
+
+| Area | Observed |
+|---|---|
+| Handshake | The SDK first probes `server/discover` (2026-07-28); the reference servers answer `-32601` and the client falls back to `initialize` 2025-11-25. Versions, capabilities (including `elicitation: {form, url}`, `sampling`, `roots`, the server's `tasks`) and `instructions` pass through unchanged |
+| Listings and content | `tools/list`, `prompts/*`, `resources/*` (text and blob), templates, completion and subscriptions pass byte for byte, as do images, resource links, embedded resources, `structuredContent`, `isError` results and a 1.16 MB text or 512 KiB image result |
+| Notifications and server requests | Progress, log messages and `list_changed` reach the client; the server's own `elicitation/create`, `sampling/createMessage` and `roots/list` reach the client and its answers reach the server |
+| Concurrency and cancellation | 20 concurrent calls with integer and string ids each got their own answer; `notifications/cancelled` reaches the server, which then sends no response |
+| Guarding | A page fetched by `mcp-server-fetch` tainted the session shared with `server-memory` and `server-filesystem`: deleting the entity it named was blocked before reaching the server, a `conftest.py` write needed a human, and after a `.env` read a URL carrying its content was refused. A task-augmented call's output (fetched with `tasks/result`) taints the session too |
+| Confirmations | Elicitation accept ran the call, decline and cancel refused it; without elicitation the call was queued, the code reached only the file notifier, and the retry after `toolguard approve` ran |
+| Failures | A server killed mid-session made the proxy exit with 137 and the client see EOF at once; a server that ignores EOF (`server-everything` with logging on) was terminated about 5 s after the client left |
+| Protocol 2026-07-28 | Per-request `_meta`, no `initialize`: `tools/call` is guarded as usual and refusals carry `resultType: "complete"` |
+
+Bugs found this way and fixed in the proxy, each with a regression test: client lines it could not
+parse were relayed raw (and batches unguarded), malformed requests or elicitation answers stopped
+it silently, task results were never observed, it hung when a server outlived its client, a call
+cancelled while awaiting confirmation still ran once approved, elicitation ids were predictable and
+any answer with the prefix was swallowed, the process aborted at exit while still reading stdin,
+and refusals were rejected by 2026-07-28 clients for lacking `resultType`.
 
 ### Python API
 
@@ -664,6 +699,17 @@ in the response text); verifying the identity of MCP servers.
   if the policy declares `claude-code:task-notification` as a source.
 - **`WebFetch` returns a model's summary**, not the page, so injected text may arrive paraphrased
   and only the coarse `tainted` rule applies to it.
+- **MCP proxy**: verified with real servers on Linux (see [Verified
+  behaviour](#verified-behaviour-real-mcp-servers)); not exercised with a desktop client's UI
+  (Claude Desktop, IDEs) or on Windows and macOS beyond unit tests. It speaks **stdio only**:
+  servers reached over Streamable HTTP or SSE cannot be wrapped. Only `tools/call` results (and
+  their `tasks/result`) are observed; content the model gets from `resources/read` or `prompts/get`
+  (for example `mcp-server-fetch`'s `fetch` prompt) does not taint the session. On protocol
+  2026-07-28 there is no `initialize`, so the proxy does not know whether the client supports
+  elicitation and confirmations always go to the out-of-band queue (confirming through
+  `InputRequiredResult` is not implemented). The proxy trusts the client to show its elicitation
+  to the user, not to the model. On Windows a batch launcher (`npx.cmd`) passes its arguments
+  through `cmd.exe`, so keep them free of shell metacharacters.
 
 ## Development
 
@@ -691,7 +737,7 @@ src/toolguard/
   adapters/         claude_code.py (hooks), mcp_proxy.py (stdio proxy)
   evaluation.py     safety/usefulness benchmark (+ scenarios/)
   cli.py            toolguard ...
-tests/              pytest: core, adapters, proxy with a fake MCP server, CLI, benchmark
+tests/              pytest: core, adapters, proxy (fake server and replayed real traffic), CLI, benchmark
 examples/           team policy, approvals configuration, MCP client configuration, Python usage
 ```
 
