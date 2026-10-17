@@ -24,6 +24,43 @@ from .store import Store
 
 F = TypeVar("F", bound=Callable[..., Any])
 
+# Argument names that identify a specific resource (file, URL, document) rather than
+# free-form content; used to decide whether the user directed a source read.
+_RESOURCE_ARGS = (
+    "url",
+    "uri",
+    "link",
+    "href",
+    "file_path",
+    "filepath",
+    "path",
+    "filename",
+    "file_name",
+    "file",
+    "document_id",
+    "doc_id",
+    "page_id",
+    "attachment",
+)
+
+
+def _is_directed(args: Any, trusted: list[Observation]) -> bool:
+    """Return whether a resource argument of this call appears, in full, in user input.
+
+    This marks a source the user pointed at by name (``read invoices/bill.txt``,
+    ``open https://x``). Short or bare-numeric values are ignored so that an id the
+    user merely mentioned (``ticket 13``) does not endorse the whole resource.
+    """
+    if not trusted:
+        return False
+    for _, value in select_args(args, _RESOURCE_ARGS):
+        norm = normalize(value)
+        if len(norm) < 6 or not (len(norm) >= 8 or any(c in norm for c in "/.@\\")):
+            continue
+        if any(norm in obs.text for obs in trusted):
+            return True
+    return False
+
 
 def _labels(observations: list[Observation], limit: int = 3) -> str:
     unique = list(dict.fromkeys(o.label for o in observations))
@@ -77,6 +114,7 @@ class Guard:
         untrusted: bool,
         private: bool,
         trusted: bool,
+        directed: bool = False,
     ) -> Observation:
         raw = "\n".join(text for _, text in iter_strings(content))
         limit = self.policy.max_observation_chars
@@ -91,6 +129,7 @@ class Guard:
             text=normalize(raw[: limit * 2])[:limit],
             indicators=extract_indicators(raw[: limit * 2]),
             digest=hashlib.sha256(raw.encode("utf-8")).hexdigest(),
+            directed=directed,
         )
         self._log_policy(session)
         self.audit.append(
@@ -115,17 +154,23 @@ class Guard:
         self, tool: str, output: Any, args: Any = None, *, session: str | None = None
     ) -> Observation | None:
         """Record a tool result if the policy marks the tool as a source; else return ``None``."""
+        session = session or self.session
         match = self.policy.source_for(tool, args if args is not None else {})
         if match is None:
             return None
+        directed = match.untrusted and _is_directed(
+            args if args is not None else {},
+            [o for o in self.store.observations(session) if o.trusted],
+        )
         return self._record(
-            session or self.session,
+            session,
             tool,
             output,
             kind=match.kind,
             untrusted=match.untrusted,
             private=match.private,
             trusted=False,
+            directed=directed,
         )
 
     def observe_user(self, text: str, *, session: str | None = None) -> Observation | None:
@@ -185,14 +230,27 @@ class Guard:
         flows = untrusted_flows(select_args(args, sink.critical), untrusted, trusted)
         attributed = tuple(e for e in flows if not e.endorsed)
         endorsed = tuple(e for e in flows if e.endorsed)
-        if attributed:
-            names = ", ".join(dict.fromkeys(e.arg for e in attributed))
+        plain = tuple(e for e in attributed if not e.directed)
+        directed = tuple(e for e in attributed if e.directed)
+        if plain:
+            names = ", ".join(dict.fromkeys(e.arg for e in plain))
             reasons.append(
                 Reason(
                     "untrusted_flow",
                     table.untrusted_flow,
                     f"critical argument(s) {names} carry data copied from an untrusted source",
-                    attributed,
+                    plain,
+                )
+            )
+        if directed:
+            names = ", ".join(dict.fromkeys(e.arg for e in directed))
+            reasons.append(
+                Reason(
+                    "directed_flow",
+                    table.directed,
+                    f"critical argument(s) {names} carry data from a source the user named, "
+                    "which may itself carry injected instructions",
+                    directed,
                 )
             )
         if endorsed:
@@ -211,7 +269,7 @@ class Guard:
         attributed_args = {e.arg for e in attributed}
         leaks = tuple(
             e
-            for e in private_flows(select_args(args, ("*",)), private)
+            for e in private_flows(select_args(args, ("*",)), private, trusted)
             if e.arg not in attributed_args
         )
         if leaks:
@@ -286,6 +344,7 @@ class Guard:
                             "observation": e.observation_id,
                             "source": e.source,
                             "endorsed": e.endorsed,
+                            "directed": e.directed,
                         }
                         for e in r.evidence
                     ],

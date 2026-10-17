@@ -32,7 +32,7 @@ _TOP_KEYS = {
     "actions",
     "protect",
 }
-_RULE_FIELDS = ("tainted", "untrusted_flow", "private_flow", "trifecta")
+_RULE_FIELDS = ("tainted", "untrusted_flow", "directed_flow", "private_flow", "trifecta")
 
 
 class PolicyError(ValueError):
@@ -158,12 +158,23 @@ class ProtectRule:
 
 @dataclass(frozen=True)
 class ActionTable:
-    """Action demanded by each rule for one sink category."""
+    """Action demanded by each rule for one sink category.
+
+    ``directed_flow`` is ``untrusted_flow`` restricted to sources the user named in
+    the prompt; when it is ``None`` it falls back to ``untrusted_flow``, so a policy
+    that does not set it behaves exactly as before.
+    """
 
     tainted: Action = Action.CONFIRM
     untrusted_flow: Action = Action.BLOCK
     private_flow: Action = Action.BLOCK
     trifecta: Action = Action.BLOCK
+    directed_flow: Action | None = None
+
+    @property
+    def directed(self) -> Action:
+        """Return the action for a directed untrusted flow (defaults to ``untrusted_flow``)."""
+        return self.directed_flow if self.directed_flow is not None else self.untrusted_flow
 
 
 @dataclass(frozen=True)

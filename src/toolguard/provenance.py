@@ -201,15 +201,26 @@ def untrusted_flows(
                 observation_id=hit.observation.id,
                 source=hit.observation.label,
                 endorsed=_endorsed(hit.matched, trusted),
+                directed=hit.observation.directed,
             )
         )
     return evidence
 
 
-def private_flows(values: Iterable[tuple[str, str]], private: list[Observation]) -> list[Evidence]:
-    """Return evidence that ``(path, value)`` pairs carry private data (secrets or copied text)."""
+def private_flows(
+    values: Iterable[tuple[str, str]],
+    private: list[Observation],
+    trusted: list[Observation] | None = None,
+) -> list[Evidence]:
+    """Return evidence that ``(path, value)`` pairs carry private data (secrets or copied text).
+
+    Copied text that also appears verbatim in ``trusted`` (user) input is endorsed, not
+    reported: the user supplied the value. Secret-shaped tokens are never endorsed, since
+    a key the user pasted is still a key that must not leak.
+    """
     if not private:
         return []
+    trusted = trusted or []
     evidence = []
     for path, value in values:
         hit: _Hit | None = None
@@ -230,6 +241,8 @@ def private_flows(values: Iterable[tuple[str, str]], private: list[Observation])
                         hit = _Hit("fragment", piece, obs)
                         break
         if hit is not None:
+            if hit.method != "secret" and _endorsed(hit.matched, trusted):
+                continue  # The user supplied this value; it is not a private leak
             evidence.append(
                 Evidence(
                     arg=path,
