@@ -554,6 +554,10 @@ async def oob_queue(out: Path) -> dict[str, Any]:
             env=environment(),
             check=False,
         )
+        # Mark when the human approved, so a replay can approve at the same point.
+        marker = {"t": round(time.monotonic(), 6), "dir": "oob", "line": "approve"}
+        with open(out / "queue-oob.jsonl", "a", encoding="utf-8") as oob:
+            oob.write(json.dumps(marker) + "\n")
         retried = await memory.call_tool("delete_entities", args)
         graph = text_of(await memory.call_tool("read_graph", {}))
     check(queued.is_error, "queued call refused until approved")
@@ -773,6 +777,31 @@ async def large(out: Path) -> dict[str, Any]:
     return {"text_bytes": len(text), "png_bytes": len(png), "seconds": elapsed}
 
 
+def versions() -> dict[str, str]:
+    """Return the versions of the client, the servers and their SDKs in this image."""
+    found = {"python": sys.version.split()[0]}
+    node = subprocess.run(["/usr/local/bin/node", "--version"], capture_output=True, check=False)
+    found["node"] = node.stdout.decode().strip()
+    modules = Path("/usr/local/lib/node_modules/@modelcontextprotocol")
+    for server in ("server-everything", "server-filesystem", "server-memory"):
+        package = json.loads((modules / server / "package.json").read_text(encoding="utf-8"))
+        found[f"@modelcontextprotocol/{server}"] = package["version"]
+        sdk_package = modules / server / "node_modules/@modelcontextprotocol/sdk/package.json"
+        if sdk_package.exists():
+            sdk_version = json.loads(sdk_package.read_text(encoding="utf-8"))["version"]
+            found[f"@modelcontextprotocol/sdk ({server})"] = sdk_version
+    for venv, names in (
+        ("client", ["mcp"]),
+        ("fetch", ["mcp-server-fetch", "mcp"]),
+        ("git", ["mcp-server-git", "mcp"]),
+    ):
+        site = next(Path(f"/opt/{venv}/lib").glob("python*/site-packages"))
+        for name in names:
+            dist = next(site.glob(f"{name.replace('-', '_')}-*.dist-info"))
+            found[f"{name} ({venv})"] = dist.name.split("-")[1].removesuffix(".dist")
+    return found
+
+
 SCENARIOS = [
     handshake,
     tools,
@@ -832,7 +861,7 @@ async def main(out_dir: str) -> int:
         status = "ok" if entry["ok"] else "FAILED " + entry["error"]
         print(f"{scenario.__name__}: {status}", flush=True)
     web.shutdown()
-    summary = {"entries": entries}
+    summary = {"versions": versions(), "entries": entries}
     (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     return 0 if all(e["ok"] for e in entries) else 1
 
