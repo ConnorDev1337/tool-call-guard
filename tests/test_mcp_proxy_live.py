@@ -346,6 +346,29 @@ def test_malformed_input_is_answered_by_the_proxy(replay):
     assert sorted(map(str, ids)) == sorted(map(str, set(ids)))  # One answer per request
 
 
+def test_stateless_revision_is_guarded_and_confirmations_fail_closed(replay):
+    # Protocol 2026-07-28: no initialize, so the proxy never learns that the client
+    # supports elicitation; confirmations go to the queue, which has no notifier here.
+    r = replay("modern")
+    sent = messages(r.events, "c2p")
+    assert sent[0]["method"] == "server/discover"
+    assert all(m.get("method") != "initialize" for m in sent)
+    meta = next(m for m in sent if m.get("method") == "tools/call")["params"]["_meta"]
+    assert meta["io.modelcontextprotocol/protocolVersion"] == "2026-07-28"
+    assert "elicitation" in meta["io.modelcontextprotocol/clientCapabilities"]
+    assert r.proxies["mail"].client_elicitation is False
+    refusals = [m["result"] for m in messages(r.events, "p2c") if m["result"].get("isError")]
+    assert [x["content"][0]["text"].splitlines()[0] for x in refusals] == [
+        "toolguard: BLOCK mcp__mail__send_email (sink: send)",
+        "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+    ]
+    assert all(x["resultType"] == "complete" for x in refusals)
+    calls = [
+        m["params"]["name"] for m in messages(r.events, "p2s") if m.get("method") == "tools/call"
+    ]
+    assert calls == ["read_inbox"]
+
+
 def test_crash_and_disconnect_exit_codes():
     crash = load("crash")["events"]
     exits = {e["dir"]: e["code"] for e in crash if e["dir"].endswith("exit")}

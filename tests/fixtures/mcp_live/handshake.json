@@ -52,461 +52,461 @@
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"},\"io.modelcontextprotocol/clientCapabilities\":{\"sampling\":{},\"elicitation\":{\"form\":{},\"url\":{}},\"roots\":{\"listChanged\":true}}}}}\n"
   },
   {
-   "t": 0.4602,
+   "t": 0.5793,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"server/discover\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/protocolVersion\":\"2026-07-28\",\"io.modelcontextprotocol/clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"},\"io.modelcontextprotocol/clientCapabilities\":{\"sampling\":{},\"elicitation\":{\"form\":{},\"url\":{}},\"roots\":{\"listChanged\":true}}}}}\n"
   },
   {
-   "t": 0.7864,
+   "t": 0.947,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}\n"
   },
   {
-   "t": 0.7876,
+   "t": 0.9486,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}\n"
   },
   {
-   "t": 0.7908,
+   "t": 0.9509,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"sampling\":{},\"elicitation\":{\"form\":{},\"url\":{}},\"roots\":{\"listChanged\":true}},\"clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"}}}\n"
   },
   {
-   "t": 0.7929,
+   "t": 0.9521,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"sampling\":{},\"elicitation\":{\"form\":{},\"url\":{}},\"roots\":{\"listChanged\":true}},\"clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"}}}\n"
   },
   {
-   "t": 0.804,
+   "t": 0.9586,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 0.8058,
+   "t": 0.9602,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 0.8102,
+   "t": 0.9624,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n"
   },
   {
-   "t": 0.8111,
+   "t": 0.9632,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}\n"
   },
   {
-   "t": 0.8113,
+   "t": 0.9633,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n"
   },
   {
-   "t": 0.812,
+   "t": 0.964,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}\n"
   },
   {
-   "t": 0.8164,
+   "t": 0.9681,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8176,
+   "t": 0.9694,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8178,
+   "t": 0.9696,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8187,
+   "t": 0.9701,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8189,
+   "t": 0.9703,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8195,
+   "t": 0.9706,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8196,
+   "t": 0.9708,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8207,
+   "t": 0.9712,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8209,
+   "t": 0.9713,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8219,
+   "t": 0.9718,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8301,
+   "t": 0.9763,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"tools\":[{\"name\":\"echo\",\"title\":\"Echo Tool\",\"description\":\"Echoes back the input string\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"message\":{\"type\":\"string\",\"description\":\"Message to echo\"}},\"required\":[\"message\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-annotated-message\",\"title\":\"Get Annotated Message Tool\",\"description\":\"Demonstrates how annotations can be used to provide metadata about content.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"messageType\":{\"type\":\"string\",\"enum\":[\"error\",\"success\",\"debug\"],\"description\":\"Type of message to demonstrate different annotation patterns\"},\"includeImage\":{\"default\":false,\"description\":\"Whether to include an example image\",\"type\":\"boolean\"}},\"required\":[\"messageType\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-env\",\"title\":\"Print Environment Tool\",\"description\":\"Returns all environment variables, helpful for debugging MCP server configuration\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-resource-links\",\"title\":\"Get Resource Links Tool\",\"description\":\"Returns up to ten resource links that reference different types of resources\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"count\":{\"default\":3,\"description\":\"Number of resource links to return (1-10)\",\"type\":\"number\",\"minimum\":1,\"maximum\":10}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-resource-reference\",\"title\":\"Get Resource Reference Tool\",\"description\":\"Returns a resource reference that can be used by MCP clients\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"resourceType\":{\"default\":\"Text\",\"type\":\"string\",\"enum\":[\"Text\",\"Blob\"]},\"resourceId\":{\"default\":1,\"description\":\"ID of the text resource to fetch\",\"type\":\"number\"}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-structured-content\",\"title\":\"Get Structured Content Tool\",\"description\":\"Returns structured content along with an output schema for client data validation\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\",\"enum\":[\"New York\",\"Chicago\",\"Los Angeles\"],\"description\":\"Choose city\"}},\"required\":[\"location\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"temperature\":{\"type\":\"number\",\"description\":\"Temperature in celsius\"},\"conditions\":{\"type\":\"string\",\"description\":\"Weather conditions description\"},\"humidity\":{\"type\":\"number\",\"description\":\"Humidity percentage\"}},\"required\":[\"temperature\",\"conditions\",\"humidity\"],\"additionalProperties\":false}},{\"name\":\"get-sum\",\"title\":\"Get Sum Tool\",\"description\":\"Returns the sum of two numbers\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"description\":\"First number\"},\"b\":{\"type\":\"number\",\"description\":\"Second number\"}},\"required\":[\"a\",\"b\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-tiny-image\",\"title\":\"Get Tiny Image Tool\",\"description\":\"Returns a tiny MCP logo image.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"gzip-file-as-resource\",\"title\":\"GZip File as Resource Tool\",\"description\":\"Compresses a single file using gzip compression. Depending upon the selected output type, returns either the compressed data as a gzipped resource or a resource link, allowing it to be downloaded in a subsequent request during the current session.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"name\":{\"default\":\"README.md.gz\",\"type\":\"string\",\"description\":\"Name of the output file\"},\"data\":{\"default\":\"https://raw.githubusercontent.com/modelcontextprotocol/servers/refs/heads/main/README.md\",\"type\":\"string\",\"format\":\"uri\",\"description\":\"URL or data URI of the file content to compress\"},\"outputType\":{\"default\":\"resourceLink\",\"description\":\"How the resulting gzipped file should be returned. 'resourceLink' returns a link to a resource that can be read later, 'resource' returns a full resource object.\",\"type\":\"string\",\"enum\":[\"resourceLink\",\"resource\"]}}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"toggle-simulated-logging\",\"title\":\"Toggle Simulated Logging\",\"description\":\"Toggles simulated, random-leveled logging on or off.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"toggle-subscriber-updates\",\"title\":\"Toggle Subscriber Updates\",\"description\":\"Toggles simulated resource subscription updates on or off.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-long-running-operation\",\"title\":\"Trigger Long Running Operation Tool\",\"description\":\"Demonstrates a long running operation with progress updates.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"duration\":{\"default\":10,\"description\":\"Duration of the operation in seconds\",\"type\":\"number\"},\"steps\":{\"default\":5,\"description\":\"Number of steps in the operation\",\"type\":\"number\"}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-roots-list\",\"title\":\"Get Roots List Tool\",\"description\":\"Lists the current MCP roots provided by the client. Demonstrates the roots protocol capability even though this server doesn't access files.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-elicitation-request\",\"title\":\"Trigger Elicitation Request Tool\",\"description\":\"Trigger a Request from the Server for User Elicitation\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-url-elicitation\",\"title\":\"Trigger URL Elicitation Tool\",\"description\":\"Trigger a URL elicitation so the client can direct the user to a browser flow. Supports two mechanisms: the request path (elicitation/create, default) which awaits the user's response, and the error path (UrlElicitationRequiredError, -32042) which signals the client to handle URL elicitation via the error response. Set errorPath=true to use the error path.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"url\":{\"type\":\"string\",\"format\":\"uri\",\"description\":\"The URL the user should open\"},\"message\":{\"default\":\"Please open the link to complete this action.\",\"description\":\"Message shown to the user before opening the URL\",\"type\":\"string\"},\"elicitationId\":{\"description\":\"Optional explicit elicitation ID. Defaults to a random UUID.\",\"type\":\"string\"},\"errorPath\":{\"default\":false,\"description\":\"Controls which elicitation mechanism is used. When false (default), sends an elicitation/create request (request path). When true, throws a UrlElicitationRequiredError (MCP error code -32042) so the client handles the URL elicitation via the error path rather than waiting for a response. To clear the error, satisfy the prerequisite and retry this call with the same arguments; the retry ignores errorPath and proceeds, so the client does not loop on the same error.\",\"type\":\"boolean\"}},\"required\":[\"url\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-sampling-request\",\"title\":\"Trigger Sampling Request Tool\",\"description\":\"Trigger a Request from the Server for LLM Sampling\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"prompt\":{\"type\":\"string\",\"description\":\"The prompt to send to the LLM\"},\"maxTokens\":{\"default\":100,\"description\":\"Maximum number of tokens to generate\",\"type\":\"number\"}},\"required\":[\"prompt\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"simulate-research-query\",\"title\":\"Simulate Research Query\",\"description\":\"Simulates a deep research operation that gathers, analyzes, and synthesizes information. Demonstrates MCP task-based operations with progress through multiple stages. If 'ambiguous' is true and client supports elicitation, sends an elicitation request for clarification.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"topic\":{\"type\":\"string\",\"description\":\"The research topic to investigate\"},\"ambiguous\":{\"default\":false,\"description\":\"Simulate an ambiguous query that requires clarification (triggers input_required status)\",\"type\":\"boolean\"}},\"required\":[\"topic\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"required\"}}]},\"jsonrpc\":\"2.0\",\"id\":3}\n"
   },
   {
-   "t": 0.8323,
+   "t": 0.9771,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"tools\":[{\"name\":\"echo\",\"title\":\"Echo Tool\",\"description\":\"Echoes back the input string\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"message\":{\"type\":\"string\",\"description\":\"Message to echo\"}},\"required\":[\"message\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-annotated-message\",\"title\":\"Get Annotated Message Tool\",\"description\":\"Demonstrates how annotations can be used to provide metadata about content.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"messageType\":{\"type\":\"string\",\"enum\":[\"error\",\"success\",\"debug\"],\"description\":\"Type of message to demonstrate different annotation patterns\"},\"includeImage\":{\"default\":false,\"description\":\"Whether to include an example image\",\"type\":\"boolean\"}},\"required\":[\"messageType\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-env\",\"title\":\"Print Environment Tool\",\"description\":\"Returns all environment variables, helpful for debugging MCP server configuration\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-resource-links\",\"title\":\"Get Resource Links Tool\",\"description\":\"Returns up to ten resource links that reference different types of resources\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"count\":{\"default\":3,\"description\":\"Number of resource links to return (1-10)\",\"type\":\"number\",\"minimum\":1,\"maximum\":10}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-resource-reference\",\"title\":\"Get Resource Reference Tool\",\"description\":\"Returns a resource reference that can be used by MCP clients\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"resourceType\":{\"default\":\"Text\",\"type\":\"string\",\"enum\":[\"Text\",\"Blob\"]},\"resourceId\":{\"default\":1,\"description\":\"ID of the text resource to fetch\",\"type\":\"number\"}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-structured-content\",\"title\":\"Get Structured Content Tool\",\"description\":\"Returns structured content along with an output schema for client data validation\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\",\"enum\":[\"New York\",\"Chicago\",\"Los Angeles\"],\"description\":\"Choose city\"}},\"required\":[\"location\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"temperature\":{\"type\":\"number\",\"description\":\"Temperature in celsius\"},\"conditions\":{\"type\":\"string\",\"description\":\"Weather conditions description\"},\"humidity\":{\"type\":\"number\",\"description\":\"Humidity percentage\"}},\"required\":[\"temperature\",\"conditions\",\"humidity\"],\"additionalProperties\":false}},{\"name\":\"get-sum\",\"title\":\"Get Sum Tool\",\"description\":\"Returns the sum of two numbers\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"a\":{\"type\":\"number\",\"description\":\"First number\"},\"b\":{\"type\":\"number\",\"description\":\"Second number\"}},\"required\":[\"a\",\"b\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-tiny-image\",\"title\":\"Get Tiny Image Tool\",\"description\":\"Returns a tiny MCP logo image.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"gzip-file-as-resource\",\"title\":\"GZip File as Resource Tool\",\"description\":\"Compresses a single file using gzip compression. Depending upon the selected output type, returns either the compressed data as a gzipped resource or a resource link, allowing it to be downloaded in a subsequent request during the current session.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"name\":{\"default\":\"README.md.gz\",\"type\":\"string\",\"description\":\"Name of the output file\"},\"data\":{\"default\":\"https://raw.githubusercontent.com/modelcontextprotocol/servers/refs/heads/main/README.md\",\"type\":\"string\",\"format\":\"uri\",\"description\":\"URL or data URI of the file content to compress\"},\"outputType\":{\"default\":\"resourceLink\",\"description\":\"How the resulting gzipped file should be returned. 'resourceLink' returns a link to a resource that can be read later, 'resource' returns a full resource object.\",\"type\":\"string\",\"enum\":[\"resourceLink\",\"resource\"]}}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"toggle-simulated-logging\",\"title\":\"Toggle Simulated Logging\",\"description\":\"Toggles simulated, random-leveled logging on or off.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"toggle-subscriber-updates\",\"title\":\"Toggle Subscriber Updates\",\"description\":\"Toggles simulated resource subscription updates on or off.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-long-running-operation\",\"title\":\"Trigger Long Running Operation Tool\",\"description\":\"Demonstrates a long running operation with progress updates.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"duration\":{\"default\":10,\"description\":\"Duration of the operation in seconds\",\"type\":\"number\"},\"steps\":{\"default\":5,\"description\":\"Number of steps in the operation\",\"type\":\"number\"}}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"get-roots-list\",\"title\":\"Get Roots List Tool\",\"description\":\"Lists the current MCP roots provided by the client. Demonstrates the roots protocol capability even though this server doesn't access files.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-elicitation-request\",\"title\":\"Trigger Elicitation Request Tool\",\"description\":\"Trigger a Request from the Server for User Elicitation\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-url-elicitation\",\"title\":\"Trigger URL Elicitation Tool\",\"description\":\"Trigger a URL elicitation so the client can direct the user to a browser flow. Supports two mechanisms: the request path (elicitation/create, default) which awaits the user's response, and the error path (UrlElicitationRequiredError, -32042) which signals the client to handle URL elicitation via the error response. Set errorPath=true to use the error path.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"url\":{\"type\":\"string\",\"format\":\"uri\",\"description\":\"The URL the user should open\"},\"message\":{\"default\":\"Please open the link to complete this action.\",\"description\":\"Message shown to the user before opening the URL\",\"type\":\"string\"},\"elicitationId\":{\"description\":\"Optional explicit elicitation ID. Defaults to a random UUID.\",\"type\":\"string\"},\"errorPath\":{\"default\":false,\"description\":\"Controls which elicitation mechanism is used. When false (default), sends an elicitation/create request (request path). When true, throws a UrlElicitationRequiredError (MCP error code -32042) so the client handles the URL elicitation via the error path rather than waiting for a response. To clear the error, satisfy the prerequisite and retry this call with the same arguments; the retry ignores errorPath and proceeds, so the client does not loop on the same error.\",\"type\":\"boolean\"}},\"required\":[\"url\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"trigger-sampling-request\",\"title\":\"Trigger Sampling Request Tool\",\"description\":\"Trigger a Request from the Server for LLM Sampling\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"prompt\":{\"type\":\"string\",\"description\":\"The prompt to send to the LLM\"},\"maxTokens\":{\"default\":100,\"description\":\"Maximum number of tokens to generate\",\"type\":\"number\"}},\"required\":[\"prompt\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":true},\"execution\":{\"taskSupport\":\"forbidden\"}},{\"name\":\"simulate-research-query\",\"title\":\"Simulate Research Query\",\"description\":\"Simulates a deep research operation that gathers, analyzes, and synthesizes information. Demonstrates MCP task-based operations with progress through multiple stages. If 'ambiguous' is true and client supports elicitation, sends an elicitation request for clarification.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"topic\":{\"type\":\"string\",\"description\":\"The research topic to investigate\"},\"ambiguous\":{\"default\":false,\"description\":\"Simulate an ambiguous query that requires clarification (triggers input_required status)\",\"type\":\"boolean\"}},\"required\":[\"topic\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"required\"}}]},\"jsonrpc\":\"2.0\",\"id\":3}\n"
   },
   {
-   "t": 0.8375,
+   "t": 0.9791,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"prompts/list\"}\n"
   },
   {
-   "t": 0.8388,
+   "t": 0.9797,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"prompts/list\"}\n"
   },
   {
-   "t": 0.8421,
+   "t": 0.9812,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"prompts\":[{\"name\":\"simple-prompt\",\"title\":\"Simple Prompt\",\"description\":\"A prompt with no arguments\"},{\"name\":\"args-prompt\",\"title\":\"Arguments Prompt\",\"description\":\"A prompt with two arguments, one required and one optional\",\"arguments\":[{\"name\":\"city\",\"description\":\"Name of the city\",\"required\":true},{\"name\":\"state\",\"required\":false}]},{\"name\":\"completable-prompt\",\"title\":\"Team Management\",\"description\":\"First argument choice narrows values for second argument.\",\"arguments\":[{\"name\":\"department\",\"description\":\"Choose the department.\",\"required\":true},{\"name\":\"name\",\"description\":\"Choose a team member to lead the selected department.\",\"required\":true}]},{\"name\":\"resource-prompt\",\"title\":\"Resource Prompt\",\"description\":\"A prompt that includes an embedded resource reference\",\"arguments\":[{\"name\":\"resourceType\",\"description\":\"Type of resource to fetch\",\"required\":true},{\"name\":\"resourceId\",\"description\":\"ID of the text resource to fetch\",\"required\":true}]}]},\"jsonrpc\":\"2.0\",\"id\":4}\n"
   },
   {
-   "t": 0.8435,
+   "t": 0.9818,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"prompts\":[{\"name\":\"simple-prompt\",\"title\":\"Simple Prompt\",\"description\":\"A prompt with no arguments\"},{\"name\":\"args-prompt\",\"title\":\"Arguments Prompt\",\"description\":\"A prompt with two arguments, one required and one optional\",\"arguments\":[{\"name\":\"city\",\"description\":\"Name of the city\",\"required\":true},{\"name\":\"state\",\"required\":false}]},{\"name\":\"completable-prompt\",\"title\":\"Team Management\",\"description\":\"First argument choice narrows values for second argument.\",\"arguments\":[{\"name\":\"department\",\"description\":\"Choose the department.\",\"required\":true},{\"name\":\"name\",\"description\":\"Choose a team member to lead the selected department.\",\"required\":true}]},{\"name\":\"resource-prompt\",\"title\":\"Resource Prompt\",\"description\":\"A prompt that includes an embedded resource reference\",\"arguments\":[{\"name\":\"resourceType\",\"description\":\"Type of resource to fetch\",\"required\":true},{\"name\":\"resourceId\",\"description\":\"ID of the text resource to fetch\",\"required\":true}]}]},\"jsonrpc\":\"2.0\",\"id\":4}\n"
   },
   {
-   "t": 0.8464,
+   "t": 0.983,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"resources/list\"}\n"
   },
   {
-   "t": 0.8478,
+   "t": 0.9835,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"resources/list\"}\n"
   },
   {
-   "t": 0.8507,
+   "t": 0.9846,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"resources\":[{\"uri\":\"demo://resource/static/document/architecture.md\",\"name\":\"architecture.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: architecture.md\"},{\"uri\":\"demo://resource/static/document/extension.md\",\"name\":\"extension.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: extension.md\"},{\"uri\":\"demo://resource/static/document/features.md\",\"name\":\"features.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: features.md\"},{\"uri\":\"demo://resource/static/document/how-it-works.md\",\"name\":\"how-it-works.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: how-it-works.md\"},{\"uri\":\"demo://resource/static/document/instructions.md\",\"name\":\"instructions.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: instructions.md\"},{\"uri\":\"demo://resource/static/document/startup.md\",\"name\":\"startup.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: startup.md\"},{\"uri\":\"demo://resource/static/document/structure.md\",\"name\":\"structure.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: structure.md\"}]},\"jsonrpc\":\"2.0\",\"id\":5}\n"
   },
   {
-   "t": 0.852,
+   "t": 0.9852,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"resources\":[{\"uri\":\"demo://resource/static/document/architecture.md\",\"name\":\"architecture.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: architecture.md\"},{\"uri\":\"demo://resource/static/document/extension.md\",\"name\":\"extension.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: extension.md\"},{\"uri\":\"demo://resource/static/document/features.md\",\"name\":\"features.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: features.md\"},{\"uri\":\"demo://resource/static/document/how-it-works.md\",\"name\":\"how-it-works.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: how-it-works.md\"},{\"uri\":\"demo://resource/static/document/instructions.md\",\"name\":\"instructions.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: instructions.md\"},{\"uri\":\"demo://resource/static/document/startup.md\",\"name\":\"startup.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: startup.md\"},{\"uri\":\"demo://resource/static/document/structure.md\",\"name\":\"structure.md\",\"mimeType\":\"text/markdown\",\"description\":\"Static document file exposed from /docs: structure.md\"}]},\"jsonrpc\":\"2.0\",\"id\":5}\n"
   },
   {
-   "t": 0.8551,
+   "t": 0.9865,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"resources/templates/list\"}\n"
   },
   {
-   "t": 0.8564,
+   "t": 0.987,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"resources/templates/list\"}\n"
   },
   {
-   "t": 0.8595,
+   "t": 0.9883,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"resourceTemplates\":[{\"name\":\"Dynamic Text Resource\",\"uriTemplate\":\"demo://resource/dynamic/text/{resourceId}\",\"mimeType\":\"text/plain\",\"description\":\"Plaintext dynamic resource fabricated from the {resourceId} variable, which must be an integer.\"},{\"name\":\"Dynamic Blob Resource\",\"uriTemplate\":\"demo://resource/dynamic/blob/{resourceId}\",\"mimeType\":\"application/octet-stream\",\"description\":\"Binary (base64) dynamic resource fabricated from the {resourceId} variable, which must be an integer.\"}]},\"jsonrpc\":\"2.0\",\"id\":6}\n"
   },
   {
-   "t": 0.8621,
+   "t": 0.9889,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"resourceTemplates\":[{\"name\":\"Dynamic Text Resource\",\"uriTemplate\":\"demo://resource/dynamic/text/{resourceId}\",\"mimeType\":\"text/plain\",\"description\":\"Plaintext dynamic resource fabricated from the {resourceId} variable, which must be an integer.\"},{\"name\":\"Dynamic Blob Resource\",\"uriTemplate\":\"demo://resource/dynamic/blob/{resourceId}\",\"mimeType\":\"application/octet-stream\",\"description\":\"Binary (base64) dynamic resource fabricated from the {resourceId} variable, which must be an integer.\"}]},\"jsonrpc\":\"2.0\",\"id\":6}\n"
   },
   {
-   "t": 0.8662,
+   "t": 0.9905,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"resources/read\",\"params\":{\"uri\":\"demo://resource/static/document/instructions.md\"}}\n"
   },
   {
-   "t": 0.8671,
+   "t": 0.9911,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":7,\"method\":\"resources/read\",\"params\":{\"uri\":\"demo://resource/static/document/instructions.md\"}}\n"
   },
   {
-   "t": 0.8697,
+   "t": 0.9928,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/static/document/instructions.md\",\"mimeType\":\"text/markdown\",\"text\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"}]},\"jsonrpc\":\"2.0\",\"id\":7}\n"
   },
   {
-   "t": 0.8707,
+   "t": 0.9934,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/static/document/instructions.md\",\"mimeType\":\"text/markdown\",\"text\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"}]},\"jsonrpc\":\"2.0\",\"id\":7}\n"
   },
   {
-   "t": 0.8724,
+   "t": 0.9946,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":8,\"method\":\"resources/read\",\"params\":{\"uri\":\"demo://resource/dynamic/blob/1\"}}\n"
   },
   {
-   "t": 0.8733,
+   "t": 0.9952,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":8,\"method\":\"resources/read\",\"params\":{\"uri\":\"demo://resource/dynamic/blob/1\"}}\n"
   },
   {
-   "t": 0.8987,
+   "t": 1.0115,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/dynamic/blob/1\",\"mimeType\":\"application/octet-stream\",\"blob\":\"UmVzb3VyY2UgMTogVGhpcyBpcyBhIGJhc2U2NCBibG9iIGNyZWF0ZWQgYXQgNzoyODo1NCBBTQ==\"}]},\"jsonrpc\":\"2.0\",\"id\":8}\n"
+   "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/dynamic/blob/1\",\"mimeType\":\"application/octet-stream\",\"blob\":\"UmVzb3VyY2UgMTogVGhpcyBpcyBhIGJhc2U2NCBibG9iIGNyZWF0ZWQgYXQgNzozNTo1MCBBTQ==\"}]},\"jsonrpc\":\"2.0\",\"id\":8}\n"
   },
   {
-   "t": 0.9001,
+   "t": 1.0129,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/dynamic/blob/1\",\"mimeType\":\"application/octet-stream\",\"blob\":\"UmVzb3VyY2UgMTogVGhpcyBpcyBhIGJhc2U2NCBibG9iIGNyZWF0ZWQgYXQgNzoyODo1NCBBTQ==\"}]},\"jsonrpc\":\"2.0\",\"id\":8}\n"
+   "line": "{\"result\":{\"contents\":[{\"uri\":\"demo://resource/dynamic/blob/1\",\"mimeType\":\"application/octet-stream\",\"blob\":\"UmVzb3VyY2UgMTogVGhpcyBpcyBhIGJhc2U2NCBibG9iIGNyZWF0ZWQgYXQgNzozNTo1MCBBTQ==\"}]},\"jsonrpc\":\"2.0\",\"id\":8}\n"
   },
   {
-   "t": 0.903,
+   "t": 1.0165,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"prompts/get\",\"params\":{\"name\":\"simple-prompt\",\"arguments\":{}}}\n"
   },
   {
-   "t": 0.9044,
+   "t": 1.0177,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":9,\"method\":\"prompts/get\",\"params\":{\"name\":\"simple-prompt\",\"arguments\":{}}}\n"
   },
   {
-   "t": 0.9081,
+   "t": 1.0212,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"messages\":[{\"role\":\"user\",\"content\":{\"type\":\"text\",\"text\":\"This is a simple prompt without arguments.\"}}]},\"jsonrpc\":\"2.0\",\"id\":9}\n"
   },
   {
-   "t": 0.9096,
+   "t": 1.0224,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"messages\":[{\"role\":\"user\",\"content\":{\"type\":\"text\",\"text\":\"This is a simple prompt without arguments.\"}}]},\"jsonrpc\":\"2.0\",\"id\":9}\n"
   },
   {
-   "t": 0.9124,
+   "t": 1.0245,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":10,\"method\":\"prompts/get\",\"params\":{\"name\":\"args-prompt\",\"arguments\":{\"city\":\"Lisbon\",\"state\":\"Lisboa\"}}}\n"
   },
   {
-   "t": 0.9139,
+   "t": 1.0254,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":10,\"method\":\"prompts/get\",\"params\":{\"name\":\"args-prompt\",\"arguments\":{\"city\":\"Lisbon\",\"state\":\"Lisboa\"}}}\n"
   },
   {
-   "t": 0.9172,
+   "t": 1.0283,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"messages\":[{\"role\":\"user\",\"content\":{\"type\":\"text\",\"text\":\"What's weather in Lisbon, Lisboa?\"}}]},\"jsonrpc\":\"2.0\",\"id\":10}\n"
   },
   {
-   "t": 0.9184,
+   "t": 1.0317,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"messages\":[{\"role\":\"user\",\"content\":{\"type\":\"text\",\"text\":\"What's weather in Lisbon, Lisboa?\"}}]},\"jsonrpc\":\"2.0\",\"id\":10}\n"
   },
   {
-   "t": 0.9204,
+   "t": 1.0336,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":11,\"method\":\"completion/complete\",\"params\":{\"ref\":{\"type\":\"ref/prompt\",\"name\":\"completable-prompt\"},\"argument\":{\"name\":\"department\",\"value\":\"E\"}}}\n"
   },
   {
-   "t": 0.9213,
+   "t": 1.0345,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":11,\"method\":\"completion/complete\",\"params\":{\"ref\":{\"type\":\"ref/prompt\",\"name\":\"completable-prompt\"},\"argument\":{\"name\":\"department\",\"value\":\"E\"}}}\n"
   },
   {
-   "t": 0.9258,
+   "t": 1.0375,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"completion\":{\"values\":[\"Engineering\"],\"total\":1,\"hasMore\":false}},\"jsonrpc\":\"2.0\",\"id\":11}\n"
   },
   {
-   "t": 0.9273,
+   "t": 1.0385,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"completion\":{\"values\":[\"Engineering\"],\"total\":1,\"hasMore\":false}},\"jsonrpc\":\"2.0\",\"id\":11}\n"
   },
   {
-   "t": 0.9351,
+   "t": 1.0457,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":12,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"debug\"}}\n"
   },
   {
-   "t": 0.9362,
+   "t": 1.0468,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":12,\"method\":\"logging/setLevel\",\"params\":{\"level\":\"debug\"}}\n"
   },
   {
-   "t": 0.9388,
+   "t": 1.0496,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":12}\n"
   },
   {
-   "t": 0.9402,
+   "t": 1.0508,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":12}\n"
   },
   {
-   "t": 0.9435,
+   "t": 1.0529,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":13,\"method\":\"resources/subscribe\",\"params\":{\"uri\":\"demo://resource/dynamic/text/1\"}}\n"
   },
   {
-   "t": 0.9446,
+   "t": 1.0539,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":13,\"method\":\"resources/subscribe\",\"params\":{\"uri\":\"demo://resource/dynamic/text/1\"}}\n"
   },
   {
-   "t": 0.9474,
+   "t": 1.0555,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"info\",\"data\":\"Received Subscribe Resource request for URI: demo://resource/dynamic/text/1 \"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.9485,
+   "t": 1.0564,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":13}\n"
   },
   {
-   "t": 0.9488,
+   "t": 1.0566,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"info\",\"data\":\"Received Subscribe Resource request for URI: demo://resource/dynamic/text/1 \"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.9496,
+   "t": 1.0575,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":13}\n"
   },
   {
-   "t": 0.9515,
+   "t": 1.0593,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":14,\"method\":\"resources/unsubscribe\",\"params\":{\"uri\":\"demo://resource/dynamic/text/1\"}}\n"
   },
   {
-   "t": 0.9526,
+   "t": 1.0604,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":14,\"method\":\"resources/unsubscribe\",\"params\":{\"uri\":\"demo://resource/dynamic/text/1\"}}\n"
   },
   {
-   "t": 0.9548,
+   "t": 1.0624,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"info\",\"data\":\"Received Unsubscribe Resource request: demo://resource/dynamic/text/1 \"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.9556,
+   "t": 1.0632,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":14}\n"
   },
   {
-   "t": 0.9557,
+   "t": 1.0634,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"info\",\"data\":\"Received Unsubscribe Resource request: demo://resource/dynamic/text/1 \"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.9562,
+   "t": 1.0641,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":14}\n"
   },
   {
-   "t": 0.9578,
+   "t": 1.0661,
    "dir": "client-eof",
    "server": "everything"
   },
   {
-   "t": 0.9579,
+   "t": 1.0663,
    "dir": "server-eof",
    "server": "everything"
   },
   {
-   "t": 1.17,
+   "t": 1.3212,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"roots/list\",\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 1.1718,
+   "t": 1.3224,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"roots/list\",\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 2.964,
+   "t": 3.075,
    "dir": "client-exit",
    "server": "everything",
    "code": -15
   },
   {
-   "t": 2.9673,
+   "t": 3.0799,
    "dir": "server-exit",
    "server": "everything",
    "code": -15

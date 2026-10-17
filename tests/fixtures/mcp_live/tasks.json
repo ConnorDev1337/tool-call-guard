@@ -18,507 +18,507 @@
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.485,
+   "t": 0.5139,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.815,
+   "t": 0.8948,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.8168,
+   "t": 0.897,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.8181,
+   "t": 0.8984,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.8188,
+   "t": 0.899,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"simulate-research-query\", \"arguments\": {\"topic\": \"Archive-2019\"}, \"task\": {\"ttl\": 60000}}}\n"
   },
   {
-   "t": 0.819,
+   "t": 0.8992,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.8234,
+   "t": 0.9048,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8301,
+   "t": 0.9083,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8315,
+   "t": 0.9088,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"simulate-research-query\", \"arguments\": {\"topic\": \"Archive-2019\"}, \"task\": {\"ttl\": 60000}}}\n"
   },
   {
-   "t": 0.8386,
+   "t": 0.9141,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 0.8396,
+   "t": 0.9148,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 0.9149,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"task\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
+   "line": "{\"result\":{\"task\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 0.8397,
+   "t": 0.9155,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"result\":{\"task\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 0.8404,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"task\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
-  },
-  {
-   "t": 0.8412,
+   "t": 0.9162,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-0\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-0\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 0.8422,
+   "t": 0.9167,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-0\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-0\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 0.844,
+   "t": 0.9179,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-0\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-0\"}\n"
   },
   {
-   "t": 0.8448,
+   "t": 0.9185,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-0\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-0\"}\n"
   },
   {
-   "t": 1.3465,
+   "t": 1.4201,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-1\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-1\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 1.3477,
+   "t": 1.4216,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-1\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-1\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 1.3499,
+   "t": 1.4241,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-1\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-1\"}\n"
   },
   {
-   "t": 1.351,
+   "t": 1.4256,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:13.181Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-1\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:08.588Z\",\"pollInterval\":1000,\"statusMessage\":\"Gathering sources...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-1\"}\n"
   },
   {
-   "t": 1.8414,
+   "t": 1.915,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.8427,
+   "t": 1.9158,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.8533,
+   "t": 1.9279,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-2\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-2\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 1.8545,
+   "t": 1.9291,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-2\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-2\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 1.857,
+   "t": 1.9307,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-2\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-2\"}\n"
   },
   {
-   "t": 1.8581,
+   "t": 1.9316,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-2\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-2\"}\n"
   },
   {
-   "t": 2.36,
+   "t": 2.4336,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-3\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-3\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 2.3607,
+   "t": 2.4348,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-3\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-3\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 2.3622,
+   "t": 2.4377,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-3\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-3\"}\n"
   },
   {
-   "t": 2.363,
+   "t": 2.4388,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:14.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-3\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:09.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Analyzing content...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-3\"}\n"
   },
   {
-   "t": 2.8425,
+   "t": 2.9162,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 2.8436,
+   "t": 2.918,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 2.8648,
+   "t": 2.941,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-4\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-4\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 2.866,
+   "t": 2.9425,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-4\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-4\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 2.8677,
+   "t": 2.9444,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-4\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-4\"}\n"
   },
   {
-   "t": 2.8688,
+   "t": 2.9457,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-4\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-4\"}\n"
   },
   {
-   "t": 3.3703,
+   "t": 3.4476,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-5\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-5\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 3.3714,
+   "t": 3.4484,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-5\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-5\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 3.3727,
+   "t": 3.4496,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-5\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-5\"}\n"
   },
   {
-   "t": 3.3735,
+   "t": 3.4502,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:15.183Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-5\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:10.590Z\",\"pollInterval\":1000,\"statusMessage\":\"Synthesizing findings...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-5\"}\n"
   },
   {
-   "t": 3.8434,
+   "t": 3.9179,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 3.8445,
+   "t": 3.9195,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 3.8754,
+   "t": 3.9514,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-6\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-6\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 3.8768,
+   "t": 3.9529,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-6\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-6\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 3.8791,
+   "t": 3.9551,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-6\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-6\"}\n"
   },
   {
-   "t": 3.8803,
+   "t": 3.9562,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-6\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-6\"}\n"
   },
   {
-   "t": 4.3821,
+   "t": 4.4582,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-7\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-7\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.3836,
+   "t": 4.4598,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-7\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-7\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.3851,
+   "t": 4.4616,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-7\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-7\"}\n"
   },
   {
-   "t": 4.386,
+   "t": 4.4628,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:16.184Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-7\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"working\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:11.592Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-7\"}\n"
   },
   {
-   "t": 4.8445,
+   "t": 4.9197,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:17.185Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:12.594Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 4.8454,
+   "t": 4.9211,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:17.185Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/tasks/status\",\"params\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:12.594Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 4.8878,
+   "t": 4.9648,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-8\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-8\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.8893,
+   "t": 4.9664,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-8\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"get-8\", \"method\": \"tasks/get\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.891,
+   "t": 4.9686,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:17.185Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-8\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:12.594Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-8\"}\n"
   },
   {
-   "t": 4.8921,
+   "t": 4.9698,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:29:13.180Z\",\"lastUpdatedAt\":\"2026-10-17T07:29:17.185Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-8\"}\n"
+   "line": "{\"result\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\",\"status\":\"completed\",\"ttl\":300000,\"createdAt\":\"2026-10-17T07:36:08.588Z\",\"lastUpdatedAt\":\"2026-10-17T07:36:12.594Z\",\"pollInterval\":1000,\"statusMessage\":\"Generating report...\"},\"jsonrpc\":\"2.0\",\"id\":\"get-8\"}\n"
   },
   {
-   "t": 4.8934,
+   "t": 4.9712,
    "dir": "c2p",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tasks/result\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tasks/result\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.8943,
+   "t": 4.9722,
    "dir": "p2s",
    "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tasks/result\", \"params\": {\"taskId\": \"405088bb298c2a8b18d22f3d98a62b03\"}}\n"
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tasks/result\", \"params\": {\"taskId\": \"adab1dce6690a16baf86c5973ff0d364\"}}\n"
   },
   {
-   "t": 4.8971,
+   "t": 4.9754,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"# Research Report: Archive-2019\\n\\n## Research Parameters\\n- **Topic**: Archive-2019\\n\\n\\n## Synthesis\\nThis research query was processed through 4 stages:\\n- Stage 1: Gathering sources ✓\\n- Stage 2: Analyzing content ✓\\n- Stage 3: Synthesizing findings ✓\\n- Stage 4: Generating report ✓\\n\\n---\\n\\n## About This Demo (SEP-1686: Tasks)\\n\\nThis tool demonstrates MCP's task-based execution pattern for long-running operations:\\n\\n**Task Lifecycle Demonstrated:**\\n1. `tools/call` with `task` parameter → Server returns `CreateTaskResult` (not the final result)\\n2. Client polls `tasks/get` → Server returns current status and `statusMessage`\\n3. Status progressed: `working` → `completed`\\n4. Client calls `tasks/result` → Server returns this final result\\n\\n\\n**Key Concepts:**\\n- Tasks enable \\\"call now, fetch later\\\" patterns\\n- `statusMessage` provides human-readable progress updates\\n- Tasks have TTL (time-to-live) for automatic cleanup\\n- `pollInterval` suggests how often to check status\\n- Elicitation requests use `relatedTask` to queue via tasks/result (works on all transports)\\n\\n*This is a simulated research report from the Everything MCP Server.*\\n\"}],\"_meta\":{\"io.modelcontextprotocol/related-task\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\"}}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"# Research Report: Archive-2019\\n\\n## Research Parameters\\n- **Topic**: Archive-2019\\n\\n\\n## Synthesis\\nThis research query was processed through 4 stages:\\n- Stage 1: Gathering sources ✓\\n- Stage 2: Analyzing content ✓\\n- Stage 3: Synthesizing findings ✓\\n- Stage 4: Generating report ✓\\n\\n---\\n\\n## About This Demo (SEP-1686: Tasks)\\n\\nThis tool demonstrates MCP's task-based execution pattern for long-running operations:\\n\\n**Task Lifecycle Demonstrated:**\\n1. `tools/call` with `task` parameter → Server returns `CreateTaskResult` (not the final result)\\n2. Client polls `tasks/get` → Server returns current status and `statusMessage`\\n3. Status progressed: `working` → `completed`\\n4. Client calls `tasks/result` → Server returns this final result\\n\\n\\n**Key Concepts:**\\n- Tasks enable \\\"call now, fetch later\\\" patterns\\n- `statusMessage` provides human-readable progress updates\\n- Tasks have TTL (time-to-live) for automatic cleanup\\n- `pollInterval` suggests how often to check status\\n- Elicitation requests use `relatedTask` to queue via tasks/result (works on all transports)\\n\\n*This is a simulated research report from the Everything MCP Server.*\\n\"}],\"_meta\":{\"io.modelcontextprotocol/related-task\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\"}}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 4.9138,
+   "t": 4.997,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"# Research Report: Archive-2019\\n\\n## Research Parameters\\n- **Topic**: Archive-2019\\n\\n\\n## Synthesis\\nThis research query was processed through 4 stages:\\n- Stage 1: Gathering sources ✓\\n- Stage 2: Analyzing content ✓\\n- Stage 3: Synthesizing findings ✓\\n- Stage 4: Generating report ✓\\n\\n---\\n\\n## About This Demo (SEP-1686: Tasks)\\n\\nThis tool demonstrates MCP's task-based execution pattern for long-running operations:\\n\\n**Task Lifecycle Demonstrated:**\\n1. `tools/call` with `task` parameter → Server returns `CreateTaskResult` (not the final result)\\n2. Client polls `tasks/get` → Server returns current status and `statusMessage`\\n3. Status progressed: `working` → `completed`\\n4. Client calls `tasks/result` → Server returns this final result\\n\\n\\n**Key Concepts:**\\n- Tasks enable \\\"call now, fetch later\\\" patterns\\n- `statusMessage` provides human-readable progress updates\\n- Tasks have TTL (time-to-live) for automatic cleanup\\n- `pollInterval` suggests how often to check status\\n- Elicitation requests use `relatedTask` to queue via tasks/result (works on all transports)\\n\\n*This is a simulated research report from the Everything MCP Server.*\\n\"}],\"_meta\":{\"io.modelcontextprotocol/related-task\":{\"taskId\":\"405088bb298c2a8b18d22f3d98a62b03\"}}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"# Research Report: Archive-2019\\n\\n## Research Parameters\\n- **Topic**: Archive-2019\\n\\n\\n## Synthesis\\nThis research query was processed through 4 stages:\\n- Stage 1: Gathering sources ✓\\n- Stage 2: Analyzing content ✓\\n- Stage 3: Synthesizing findings ✓\\n- Stage 4: Generating report ✓\\n\\n---\\n\\n## About This Demo (SEP-1686: Tasks)\\n\\nThis tool demonstrates MCP's task-based execution pattern for long-running operations:\\n\\n**Task Lifecycle Demonstrated:**\\n1. `tools/call` with `task` parameter → Server returns `CreateTaskResult` (not the final result)\\n2. Client polls `tasks/get` → Server returns current status and `statusMessage`\\n3. Status progressed: `working` → `completed`\\n4. Client calls `tasks/result` → Server returns this final result\\n\\n\\n**Key Concepts:**\\n- Tasks enable \\\"call now, fetch later\\\" patterns\\n- `statusMessage` provides human-readable progress updates\\n- Tasks have TTL (time-to-live) for automatic cleanup\\n- `pollInterval` suggests how often to check status\\n- Elicitation requests use `relatedTask` to queue via tasks/result (works on all transports)\\n\\n*This is a simulated research report from the Everything MCP Server.*\\n\"}],\"_meta\":{\"io.modelcontextprotocol/related-task\":{\"taskId\":\"adab1dce6690a16baf86c5973ff0d364\"}}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 4.9155,
+   "t": 4.9987,
    "dir": "client-eof",
    "server": "everything"
   },
   {
-   "t": 4.9157,
+   "t": 4.999,
    "dir": "server-eof",
    "server": "everything"
   },
   {
-   "t": 9.9213,
+   "t": 10.0056,
    "dir": "server-exit",
    "server": "everything",
    "code": -15
   },
   {
-   "t": 9.9294,
+   "t": 10.0106,
    "dir": "client-exit",
    "server": "everything",
    "code": 143
   },
   {
-   "t": 10.0154,
+   "t": 10.1149,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{},\"clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"}}}\n"
   },
   {
-   "t": 10.4407,
+   "t": 10.5561,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{},\"clientInfo\":{\"name\":\"mcp\",\"version\":\"0.1.0\"}}}\n"
   },
   {
-   "t": 10.7374,
+   "t": 10.8726,
    "dir": "s2p",
    "server": "memory",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"resources\":{\"listChanged\":true,\"subscribe\":true}},\"serverInfo\":{\"name\":\"memory-server\",\"version\":\"1.0.0\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 10.7389,
+   "t": 10.8743,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"resources\":{\"listChanged\":true,\"subscribe\":true}},\"serverInfo\":{\"name\":\"memory-server\",\"version\":\"1.0.0\"}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 10.7407,
+   "t": 10.876,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n"
   },
   {
-   "t": 10.7413,
+   "t": 10.8766,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"create_entities\",\"arguments\":{\"entities\":[{\"name\":\"Archive-2019\",\"entityType\":\"note\",\"observations\":[\"x\"]}]}}}\n"
   },
   {
-   "t": 10.7414,
+   "t": 10.8767,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}\n"
   },
   {
-   "t": 10.7502,
+   "t": 10.8858,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"create_entities\", \"arguments\": {\"entities\": [{\"name\": \"Archive-2019\", \"entityType\": \"note\", \"observations\": [\"x\"]}]}}}\n"
   },
   {
-   "t": 10.7596,
+   "t": 10.8958,
    "dir": "s2p",
    "server": "memory",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"[]\"},{\"type\":\"text\",\"text\":\"Skipped 1 entity that already exists: Archive-2019. Its observations were not added; use add_observations for existing entities.\"}],\"structuredContent\":{\"entities\":[],\"skipped\":[\"Archive-2019\"]}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 10.7723,
+   "t": 10.9101,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"[]\"},{\"type\":\"text\",\"text\":\"Skipped 1 entity that already exists: Archive-2019. Its observations were not added; use add_observations for existing entities.\"}],\"structuredContent\":{\"entities\":[],\"skipped\":[\"Archive-2019\"]}},\"jsonrpc\":\"2.0\",\"id\":2}\n"
   },
   {
-   "t": 10.7747,
+   "t": 10.9123,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}\n"
   },
   {
-   "t": 10.7758,
+   "t": 10.9134,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/list\"}\n"
   },
   {
-   "t": 10.7836,
+   "t": 10.9205,
    "dir": "s2p",
    "server": "memory",
    "line": "{\"result\":{\"tools\":[{\"name\":\"create_entities\",\"title\":\"Create Entities\",\"description\":\"Create multiple new entities in the knowledge graph. An entity whose name already exists, or repeats an earlier entity in the same call, is skipped and its observations are not added; the result lists the skipped names in `skipped`. Use add_observations to add observations to an existing entity.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"]}}},\"required\":[\"entities\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"skipped\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"entities\"],\"additionalProperties\":false}},{\"name\":\"create_relations\",\"title\":\"Create Relations\",\"description\":\"Create multiple new relations between entities in the knowledge graph. Relations should be in active voice\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"]}}},\"required\":[\"relations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"relations\"],\"additionalProperties\":false}},{\"name\":\"add_observations\",\"title\":\"Add Observations\",\"description\":\"Add new observations to existing entities in the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\",\"description\":\"The name of the entity to add the observations to\"},\"contents\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents to add\"}},\"required\":[\"entityName\",\"contents\"]}}},\"required\":[\"observations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"results\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\"},\"addedObservations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"entityName\",\"addedObservations\"],\"additionalProperties\":false}}},\"required\":[\"results\"],\"additionalProperties\":false}},{\"name\":\"delete_entities\",\"title\":\"Delete Entities\",\"description\":\"Delete multiple entities and their associated relations from the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entityNames\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of entity names to delete\"}},\"required\":[\"entityNames\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"delete_observations\",\"title\":\"Delete Observations\",\"description\":\"Delete specific observations from entities in the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"deletions\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\",\"description\":\"The name of the entity containing the observations\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observations to delete\"}},\"required\":[\"entityName\",\"observations\"]}}},\"required\":[\"deletions\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"delete_relations\",\"title\":\"Delete Relations\",\"description\":\"Delete multiple relations from the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"]},\"description\":\"An array of relations to delete\"}},\"required\":[\"relations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"read_graph\",\"title\":\"Read Graph\",\"description\":\"Read the entire knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}},{\"name\":\"search_nodes\",\"title\":\"Search Nodes\",\"description\":\"Search for nodes in the knowledge graph based on a query\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"maxLength\":2048,\"description\":\"The search query to match against entity names, types, and observation content\"}},\"required\":[\"query\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}},{\"name\":\"open_nodes\",\"title\":\"Open Nodes\",\"description\":\"Open specific nodes in the knowledge graph by their names\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"names\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of entity names to retrieve\"}},\"required\":[\"names\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}}]},\"jsonrpc\":\"2.0\",\"id\":3}\n"
   },
   {
-   "t": 10.7852,
+   "t": 10.9226,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"result\":{\"tools\":[{\"name\":\"create_entities\",\"title\":\"Create Entities\",\"description\":\"Create multiple new entities in the knowledge graph. An entity whose name already exists, or repeats an earlier entity in the same call, is skipped and its observations are not added; the result lists the skipped names in `skipped`. Use add_observations to add observations to an existing entity.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"]}}},\"required\":[\"entities\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"skipped\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"entities\"],\"additionalProperties\":false}},{\"name\":\"create_relations\",\"title\":\"Create Relations\",\"description\":\"Create multiple new relations between entities in the knowledge graph. Relations should be in active voice\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"]}}},\"required\":[\"relations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"relations\"],\"additionalProperties\":false}},{\"name\":\"add_observations\",\"title\":\"Add Observations\",\"description\":\"Add new observations to existing entities in the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\",\"description\":\"The name of the entity to add the observations to\"},\"contents\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents to add\"}},\"required\":[\"entityName\",\"contents\"]}}},\"required\":[\"observations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":false,\"idempotentHint\":false,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"results\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\"},\"addedObservations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"entityName\",\"addedObservations\"],\"additionalProperties\":false}}},\"required\":[\"results\"],\"additionalProperties\":false}},{\"name\":\"delete_entities\",\"title\":\"Delete Entities\",\"description\":\"Delete multiple entities and their associated relations from the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entityNames\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of entity names to delete\"}},\"required\":[\"entityNames\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"delete_observations\",\"title\":\"Delete Observations\",\"description\":\"Delete specific observations from entities in the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"deletions\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"entityName\":{\"type\":\"string\",\"description\":\"The name of the entity containing the observations\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observations to delete\"}},\"required\":[\"entityName\",\"observations\"]}}},\"required\":[\"deletions\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"delete_relations\",\"title\":\"Delete Relations\",\"description\":\"Delete multiple relations from the knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"]},\"description\":\"An array of relations to delete\"}},\"required\":[\"relations\"]},\"annotations\":{\"readOnlyHint\":false,\"destructiveHint\":true,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"success\":{\"type\":\"boolean\"},\"message\":{\"type\":\"string\"}},\"required\":[\"success\",\"message\"],\"additionalProperties\":false}},{\"name\":\"read_graph\",\"title\":\"Read Graph\",\"description\":\"Read the entire knowledge graph\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{}},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}},{\"name\":\"search_nodes\",\"title\":\"Search Nodes\",\"description\":\"Search for nodes in the knowledge graph based on a query\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"maxLength\":2048,\"description\":\"The search query to match against entity names, types, and observation content\"}},\"required\":[\"query\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}},{\"name\":\"open_nodes\",\"title\":\"Open Nodes\",\"description\":\"Open specific nodes in the knowledge graph by their names\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"names\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of entity names to retrieve\"}},\"required\":[\"names\"]},\"annotations\":{\"readOnlyHint\":true,\"destructiveHint\":false,\"idempotentHint\":true,\"openWorldHint\":false},\"execution\":{\"taskSupport\":\"forbidden\"},\"outputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"entities\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\",\"description\":\"The name of the entity\"},\"entityType\":{\"type\":\"string\",\"description\":\"The type of the entity\"},\"observations\":{\"type\":\"array\",\"items\":{\"type\":\"string\"},\"description\":\"An array of observation contents associated with the entity\"}},\"required\":[\"name\",\"entityType\",\"observations\"],\"additionalProperties\":false}},\"relations\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"from\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation starts\"},\"to\":{\"type\":\"string\",\"description\":\"The name of the entity where the relation ends\"},\"relationType\":{\"type\":\"string\",\"description\":\"The type of the relation\"}},\"required\":[\"from\",\"to\",\"relationType\"],\"additionalProperties\":false}}},\"required\":[\"entities\",\"relations\"],\"additionalProperties\":false}}]},\"jsonrpc\":\"2.0\",\"id\":3}\n"
   },
   {
-   "t": 10.7925,
+   "t": 10.9275,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"delete_entities\",\"arguments\":{\"entityNames\":[\"Archive-2019\"]}}}\n"
   },
   {
-   "t": 10.7951,
+   "t": 10.9303,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 4, \"result\": {\"content\": [{\"type\": \"text\", \"text\": \"toolguard: BLOCK mcp__memory__delete_entities (sink: destructive)\\n- [tainted] the session has read untrusted data from mcp__everything__simulate-research-query [web; untrusted]\\n- [untrusted_flow] critical argument(s) entityNames[0] carry data copied from an untrusted source\\n    arg 'entityNames[0]' verbatim match 'archive-2019' from mcp__everything__simulate-research-query [web; untrusted]\"}], \"isError\": true}}\n"
   },
   {
-   "t": 10.7973,
+   "t": 10.9326,
    "dir": "client-eof",
    "server": "memory"
   },
   {
-   "t": 10.7976,
+   "t": 10.9328,
    "dir": "server-eof",
    "server": "memory"
   },
   {
-   "t": 10.8099,
+   "t": 10.9445,
    "dir": "server-exit",
    "server": "memory",
    "code": 0
   },
   {
-   "t": 10.8164,
+   "t": 10.9499,
    "dir": "client-exit",
    "server": "memory",
    "code": 0
