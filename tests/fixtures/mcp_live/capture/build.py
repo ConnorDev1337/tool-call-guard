@@ -13,7 +13,10 @@ as ``\\uXXXX`` escapes, and the build fails if a line names the capture host.
 from __future__ import annotations
 
 import ast
+import contextlib
+import getpass
 import json
+import os
 import sys
 import unicodedata
 from pathlib import Path
@@ -22,7 +25,17 @@ from typing import Any
 DIRECTIONS = {("client", "in"): "c2p", ("client", "out"): "p2c"}
 DIRECTIONS |= {("server", "in"): "p2s", ("server", "out"): "s2p"}
 SKIP = {"large"}  # Megabytes of generated content; the summary is kept in index.json
-FORBIDDEN = ("PROYECTOS", "CONNOR", "Connor", "C:\\Users", "/Users/", "parendum")
+
+
+def forbidden_words() -> tuple[str, ...]:
+    """Return strings that identify the capture machine: user, host and checkout paths."""
+    words = {"C:\\Users", "/Users/", str(Path.home()), Path.home().as_posix()}
+    checkouts = Path(__file__).resolve().parents[5]  # The directory holding the checkout
+    words.update(part for part in checkouts.parts if part.isalnum() and len(part) >= 4)
+    with contextlib.suppress(KeyError, OSError):  # No user entry; the paths still apply
+        words.add(getpass.getuser())
+    words.update(os.environ.get(key, "") for key in ("USERNAME", "USER", "COMPUTERNAME"))
+    return tuple(sorted(word for word in words if len(word) >= 3))
 
 
 def escape_hidden(text: str) -> str:
@@ -105,7 +118,7 @@ def build(out_dir: Path, target: Path) -> None:
         }
         text = escape_hidden(json.dumps(fixture, indent=1, ensure_ascii=False)) + "\n"
         assert json.loads(text) == fixture
-        for word in (*FORBIDDEN, *([host] if host else [])):
+        for word in (*forbidden_words(), *([host] if host else [])):
             if word in text:
                 raise SystemExit(f"{name}: the transcript contains {word!r}")
         (target / f"{name}.json").write_text(text, encoding="utf-8", newline="\n")

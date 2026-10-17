@@ -194,7 +194,7 @@ def test_fixtures_are_sanitized_and_versioned():
     assert set(SCENARIOS) == set(INDEX["scenarios"]) - {"large"}
     for name in SCENARIOS:
         text = (LIVE / f"{name}.json").read_text(encoding="utf-8")
-        assert "PROYECTOS" not in text and "C:\\\\Users" not in text
+        assert "C:\\\\Users" not in text and "/Users/" not in text
 
 
 @pytest.mark.parametrize("name", SCENARIOS)
