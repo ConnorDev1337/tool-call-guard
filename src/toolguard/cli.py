@@ -1,7 +1,8 @@
 """``toolguard`` command line.
 
 Exit codes for ``check``: 0 allowed, 1 blocked or denied, 2 usage or configuration
-error, 3 approval pending.
+error, 3 approval pending. ``approve`` exits with 0 when approved, 1 for a wrong,
+expired or locked code and 2 for usage errors.
 """
 
 from __future__ import annotations
@@ -12,16 +13,24 @@ import datetime as _dt
 import json
 import os
 import sys
-from collections.abc import Sequence
+import time
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
 
 from . import __version__
 from .adapters import claude_code
 from .adapters.mcp_proxy import McpProxy
-from .approvals import QueueApprover, open_console
+from .approvals import (
+    ApprovalConfig,
+    Approver,
+    QueueApprover,
+    answer_challenge,
+    open_console,
+)
 from .audit import AuditError, AuditLog, key_from_env
 from .guard import Guard
+from .notifiers import ConfigError, Notice, deliver
 from .policy import Policy, PolicyError
 from .store import Store, default_home
 
@@ -49,6 +58,21 @@ def _guard(args: argparse.Namespace, **kwargs: Any) -> Guard:
     return Guard(_policy(args), store=_store(args), session=_session(args), **kwargs)
 
 
+def _approval_config(args: argparse.Namespace) -> ApprovalConfig:
+    return ApprovalConfig.load(getattr(args, "approvals", None))
+
+
+def _queue(args: argparse.Namespace, guard: Guard) -> QueueApprover:
+    """Return the out-of-band approval queue configured for ``guard``."""
+    return QueueApprover.from_config(
+        guard.store, _approval_config(args), audit=guard.audit, clock=guard.clock
+    )
+
+
+def _user() -> str:
+    return os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
+
+
 def _load_json(text: str, what: str) -> Any:
     try:
         return json.loads(text)
@@ -69,8 +93,7 @@ def _call_args(args: argparse.Namespace) -> Any:
 
 def cmd_check(args: argparse.Namespace) -> int:
     guard = _guard(args)
-    approver = QueueApprover(guard.store)
-    decision = guard.check(args.tool, _call_args(args), approver=approver)
+    decision = guard.check(args.tool, _call_args(args), approver=_queue(args, guard))
     if args.json:
         record = guard.decision_record(decision)
         record["explanation"] = decision.explain()
@@ -116,47 +139,148 @@ def _confirm_on_console(prompt: str) -> bool:
         return reader.readline().strip().lower() == "yes"
 
 
-def cmd_approvals(args: argparse.Namespace) -> int:
+def _decision_queue(args: argparse.Namespace) -> tuple[QueueApprover, ApprovalConfig]:
+    """Return a queue on the state database (for audit and expiry) and the configuration."""
     store = _store(args)
+    config = _approval_config(args)
+    return QueueApprover(store, audit=AuditLog(store, key_from_env())), config
+
+
+def cmd_approvals(args: argparse.Namespace) -> int:
+    queue, _ = _decision_queue(args)
+    store = queue.store
+    now = time.time()
+    queue.expire(now)
     rows = store.list_approvals(None if args.all else "pending")
     if not rows:
         print("No pending approvals." if not args.all else "No approvals.")
     for row in rows:
         created = _dt.datetime.fromtimestamp(row.created).isoformat(timespec="seconds")
-        print(f"{row.id}  {row.status:<9} {created}  {row.tool}  (session {row.session})")
+        notes = []
+        if row.channel:
+            notes.append(f"code via {row.channel}")
+        if row.status == "pending" and row.expires is not None:
+            notes.append(f"expires in {max(0, int(row.expires - now))}s")
+        if row.attempts:
+            notes.append(f"{row.attempts} wrong code(s)")
+        extra = f"  [{', '.join(notes)}]" if notes else ""
+        print(f"{row.id}  {row.status:<13} {created}  {row.tool}  (session {row.session}){extra}")
         if args.verbose:
             print("    " + row.summary.replace("\n", "\n    "))
     return 0
 
 
-def cmd_decide(args: argparse.Namespace, status: str) -> int:
-    if not _require_human(status):
-        return 2
-    store = _store(args)
+def _ask_code(approval_id: str, channel: str | None) -> str | None:
+    """Ask for the one-time code on the controlling terminal; ``None`` if there is none."""
+    with open_console() as console:
+        if console is None:
+            return None
+        reader, writer = console
+        via = f" (sent via {channel})" if channel else ""
+        writer.write(f"\nOne-time code for approval {approval_id}{via}: ")
+        writer.flush()
+        return reader.readline().strip()
+
+
+_APPROVE_ERRORS = {
+    "expired": "the code has expired; let the agent retry the call to get a new one",
+    "not_pending": "the approval is no longer pending",
+    "no_code": "this approval predates approval codes; let the agent retry the call",
+    "unverifiable": "the code hash is keyed: set the approval key (TOOLGUARD_APPROVAL_KEY "
+    "or the configured key_env) as when the approval was created",
+}
+
+
+def cmd_approve(args: argparse.Namespace) -> int:
+    """Approve a pending call with the one-time code delivered out of band."""
+    queue, config = _decision_queue(args)
+    store = queue.store
+    queue.expire(time.time())
     approval = store.get_approval(args.id)
     if approval is None or approval.status != "pending":
         print(f"error: no pending approval {args.id!r}", file=sys.stderr)
         return 2
     print(approval.summary)
-    verb = "APPROVE" if status == "approved" else "DENY"
-    if not _confirm_on_console(f"\n{verb} this call to {approval.tool}?"):
+    code = args.code
+    if code is None:
+        code = _ask_code(approval.id, approval.channel)
+        if code is None:
+            print(
+                "error: no controlling terminal to ask for the code; use --code", file=sys.stderr
+            )
+            return 2
+    if not code.strip():
         print("aborted")
         return 1
-    user = os.environ.get("USER") or os.environ.get("USERNAME") or "unknown"
-    by = f"cli:{user}"
-    if not store.decide_approval(approval.id, status, by, _dt.datetime.now().timestamp()):
+    by = f"cli:{_user()}"
+    result = answer_challenge(
+        store, approval.id, code, by=by, settings=config.settings, now=time.time()
+    )
+    session, base = approval.session, {"id": approval.id, "tool": approval.tool}
+    if result.status == "approved":
+        queue._event(session, **base, status="approved", by=by)
+        print(f"{approval.id}: approved. The agent may now retry the identical call.")
+        return 0
+    if result.status == "wrong":
+        queue._event(session, **base, status="failed_attempt", by=by, left=result.attempts_left)
+        print(f"error: wrong code ({result.attempts_left} attempt(s) left)", file=sys.stderr)
+        return 1
+    if result.status == "locked":
+        queue._event(session, **base, status="failed_attempt", by=by, left=0)
+        queue._event(session, **base, status="locked", attempts=config.settings.max_attempts)
+        print(f"error: wrong code; approval {approval.id} is now locked", file=sys.stderr)
+        return 1
+    if result.status == "expired":
+        queue._event(session, **base, status="expired")
+    print(f"error: {_APPROVE_ERRORS[result.status]}", file=sys.stderr)
+    return 1 if result.status == "expired" else 2
+
+
+def cmd_deny(args: argparse.Namespace) -> int:
+    """Deny a pending call; no code is needed to refuse, but a terminal is."""
+    if not _require_human("deny"):
+        return 2
+    queue, _ = _decision_queue(args)
+    store = queue.store
+    approval = store.get_approval(args.id)
+    if approval is None or approval.status != "pending":
+        print(f"error: no pending approval {args.id!r}", file=sys.stderr)
+        return 2
+    print(approval.summary)
+    if not _confirm_on_console(f"\nDENY this call to {approval.tool}?"):
+        print("aborted")
+        return 1
+    by = f"cli:{_user()}"
+    if not store.decide_approval(approval.id, "denied", by, time.time()):
         print("error: approval was decided concurrently", file=sys.stderr)
         return 2
-    guard = Guard(_policy(args), store=store, session=approval.session)
-    guard.audit.append(
-        "approval", approval.session, {"id": approval.id, "status": status, "by": by}
-    )
-    print(
-        f"{approval.id}: {status}. The agent may now retry the identical call."
-        if status == "approved"
-        else f"{approval.id}: denied."
-    )
+    queue._event(approval.session, id=approval.id, tool=approval.tool, status="denied", by=by)
+    print(f"{approval.id}: denied.")
     return 0
+
+
+def cmd_notifiers(args: argparse.Namespace) -> int:
+    """Show the approval configuration and, with ``--test``, try every notifier."""
+    config = _approval_config(args)
+    settings = config.settings
+    print(f"approvals configuration: {config.path or 'none'}")
+    print(
+        f"  codes: {settings.length} characters, valid {settings.code_ttl:g}s, "
+        f"{settings.max_attempts} attempt(s), stored as {settings.algorithm}"
+    )
+    if not config.notifiers:
+        print("  no notifier: queued approvals are refused (fail closed)")
+        return 1 if args.test else 0
+    failed = 0
+    for notifier in config.notifiers:
+        line = f"  - {notifier.name} ({type(notifier).__name__})"
+        if args.test:
+            notice = Notice("test", "-", "-", "", time.time(), test=True)
+            ((_, error),) = deliver([notifier], notice)
+            failed += error is not None
+            line += f": {'FAILED, ' + error if error else 'sent'}"
+        print(line)
+    return 1 if failed else 0
 
 
 def cmd_sessions(args: argparse.Namespace) -> int:
@@ -241,7 +365,15 @@ def cmd_policy(args: argparse.Namespace) -> int:
 
 def cmd_hook(args: argparse.Namespace) -> int:
     ask_modes = frozenset(m.strip() for m in args.ask_modes.split(",") if m.strip())
-    return claude_code.main(lambda: _guard(args), ask_modes=ask_modes, annotate=args.annotate)
+    approver: Callable[[Guard], Approver] | None = None
+    if args.oob_approvals:
+
+        def approver(guard: Guard) -> Approver:
+            return _queue(args, guard)
+
+    return claude_code.main(
+        lambda: _guard(args), ask_modes=ask_modes, annotate=args.annotate, approver=approver
+    )
 
 
 def cmd_install(args: argparse.Namespace) -> int:
@@ -268,7 +400,7 @@ def cmd_mcp_proxy(args: argparse.Namespace) -> int:
         print("error: missing server command after --", file=sys.stderr)
         return 2
     guard = _guard(args)
-    return McpProxy(guard, args.server_name, command).run()
+    return McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
 
 
 def cmd_eval(args: argparse.Namespace) -> int:
@@ -286,6 +418,11 @@ def _common(parser: argparse.ArgumentParser, *, session: bool = True) -> None:
     )
     parser.add_argument(
         "--db", help=f"state database (default: ${{TOOLGUARD_HOME}}/guard.db, {default_home()})"
+    )
+    parser.add_argument(
+        "--approvals",
+        help="approvals configuration (default: $TOOLGUARD_APPROVALS_CONFIG or "
+        "$TOOLGUARD_HOME/approvals.toml)",
     )
     if session:
         parser.add_argument("--session", help=f"session id (default: ${ENV_SESSION} or 'default')")
@@ -329,6 +466,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--annotate", action="store_true", help="tell the model when output is untrusted"
     )
+    p.add_argument(
+        "--oob-approvals",
+        action="store_true",
+        help="in permission modes that ask nobody, queue CONFIRM for an out-of-band approval "
+        "with a one-time code instead of denying it",
+    )
     p.set_defaults(func=cmd_hook)
 
     p = sub.add_parser("install", help="print hook configuration for an agent")
@@ -349,11 +492,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("-v", "--verbose", action="store_true")
     p.set_defaults(func=cmd_approvals)
 
-    for name, status in (("approve", "approved"), ("deny", "denied")):
-        p = sub.add_parser(name, help=f"{name} a pending request (interactive terminal only)")
-        _common(p, session=False)
-        p.add_argument("id")
-        p.set_defaults(func=lambda a, s=status: cmd_decide(a, s))
+    p = sub.add_parser("approve", help="approve a pending request with its one-time code")
+    _common(p, session=False)
+    p.add_argument("id")
+    p.add_argument(
+        "--code", help="the code sent out of band (default: ask on the controlling terminal)"
+    )
+    p.set_defaults(func=cmd_approve)
+
+    p = sub.add_parser("deny", help="deny a pending request (interactive terminal only)")
+    _common(p, session=False)
+    p.add_argument("id")
+    p.set_defaults(func=cmd_deny)
+
+    p = sub.add_parser("notifiers", help="show the approval notifiers; --test sends a test")
+    _common(p, session=False)
+    p.add_argument("--test", action="store_true", help="send a test notice through each one")
+    p.set_defaults(func=cmd_notifiers)
 
     p = sub.add_parser("sessions", help="list sessions and their taint")
     _common(p, session=False)
@@ -405,7 +560,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     try:
         return int(args.func(args))
-    except (PolicyError, AuditError) as exc:
+    except (PolicyError, AuditError, ConfigError) as exc:
         if args.command == "hook":
             raise  # The hook adapter applies its own fail-closed exit codes
         print(f"error: {exc}", file=sys.stderr)

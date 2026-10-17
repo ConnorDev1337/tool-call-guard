@@ -8,6 +8,7 @@ import pytest
 
 from conftest import FIXTURES
 from toolguard.adapters.mcp_proxy import McpProxy
+from toolguard.approvals import ChallengeSettings, QueueApprover, answer_challenge
 
 SERVER = [sys.executable, str(FIXTURES / "fake_mail_server.py")]
 
@@ -15,7 +16,7 @@ SERVER = [sys.executable, str(FIXTURES / "fake_mail_server.py")]
 class Harness:
     """Runs McpProxy in-process, wired to the fake server and a fake client."""
 
-    def __init__(self, guard, elicitation_timeout=10.0):
+    def __init__(self, guard, elicitation_timeout=10.0, approver=None):
         c2p_r, c2p_w = os.pipe()
         p2c_r, p2c_w = os.pipe()
         self.to_proxy = os.fdopen(c2p_w, "wb", buffering=0)
@@ -27,6 +28,7 @@ class Harness:
             client_in=os.fdopen(c2p_r, "rb"),
             client_out=os.fdopen(p2c_w, "wb"),
             elicitation_timeout=elicitation_timeout,
+            queue=approver,
         )
         self.lines: queue.Queue = queue.Queue()
         self.exit_code: list[int] = []
@@ -82,7 +84,15 @@ def harness(make_guard):
     created = []
 
     def _make(**kwargs):
-        h = Harness(make_guard(), **kwargs)
+        guard = make_guard()
+        if "notifiers" in kwargs:
+            kwargs["approver"] = QueueApprover(
+                guard.store,
+                clock=guard.clock,
+                audit=guard.audit,
+                notifiers=kwargs.pop("notifiers"),
+            )
+        h = Harness(guard, **kwargs)
         created.append(h)
         return h
 
@@ -119,18 +129,39 @@ def test_injected_recipient_is_refused_without_reaching_the_server(harness):
     assert decision["integration"] == "mcp-proxy" and decision["effective"] == "block"
 
 
-def test_confirmation_via_out_of_band_queue(harness, store, clock):
-    h = harness()
+def test_confirmation_via_out_of_band_queue(harness, store, clock, inbox):
+    h = harness(notifiers=[inbox])
     h.initialize()
     h.call("read_inbox", {})
     h.recv()
     h.call("send_email", {"to": "alice@corp.example", "body": "hi"})
     refused = h.recv()
-    assert refused["result"]["isError"] and "toolguard approve" in text_of(refused)
+    text = text_of(refused)
+    assert refused["result"]["isError"] and "toolguard approve" in text
+    assert "out of band" in text and inbox.code not in text  # The code stays out of band
     (pending,) = store.list_approvals("pending")
-    store.decide_approval(pending.id, "approved", "cli:alice", clock())
+    settings = ChallengeSettings()
+    wrong = answer_challenge(
+        store, pending.id, "0000-0000-0000", by="agent", settings=settings, now=clock()
+    )
+    assert wrong.status == "wrong"
+    good = answer_challenge(
+        store, pending.id, inbox.code, by="cli:alice", settings=settings, now=clock()
+    )
+    assert good.status == "approved"
     h.call("send_email", {"to": "alice@corp.example", "body": "hi"})
     assert text_of(h.recv()) == "sent to alice@corp.example"
+
+
+def test_queue_without_notifier_refuses(harness, store):
+    h = harness()
+    h.initialize()
+    h.call("read_inbox", {})
+    h.recv()
+    h.call("send_email", {"to": "alice@corp.example", "body": "hi"})
+    text = text_of(h.recv())
+    assert "no out-of-band notifier" in text and "approval denied" in text
+    assert store.list_approvals("pending") == []
 
 
 @pytest.mark.parametrize(("answer", "allowed"), [(True, True), (False, False), (None, False)])

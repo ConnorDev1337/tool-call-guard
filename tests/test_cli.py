@@ -1,12 +1,17 @@
 import contextlib
 import io
 import json
+import re
 import sys
+import time
+from pathlib import Path
 
 import pytest
 
 from conftest import INBOX_ATTACK
 from toolguard import cli
+from toolguard.approvals import ChallengeResult
+from toolguard.audit import AuditLog
 from toolguard.store import Store
 
 
@@ -39,7 +44,26 @@ def human(monkeypatch):
     return _human
 
 
-def test_check_exit_codes_and_approval_flow(capsys, db, monkeypatch, tmp_path, human):
+@pytest.fixture
+def operator(tmp_path, monkeypatch):
+    """Approvals configuration whose notifier writes to a file only the test reads."""
+    log = tmp_path / "operator" / "approvals.log"
+    log.parent.mkdir()
+    config = tmp_path / "approvals.toml"
+    config.write_text(
+        "[challenge]\nmax_attempts = 3\n\n"
+        f'[[notifier]]\ntype = "file"\npath = "{log.as_posix()}"\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("TOOLGUARD_APPROVALS_CONFIG", str(config))
+
+    def last_code():
+        return re.findall(r"One-time code: (\S+)", log.read_text(encoding="utf-8"))[-1]
+
+    return last_code
+
+
+def test_check_exit_codes_and_approval_flow(capsys, db, monkeypatch, tmp_path, human, operator):
     base = ["--db", db, "--session", "s"]
     assert run(capsys, "check", "Bash", "--args", '{"command": "ls"}', *base)[0] == 0
     inbox = tmp_path / "inbox.json"
@@ -55,23 +79,125 @@ def test_check_exit_codes_and_approval_flow(capsys, db, monkeypatch, tmp_path, h
     assert code == 3
     pending = json.loads(out)
     assert pending["approval"]["status"] == "pending"
+    assert pending["approval"]["channel"] == "file"
     approval_id = pending["approval"]["id"]
+    secret = operator()
+    assert secret not in out  # What the agent reads never contains the code
 
     code, out, _ = run(capsys, "approvals", "--db", db, "-v")
-    assert approval_id in out and "tainted" in out
+    assert approval_id in out and "tainted" in out and "code via file" in out
+    assert "expires in" in out and secret not in out
 
-    # Not from a terminal (e.g. the agent's own shell): refused.
+    # Without --code and without a terminal (e.g. the agent's own shell): refused.
+    no_tty(monkeypatch)
     code, _, err = run(capsys, "approve", approval_id, "--db", db)
-    assert code == 2 and "interactive terminal" in err
-
-    human("no")
+    assert code == 2 and "--code" in err
+    # A guessed code fails and counts as an attempt.
+    code, _, err = run(capsys, "approve", approval_id, "--db", db, "--code", "0000-0000-0000")
+    assert code == 1 and "2 attempt(s) left" in err
+    human("")  # An empty answer aborts without counting
     assert run(capsys, "approve", approval_id, "--db", db)[0] == 1
-    human("yes")
+    human(secret.lower())  # Typed on the terminal, case-insensitive
     code, out, _ = run(capsys, "approve", approval_id, "--db", db)
     assert code == 0 and "approved" in out
     assert run(capsys, "approve", approval_id, "--db", db)[0] == 2  # No longer pending
     assert run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)[0] == 0
     assert run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)[0] == 3
+
+    events = [
+        r["data"]["status"] for r in AuditLog(Store(db)).records() if r["event"] == "approval"
+    ]
+    assert events == ["created", "notified", "failed_attempt", "approved", "created", "notified"]
+    code, out, _ = run(capsys, "audit", "export", "--db", db)
+    assert secret not in out
+
+
+def no_tty(monkeypatch):
+    @contextlib.contextmanager
+    def console():
+        yield None
+
+    monkeypatch.setattr(cli, "open_console", console)
+
+
+def test_approve_lockout_and_expiry(capsys, db, operator, monkeypatch):
+    base = ["--db", db, "--session", "s"]
+    run(capsys, "observe", "WebFetch", *base, stdin="docs", monkeypatch=monkeypatch)
+    run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)
+    (approval,) = Store(db).list_approvals("pending")
+    for left in (2, 1):
+        _, _, err = run(capsys, "approve", approval.id, "--db", db, "--code", "WRONG")
+        assert f"{left} attempt(s) left" in err
+    code, _, err = run(capsys, "approve", approval.id, "--db", db, "--code", "WRONG")
+    assert code == 1 and "now locked" in err  # The third wrong guess...
+    code, _, err = run(capsys, "approve", approval.id, "--db", db, "--code", operator())
+    assert code == 2 and "no pending approval" in err  # ... so even the right code is refused
+    events = [r["data"] for r in AuditLog(Store(db)).records() if r["event"] == "approval"]
+    assert [e["status"] for e in events][-2:] == ["failed_attempt", "locked"]
+
+    code, out, _ = run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)
+    assert code == 1 and "too many wrong codes" in out  # Still locked for this call
+
+    run(capsys, "check", "Bash", "--args", '{"command": "make other"}', *base)
+    pending = Store(db).list_approvals("pending")[0]
+    with Store(db) as store, store.transaction() as conn:
+        conn.execute("UPDATE approvals SET expires = 1 WHERE id = ?", (pending.id,))
+    code, _, err = run(capsys, "approve", pending.id, "--db", db, "--code", operator())
+    assert code == 2 and "no pending approval" in err  # Swept as expired on the way in
+    assert Store(db).get_approval(pending.id).status == "expired"
+    assert "expired" in run(capsys, "approvals", "--db", db, "--all")[1]
+
+
+def test_approve_edge_cases(capsys, db, operator, monkeypatch):
+    with Store(db) as store:
+        legacy = store.create_approval(
+            session="s", fingerprint="f", tool="Bash", summary="x", now=time.time()
+        )
+    code, _, err = run(capsys, "approve", legacy.id, "--db", db, "--code", "X")
+    assert code == 2 and "predates approval codes" in err
+
+    base = ["--db", db, "--session", "s"]
+    monkeypatch.setenv("TOOLGUARD_APPROVAL_KEY", "k1")
+    run(capsys, "observe", "WebFetch", *base, stdin="docs", monkeypatch=monkeypatch)
+    run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)
+    keyed = next(a for a in Store(db).list_approvals("pending") if a.id != legacy.id)
+    assert keyed.code_alg == "hmac-sha256"
+    monkeypatch.delenv("TOOLGUARD_APPROVAL_KEY")
+    code, _, err = run(capsys, "approve", keyed.id, "--db", db, "--code", operator())
+    assert code == 2 and "keyed" in err
+    with Store(db) as store, store.transaction() as conn:
+        conn.execute("UPDATE approvals SET expires = ? WHERE id = ?", (time.time() + 99, keyed.id))
+    monkeypatch.setattr(cli, "answer_challenge", lambda *a, **k: ChallengeResult("expired", None))
+    code, _, err = run(capsys, "approve", keyed.id, "--db", db, "--code", operator())
+    assert code == 1 and "has expired" in err
+
+
+def test_check_without_notifier_fails_closed(capsys, db, monkeypatch):
+    base = ["--db", db, "--session", "s"]
+    run(capsys, "observe", "WebFetch", *base, stdin="docs", monkeypatch=monkeypatch)
+    code, out, _ = run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)
+    assert code == 1 and "no out-of-band notifier" in out
+    monkeypatch.setenv("TOOLGUARD_APPROVALS_CONFIG", str(Path(db).parent / "missing.toml"))
+    code, _, err = run(capsys, "check", "Bash", "--args", '{"command": "make"}', *base)
+    assert code == 2 and "not found" in err
+
+
+def test_notifiers_command(capsys, tmp_path, monkeypatch, operator):
+    code, out, _ = run(capsys, "notifiers")
+    assert code == 0 and "file (FileNotifier)" in out and "3 attempt(s)" in out
+    code, out, _ = run(capsys, "notifiers", "--test")
+    assert code == 0 and "file (FileNotifier): sent" in out
+    broken = tmp_path / "broken.toml"
+    broken.write_text(
+        '[[notifier]]\ntype = "webhook"\nurl = "http://127.0.0.1:9/x"\nsecret_env = "UNSET_X"\n',
+        encoding="utf-8",
+    )
+    code, out, _ = run(capsys, "notifiers", "--test", "--approvals", str(broken))
+    assert code == 1 and "FAILED, webhook: environment variable UNSET_X is not set" in out
+    monkeypatch.delenv("TOOLGUARD_APPROVALS_CONFIG")
+    code, out, _ = run(capsys, "notifiers")
+    assert code == 0 and "no notifier" in out
+    assert run(capsys, "notifiers", "--test")[0] == 1
 
 
 def test_deny_command(capsys, db, human):
@@ -79,12 +205,20 @@ def test_deny_command(capsys, db, human):
     approval = store.create_approval(
         session="s", fingerprint="f", tool="Bash", summary="x", now=1.0
     )
+    code, _, err = run(capsys, "deny", approval.id, "--db", db)
+    assert code == 2 and "interactive terminal" in err
+    human("no")
+    assert run(capsys, "deny", approval.id, "--db", db)[0] == 1
     human("yes")
     code, out, _ = run(capsys, "deny", approval.id, "--db", db)
     assert code == 0 and "denied" in out
     assert Store(db).get_approval(approval.id).status == "denied"
+    assert run(capsys, "deny", approval.id, "--db", db)[0] == 2
     code, out, _ = run(capsys, "approvals", "--db", db, "--all")
     assert "denied" in out
+    assert "No pending approvals." in run(capsys, "approvals", "--db", db)[1]
+    events = [r["data"] for r in AuditLog(Store(db)).records() if r["event"] == "approval"]
+    assert events[-1]["status"] == "denied" and events[-1]["by"].startswith("cli:")
 
 
 def test_observe_stdin_user_and_non_source(capsys, db, monkeypatch):

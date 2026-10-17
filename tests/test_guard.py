@@ -4,6 +4,7 @@ import pytest
 
 from conftest import INBOX_ATTACK, SSH_KEY
 from toolguard import Action, Policy, QueueApprover, ToolBlocked
+from toolguard.approvals import ChallengeSettings, answer_challenge
 
 
 def rules(decision):
@@ -133,18 +134,38 @@ def test_non_source_tools_are_not_recorded(make_guard):
     assert guard.observe_user("hello") is None
 
 
-def test_queue_approval_with_identical_retry(make_guard, store, clock):
-    guard = make_guard(approver=QueueApprover(store, clock=clock))
+def test_queue_approval_with_identical_retry(make_guard, store, clock, inbox):
+    guard = make_guard(approver=QueueApprover(store, clock=clock, notifiers=[inbox]))
     guard.observe("WebFetch", "docs", {"url": "u"})
     first = guard.check("Bash", {"command": "make deploy"})
     assert first.approval_status == "pending" and not first.allowed
-    assert f"toolguard approve {first.approval_id}" in first.explain()
-    store.decide_approval(first.approval_id, "approved", "console:alice", clock())
+    explanation = first.explain()
+    assert f"toolguard approve {first.approval_id}" in explanation
+    assert "out of band" in explanation and "via inbox" in explanation
+    assert inbox.code not in explanation  # The model never sees the code
+    result = answer_challenge(
+        store,
+        first.approval_id,
+        inbox.code,
+        by="cli:alice",
+        settings=ChallengeSettings(),
+        now=clock(),
+    )
+    assert result.status == "approved"
     other = guard.check("Bash", {"command": "make deploy --force"})
     assert other.approval_status == "pending"  # The approval is bound to the exact call
     retry = guard.check("Bash", {"command": "make deploy"})
-    assert retry.allowed and retry.approved_by == "console:alice"
+    assert retry.allowed and retry.approved_by == "cli:alice"
     assert not guard.check("Bash", {"command": "make deploy"}).allowed  # Consumed
+
+
+def test_queue_without_notifier_fails_closed(make_guard, store, clock):
+    guard = make_guard(approver=QueueApprover(store, clock=clock))
+    guard.observe("WebFetch", "docs", {"url": "u"})
+    decision = guard.check("Bash", {"command": "make"})
+    assert decision.approval_status == "denied" and not decision.allowed
+    assert "no out-of-band notifier" in decision.explain()
+    assert store.get_approval(decision.approval_id).status == "undeliverable"
 
 
 def test_wrap_decorator(make_guard):

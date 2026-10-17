@@ -2,10 +2,11 @@
 
 CONFIRM becomes ``ask``, answered by the user in Claude Code's own permission
 prompt, only in permission modes that really ask a human; otherwise it becomes
-``deny``. ALLOW produces no output rather than ``allow``, so Claude Code's own
-permission rules still apply. Internal errors on ``PreToolUse`` exit with code 2,
-which Claude Code treats as a block (fail closed); exit code 1 would let the call
-through.
+``deny``, or, with an out-of-band approver, ``deny`` until a human approves the
+call with a one-time code the model never sees. ALLOW produces no output rather
+than ``allow``, so Claude Code's own permission rules still apply. Internal errors
+on ``PreToolUse`` exit with code 2, which Claude Code treats as a block (fail
+closed); exit code 1 would let the call through.
 """
 
 from __future__ import annotations
@@ -18,8 +19,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, BinaryIO, TextIO
 
+from ..approvals import ApprovalRequest, Approver, apply_outcome
 from ..guard import Guard
 from ..model import Action
+from ..redact import redact_args
 
 # Permission modes in which "ask" reaches a human. In other modes (bypassPermissions,
 # dontAsk, auto, ...) nobody or a model would answer, so CONFIRM becomes a denial.
@@ -48,7 +51,12 @@ def _session(event: dict[str, Any]) -> str:
     return f"claude-code:{event.get('session_id') or 'unknown'}"
 
 
-def _pre_tool_use(guard: Guard, event: dict[str, Any], ask_modes: frozenset[str]) -> HookResult:
+def _pre_tool_use(
+    guard: Guard,
+    event: dict[str, Any],
+    ask_modes: frozenset[str],
+    approver: Callable[[Guard], Approver] | None,
+) -> HookResult:
     session = _session(event)
     tool = str(event.get("tool_name", ""))
     args = event.get("tool_input") or {}
@@ -66,6 +74,19 @@ def _pre_tool_use(guard: Guard, event: dict[str, Any], ask_modes: frozenset[str]
         decision.approved_by = "claude-code-permission-prompt"
         decision.effective = Action.CONFIRM
         output = {"permissionDecision": "ask", "permissionDecisionReason": decision.explain()}
+    elif approver is not None:
+        # Nobody answers "ask" in this mode: ask a human out of band instead. Only the
+        # notifier sees the code; the model gets the explanation and retries later.
+        request = ApprovalRequest(
+            session=session,
+            tool=tool,
+            fingerprint=decision.fingerprint,
+            summary=decision.explain(),
+            args_preview=redact_args(args, 200),
+        )
+        apply_outcome(decision, approver(guard).request(request))
+        if not decision.allowed:
+            output = {"permissionDecision": "deny", "permissionDecisionReason": decision.explain()}
     else:
         decision.effective = Action.BLOCK
         reason = (
@@ -115,8 +136,13 @@ def handle_event(
     *,
     ask_modes: frozenset[str] = ASK_MODES,
     annotate: bool = False,
+    approver: Callable[[Guard], Approver] | None = None,
 ) -> HookResult:
     """Handle one parsed hook event; ``SessionStart`` after ``/clear`` resets the taint.
+
+    ``approver`` builds the out-of-band approver used for CONFIRM in permission modes
+    outside ``ask_modes``; it is only called when needed, so a broken approvals
+    configuration cannot stop other events from being recorded.
 
     Claude Code 2.1.302 gives the cleared conversation a new session id, so the reset only
     matters for versions that keep the id; the old session keeps its taint since it can be
@@ -124,7 +150,7 @@ def handle_event(
     """
     name = event.get("hook_event_name")
     if name == "PreToolUse":
-        return _pre_tool_use(guard, event, ask_modes)
+        return _pre_tool_use(guard, event, ask_modes, approver)
     if name in ("PostToolUse", "PostToolUseFailure"):
         return _post_tool_use(guard, event, annotate)
     if name == "UserPromptSubmit":
@@ -146,6 +172,7 @@ def run(
     *,
     ask_modes: frozenset[str] = ASK_MODES,
     annotate: bool = False,
+    approver: Callable[[Guard], Approver] | None = None,
 ) -> HookResult:
     """Read one hook event from ``stdin`` and handle it, failing closed.
 
@@ -161,7 +188,9 @@ def run(
         if not isinstance(payload, dict):
             raise ValueError("hook input is not a JSON object")
         event = payload
-        return handle_event(make_guard(), event, ask_modes=ask_modes, annotate=annotate)
+        return handle_event(
+            make_guard(), event, ask_modes=ask_modes, annotate=annotate, approver=approver
+        )
     except Exception as exc:
         detail = "".join(traceback.format_exception_only(type(exc), exc)).strip()
         # Treat unreadable or unnamed events as PreToolUse, i.e. block.
