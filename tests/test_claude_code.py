@@ -244,3 +244,47 @@ def test_main_writes_streams(make_guard, monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(pre("Bash", {"command": "ls"}))))
     assert claude_code.main(make_guard) == 0
     assert capsys.readouterr().out == ""
+
+
+def test_oob_approval_in_modes_that_ask_nobody(make_guard, store, clock, inbox):
+    from toolguard.approvals import ChallengeSettings, QueueApprover, answer_challenge
+
+    guard = make_guard()
+
+    def approver(g):
+        return QueueApprover(g.store, clock=clock, audit=g.audit, notifiers=[inbox])
+
+    handle_event(guard, post("WebFetch", {"url": "https://x"}, {"result": "docs page"}))
+    call = pre("Bash", {"command": "make"}, permission_mode="bypassPermissions")
+    result = handle_event(guard, call, approver=approver)
+    decision, reason = decision_of(result)
+    assert decision == "deny" and "out of band" in reason and "via inbox" in reason
+    assert inbox.code not in result.stdout  # The model reads the reason, never the code
+    # In a mode that asks a human, Claude Code's own prompt is still used.
+    asked = handle_event(guard, pre("Bash", {"command": "make"}), approver=approver)
+    assert decision_of(asked)[0] == "ask" and len(inbox.notices) == 1
+
+    (pending,) = store.list_approvals("pending")
+    approved = answer_challenge(
+        store, pending.id, inbox.code, by="cli:alice", settings=ChallengeSettings(), now=clock()
+    )
+    assert approved.status == "approved"
+    retry = handle_event(guard, call, approver=approver)
+    assert retry.stdout is None  # Allowed: no output, Claude Code's own rules apply
+    record = list(guard.audit.records())[-1]["data"]
+    assert record["approval"]["status"] == "approved" and record["effective"] == "allow"
+    assert decision_of(handle_event(guard, call, approver=approver))[0] == "deny"  # Single use
+
+
+def test_broken_approval_config_only_affects_confirmations(make_guard):
+    guard = make_guard()
+
+    def broken(g):
+        raise ValueError("bad approvals.toml")
+
+    # Observations are still recorded: the approver is only built when needed.
+    handle_event(guard, post("WebFetch", {"url": "https://x"}, "page"), approver=broken)
+    assert guard.store.observations("claude-code:abc")
+    payload = json.dumps(pre("Bash", {"command": "make"}, permission_mode="auto"))
+    result = run(lambda: guard, io.StringIO(payload), approver=broken)
+    assert result.exit_code == 2 and "fail closed" in result.stderr
