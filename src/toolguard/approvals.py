@@ -310,10 +310,11 @@ def brief(decision: Decision) -> str:
     """Return what a human needs to decide on ``decision``, concisely and without secrets.
 
     The first line names the call, its sink and the rules that ask for approval; then
-    come the critical and flagged argument values (masked by :func:`display_value`),
-    the rules and where each flagged value came from: the source tool or resource,
-    whether it is untrusted or private and whether the user named that source. It is
-    meant for out-of-band channels; it never contains the one-time code.
+    come the argument values, critical and flagged ones first (masked by
+    :func:`display_value`), the rules and where each flagged value came from: the
+    source tool or resource, whether it is untrusted or private and whether the user
+    named that source. It is meant for out-of-band channels; it never contains the
+    one-time code.
     """
     asking = [r for r in decision.reasons if r.action != Action.ALLOW]
     head = visible(decision.tool)
@@ -326,7 +327,9 @@ def brief(decision: Decision) -> str:
     flagged = {e.arg for _, e in evidence}
     leaked = {m for _, e in evidence for m in _REDACTED.findall(e.matched)}
     critical = {path for path, _ in select_args(decision.args, decision.critical or ("*",))}
-    shown = [(p, v) for p, v in iter_strings(decision.args) if p in critical or p in flagged]
+    leaves = list(iter_strings(decision.args))
+    # Critical and flagged values first, then the others while there is room.
+    shown = sorted(leaves, key=lambda leaf: leaf[0] not in critical and leaf[0] not in flagged)
     if shown:
         lines.append("Arguments:")
         lines += [

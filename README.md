@@ -353,7 +353,7 @@ the model never sees**, so a forged command fails even if it runs:
 5. The agent retries the **identical call**, which is allowed once within 10 minutes.
 
 Each notice also carries a short **brief** of what you are approving: the tool and its sink, the
-critical argument values and any other flagged ones, the rules that fired, and where each flagged
+argument values (critical and flagged ones first), the rules that fired, and where each flagged
 value came from (source tool or resource, untrusted or private, and whether you named that source
 in your prompt). Secret-shaped tokens and known credential formats are masked as
 `[secret:<sha256 prefix>]`, the same prefix the evidence uses; IBANs and crypto addresses stay
