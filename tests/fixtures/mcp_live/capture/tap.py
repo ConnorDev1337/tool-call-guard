@@ -14,6 +14,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import json
+import os
 import signal
 import subprocess
 import sys
@@ -79,4 +80,7 @@ def main(argv: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    status = main(sys.argv[1:])
+    # The stdin pump may still hold the stdin lock; skip the interpreter shutdown.
+    sys.stdout.flush()
+    os._exit(status if status >= 0 else 128 - status)
