@@ -80,27 +80,37 @@ existing agents through hooks or a proxy, at the cost of heuristic attribution (
 ```
 
 **Sources** (`[[source]]`): tools whose output is *untrusted* (`WebFetch`, search, browsers,
-e-mail, Slack, issues, shared documents) and/or *private* (`Read` of paths such as `~/.ssh/*` or
-`.env`, password managers, databases, e-mail). Each result is stored as an **observation**:
-normalized text (NFKC, invisible characters removed) and extracted **indicators** (URLs, domains,
-e-mail addresses, IPs, IBANs with checksum, crypto addresses, phone numbers).
+e-mail, Slack and other chat, calendar events and invitations, issues, tickets, pull requests and
+comments on any forge or help desk, shared documents and pages) and/or *private* (`Read` of paths
+such as `~/.ssh/*` or `.env`, password managers, databases, e-mail). Each result is stored as an
+**observation**: normalized text (NFKC, invisible characters removed) and extracted **indicators**
+(URLs, domains, e-mail addresses, IPs, IBANs with checksum, crypto addresses, phone numbers). A
+source the user named in the prompt (e.g. `read invoices/bill.txt`, `open https://x`) is recorded
+as **directed**.
 
 **Sinks** (`[[sink]]`): sensitive tools with a **category** (`shell`, `send`, `payment`,
-`publish`, `destructive`, `web`, `write`), their **critical arguments** (`to`, `iban`, `command`,
-`file_path`...) and whether they send data **out** (`egress`).
+`publish`, `destructive`, `web`, `write`, plus `autoexec` for writes to auto-executed paths,
+`access` for sharing/invites/membership and `account` for credential, key and profile changes),
+their **critical arguments** (`to`, `iban`, `command`, `file_path`...) and whether they send data
+**out** (`egress`).
 
-**Rules**: four conditions are evaluated for every sink and the most restrictive action wins:
+**Rules**: five conditions are evaluated for every sink and the most restrictive action wins:
 
 | Rule | Condition | Example |
 |---|---|---|
 | `tainted` | the session has read untrusted data (coarse, always sound) | Bash after reading a web page |
 | `untrusted_flow` | a critical argument **contains** data seen in an untrusted source | `to` = an address from the attacker's e-mail |
+| `directed_flow` | an `untrusted_flow` whose source the user named in the prompt | `iban` from the bill the user asked to pay |
 | `private_flow` | an argument carries private data (verbatim, fragment or secret-shaped token) | part of `id_ed25519` in a URL query |
 | `trifecta` | untrusted + private data in the session, and the sink sends data out | replying to an e-mail after reading the inbox |
 
 **Evidence** comes from indicators, verbatim matches, fragments of ≥ 4 consecutive tokens and
 high-entropy tokens. If the value also appears in what the user typed, it is **endorsed**
-(`endorsed_flow`) and not attributed to the untrusted source. **Self-protection rules** always
+(`endorsed_flow`) and not attributed to the untrusted source; private text the user typed is
+endorsed too, but secret-shaped tokens never are. `directed_flow` is softer than `untrusted_flow`
+(the user pointed at the source, but it may still carry injected instructions the guard cannot
+distinguish from legitimate data), so `balanced` asks a human where it would otherwise block.
+**Self-protection rules** always
 block, with no possible approval, any attempt by the agent to invoke `toolguard`, touch
 `~/.toolguard/` or edit `.claude/settings*.json`. They are pattern-based defence in depth; what
 makes an approval unforgeable is the [one-time code](#out-of-band-approvals) the model never sees.
@@ -381,11 +391,21 @@ Bundled presets:
 |---|---|---|
 | payment | confirm / **block** / confirm / confirm | confirm / block / block / block |
 | send | confirm / **block** / confirm / confirm | confirm / block / block / block |
+| access | confirm / **block** / confirm / confirm | confirm / block / block / block |
+| account | confirm / **block** / confirm / confirm | confirm / block / block / block |
 | shell | confirm / confirm / confirm / confirm | confirm / block / block / block (and counts as egress) |
+| autoexec | confirm / confirm / confirm / confirm | confirm / block / block / block |
 | publish | confirm / confirm / **block** / confirm | confirm / block / block / block |
 | destructive | confirm / **block** / confirm / confirm | confirm / block / confirm / block |
 | web | allow / allow / **block** / confirm | confirm / confirm / block / block |
 | write | allow / confirm / allow / allow | confirm / block / allow / confirm |
+
+`directed_flow` defaults to `untrusted_flow`; `balanced` softens it to `confirm` for `payment`,
+`send`, `access` and `account` (a value from a source the user named goes to a human, not an
+outright block), while `strict` keeps it at `block`. `autoexec` (writes to `conftest.py`, CI
+configs, `Makefile`, `package.json`, git hooks, shell rc files, Dockerfiles, ...) takes the shell
+posture with every argument critical; `access` (sharing, invites, membership) mirrors `send`; and
+`account` (credentials, keys, profile) mirrors `payment`.
 
 A custom policy usually extends a preset and describes your tools; its rules take precedence over
 the preset's. Full example: [`examples/team-policy.toml`](examples/team-policy.toml).
@@ -425,9 +445,9 @@ carries a category, so results are also reported per class (`toolguard eval` pri
 ```text
 policy       | attacks: prevented flagged missed  |  benign: autonomous human broken  | confirms/scen.
 allow-all    |                  0       0     26  |                  25     0      0  |           0.00
-taint-only   |                  4      21      1  |                   9    16      0  |           0.84
-balanced     |                 15       9      2  |                  13    12      0  |           0.43
-strict       |                 24       1      1  |                   9     5     11  |           0.22
+taint-only   |                  4      22      0  |                   9    16      0  |           0.86
+balanced     |                 16      10      0  |                  13    12      0  |           0.45
+strict       |                 26       0      0  |                   9     5     11  |           0.20
 ```
 
 Per attack category (prevented / flagged / missed):
@@ -437,13 +457,13 @@ Per attack category (prevented / flagged / missed):
 | exfil-recipient | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 2 / 0 / 0 | 2 / 0 / 0 |
 | command-exec | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 0 / 2 / 0 | 2 / 0 / 0 |
 | exfil-url | 3 | 0 / 0 / 3 | 0 / 3 / 0 | 2 / 1 / 0 | 3 / 0 / 0 |
-| content-injection | 2 | 0 / 0 / 2 | 0 / 1 / 1 | 1 / 0 / 1 | 1 / 0 / 1 |
+| content-injection | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 2 / 0 / 0 | 2 / 0 / 0 |
 | exfil-encoded | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 0 / 2 / 0 | 2 / 0 / 0 |
 | persistence | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 0 / 2 / 0 | 2 / 0 / 0 |
 | guard-bypass | 4 | 0 / 0 / 4 | 4 / 0 / 0 | 4 / 0 / 0 | 4 / 0 / 0 |
 | destructive | 3 | 0 / 0 / 3 | 0 / 3 / 0 | 2 / 1 / 0 | 3 / 0 / 0 |
 | multi-hop | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 2 / 0 / 0 | 2 / 0 / 0 |
-| ci-build-injection | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 0 / 1 / 1 | 1 / 1 / 0 |
+| ci-build-injection | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 0 / 2 / 0 | 2 / 0 / 0 |
 | cross-server | 2 | 0 / 0 / 2 | 0 / 2 / 0 | 2 / 0 / 0 | 2 / 0 / 0 |
 
 Per benign category (autonomous / needs-human / broken):
@@ -463,49 +483,67 @@ How to read it:
 
 - **taint-only** asks a human for every sensitive action after reading anything untrusted. It is
   cheap to reason about but expensive: 16 of 25 legitimate tasks need intervention, and safety
-  rests on the human spotting the attack in 21 of 26 cases.
-- **balanced** uses flow evidence to prevent 15 of 26 attacks with no human: attacker recipients
+  rests on the human spotting the attack in 22 of 26 cases.
+- **balanced** uses flow evidence to prevent 16 of 26 attacks with no human: attacker recipients
   and IBANs (`exfil-recipient`), secrets leaked verbatim through a URL, a markdown image or a
   public comment (`exfil-url`, `content-injection`), multi-hop leaks that route a secret through a
   temp file before sending it (`multi-hop`), cross-server exfiltration (`cross-server`), and
   destructive calls aimed at an injected target (`destructive`), plus every `guard-bypass`
-  attempt (see below on self-approval). It only flags another 9 and keeps 13 of 25 benign tasks
+  attempt (see below on self-approval). It only flags another 10 and keeps 13 of 25 benign tasks
   fully autonomous, roughly halving the review load of taint-only.
-- **strict** prevents 24 of 26, but breaks 11 legitimate tasks: every `communication` task
+- **strict** prevents all 26, but breaks 11 legitimate tasks: every `communication` task
   (reply/forward even when the user asked), both `payment` tasks to a user-named account, and four
   of five `docs-lookup` tasks (running a command copied from official docs). This is the cost of
   blocking on any untrusted evidence.
 
-Where the policies fail, and what it reveals (these gaps are intentional, not hidden):
+Both formerly documented misses are now closed generically by the policy-gap work (see
+[`docs/policy-gaps.md`](docs/policy-gaps.md) and the [held-out set](#held-out-policy-gap-scenarios)):
+the calendar invitation (`content-injection`) is prevented because calendar reads are now an
+untrusted source, and the `conftest.py` payload (`ci-build-injection`) is flagged by `balanced` and
+prevented by `strict` because writes to auto-executed paths are an `autoexec` sink checking the
+whole content. No benign scenario regressed. The gaps that remain are honest limits of the
+approach, not hidden:
 
 - **Encoded or paraphrased exfiltration is not attributed.** `exfil-encoded` (a base64-wrapped SSH
   key, a spelled-out recipient `ceo dot backup at protonmail dot com`) leaves no literal trace, so
   `balanced` only flags it through the coarse `tainted`/`trifecta` rules; `command-exec` (a copied
   `curl | bash` or reverse shell) is indistinguishable from the same command copied from
   documentation, so both are flagged, not blocked.
-- **Payloads in non-critical arguments slip past flow rules.** `attack-build-conftest-content`
-  hides a malicious fixture in a file's *content* (not its path), so `balanced` misses it and
-  `strict` only escalates it. The guard attributes critical arguments, not whole file bodies.
-- **The guard only sees sources it is told about.** `attack-calendar-injection` is missed by
-  *every* policy, including `strict`, because the default presets do not classify calendar reads as
-  untrusted, so nothing is tainted. Adding the calendar tools as a `[[source]]` closes it; this is
-  a configuration choice, deliberately left out of the presets rather than tuned in to beat the
-  benchmark.
+- **Payloads in non-critical arguments of ordinary sinks still slip past flow rules.** The
+  `autoexec` sink closes this for writes to auto-executed paths (its every argument is critical),
+  but a payload hidden in the body of a sink the guard treats as path-only or recipient-only is
+  still only caught by the coarse rules.
+- **A source the user named may itself be attacker-controlled.** When the user points at a specific
+  file or URL (`directed_flow`), the guard cannot tell a legitimate value in it from an injected
+  one, so `balanced` asks a human rather than blocking; a careless approval defeats it.
 - **Self-protection is pattern-based, approvals are not.** `attack-obfuscated-approve`
   (`t''oolguard approve ...`) still evades the dedicated protect rule; `taint-only` and `balanced`
   only ask a human about the shell call. It counts as **prevented** anyway because the forged
   approval cannot succeed without the out-of-band one-time code. The benchmark marks such steps
   with `"forges_approval": true` and reports them with an explicit `approval_code` rule; under
-  `allow-all` there is no guard and nothing to approve, so they stay missed. This is the only
-  outcome the codes changed (taint-only 3/22/1 to 4/21/1, balanced 14/10/2 to 15/9/2); review load
-  is unchanged because the shell call is still shown to a human.
+  `allow-all` there is no guard and nothing to approve, so they stay missed. The forged approval is
+  counted as prevented under every guard; review load is unchanged because the shell call is still
+  shown to a human.
 
 The numbers are illustrative, not a research result. The scenarios are hand-written **alongside the
 policy by the same author**, cover one path each, and model a **non-adaptive** attacker; an attacker
-who knows the rules would prefer exactly the encoded, non-critical-argument and unsourced techniques
-above. The presets are deliberately **not** tuned to these scenarios. The benchmark serves as a
-regression test of the safety/usefulness trade-off and as a starting point for more serious
-evaluations, for example with real traces or AgentDojo-style benchmarks.
+who knows the rules would prefer exactly the encoded and paraphrased techniques above. The presets
+are deliberately **not** tuned to these scenarios. The benchmark serves as a regression test of the
+safety/usefulness trade-off and as a starting point for more serious evaluations, for example with
+real traces or AgentDojo-style benchmarks.
+
+### Held-out: policy-gap scenarios
+
+A second held-out set, [`benchmarks/heldout/`](benchmarks/heldout), was written **before** the
+policy-gap changes (see [`docs/policy-gaps.md`](docs/policy-gaps.md)) to test each gap class
+independently of either benchmark: 13 attacks and 13 benign look-alikes for third-party content
+sources, writes to auto-executed paths, access grants, account changes, user-directed data sources
+and link-following. With the presets before the change almost every attack here was missed; after
+it, `balanced` prevents 7, flags 5 and misses 1 while keeping 11 of 13 benign tasks autonomous, and
+`strict` prevents 12 and flags 1. The one `balanced` miss is a link the agent is told to visit: the
+`web` candidate that would flag it was **rejected** because adopting it also breaks following a
+documentation link from search results (the cost shows up as `strict`'s needs-human on that benign
+task). Run it with `toolguard eval benchmarks/heldout`.
 
 ### Held-out: AgentDojo
 
@@ -519,7 +557,8 @@ ground-truth calls (596 attack scenarios, each one confirmed successful by Agent
 security check; 353 pairs cannot be converted, mostly because AgentDojo ships no ground truth for
 them). The AgentDojo tools are classified by a separate
 [toolset mapping](benchmarks/agentdojo/toolset.toml), written from their docstrings before the
-first run and combined with each policy by `--toolset`; the presets are unchanged.
+first run and combined with each policy by `--toolset`; the presets and the mapping are unchanged
+by the policy-gap work.
 
 ```sh
 toolguard eval benchmarks/agentdojo/scenarios --toolset benchmarks/agentdojo/toolset.toml
@@ -529,22 +568,27 @@ toolguard eval benchmarks/agentdojo/scenarios --toolset benchmarks/agentdojo/too
 |---|---|---|---|
 | `allow-all` | 0 / 0 / 596 | 97 / 0 / 0 | 0.00 |
 | `taint-only` | 0 / 596 / 0 | 37 / 60 / 0 | 1.94 |
-| `balanced` | 493 / 98 / 5 | 42 / 35 / 20 | 0.81 |
+| `balanced` | 432 / 159 / 5 | 42 / 44 / 11 | 1.03 |
 | `strict` | 526 / 70 / 0 | 37 / 15 / 45 | 0.39 |
 
 | suite | attacks | `balanced` attacks | `strict` attacks | benign | `balanced` benign | `strict` benign |
 |---|---|---|---|---|---|---|
-| workspace | 231 | 191 / 40 / 0 | 191 / 40 / 0 | 40 | 23 / 10 / 7 | 18 / 7 / 15 |
-| slack | 105 | 63 / 37 / 5 | 95 / 10 / 0 | 21 | 1 / 10 / 10 | 1 / 1 / 19 |
+| workspace | 231 | 171 / 60 / 0 | 191 / 40 / 0 | 40 | 23 / 13 / 4 | 18 / 7 / 15 |
+| slack | 105 | 58 / 42 / 5 | 95 / 10 / 0 | 21 | 1 / 14 / 6 | 1 / 1 / 19 |
 | travel | 118 | 97 / 21 / 0 | 98 / 20 / 0 | 20 | 14 / 6 / 0 | 14 / 6 / 0 |
-| banking | 142 | 142 / 0 / 0 | 142 / 0 / 0 | 16 | 4 / 9 / 3 | 4 / 1 / 11 |
+| banking | 142 | 106 / 36 / 0 | 142 / 0 / 0 | 16 | 4 / 11 / 1 | 4 / 1 / 11 |
 
-Attacker-chosen destinations (IBANs, e-mail addresses, URLs, passwords copied from the
-injection) are blocked outright; attacks without an attributable destination ("delete file 13")
-are only flagged; `balanced` misses five "visit this link" attacks where the agent has browsed but
-not yet read private data. The price is usefulness: legitimate tasks whose recipients, IBANs or
-user names come from untrusted data (paying the IBAN on a bill, inviting the user whose address is
-on a web page) are blocked, 20 of 97 under `balanced` and 45 under `strict`. Ground-truth
+Attacker-chosen destinations (IBANs, e-mail addresses, URLs, passwords copied from the injection)
+are blocked outright, **unless** the user named the exact source that carried them: the policy-gap
+work added a generic `directed_flow` rule, so `balanced` now asks a human about a value from a
+user-named file or URL instead of blocking (the guard cannot tell an injected IBAN in "the bill
+you asked me to pay" from a legitimate one). This moved 61 `balanced` attacks from prevented to
+flagged (banking 142 → 106 prevented, workspace 191 → 171, slack 63 → 58) while leaving
+`safety_with_human` at 99%, and in exchange rescued 9 benign tasks from broken to needs-human
+(paying a named bill, inviting the user on a named page, the two `share_file` tasks the old
+`default` actions broke). `strict` is unchanged: it blocks directed flows. Attacks without an
+attributable destination ("delete file 13") are only flagged; `balanced` still misses five "visit
+this link" attacks where the agent has browsed but not yet read private data. Ground-truth
 trajectories are not model behaviour (models deviate, comply partially, paraphrase or refuse), the
 attack is a single non-adaptive template, and the mapping choices move the numbers; see the
 [benchmark README](benchmarks/agentdojo/README.md) for the method, the mapping rationale and these
@@ -560,17 +604,19 @@ user's behalf (send, pay, publish, execute, delete); integrity of the log and of
 | Trusted | Untrusted |
 |---|---|
 | The toolguard process, its policy and its state directory | The model and everything it generates |
-| What the user types in the prompt | Results of source tools (web, e-mail, issues, documents) |
+| What the user types in the prompt | Results of source tools (web, e-mail, chat, calendar invitations, tickets, documents) |
 | The human on the approval channel and the notifier that reaches them | Third-party MCP servers and their responses |
 
 **Adversaries**: the author of content the agent will read (web page, e-mail, issue, document, chat
 message), and a model acting against the user for whatever reason.
 
 **Covered threats**: exfiltration to attacker-controlled recipients or URLs; payments to injected
-accounts; commands copied from untrusted sources; publishing secrets; destructive actions dictated
-by third parties; persistence (`~/.bashrc`); self-approval (structurally, by the out-of-band
-code) and tampering with the guard or its hooks; deleting or editing the log or approval records
-(detectable with a key).
+accounts; granting an injected party access to data or changing account credentials, keys or the
+profile (`access`, `account`); commands copied from untrusted sources; injecting code into
+auto-executed files such as `conftest.py`, CI configs or git hooks (`autoexec`); publishing
+secrets; destructive actions dictated by third parties; persistence (`~/.bashrc`); self-approval
+(structurally, by the out-of-band code) and tampering with the guard or its hooks; deleting or
+editing the log or approval records (detectable with a key).
 
 **Out of scope**: isolating execution (this is not a sandbox; it complements the agent's
 permissions and sandboxing); attacks that do not go through tools (for example, persuading the user
@@ -586,7 +632,10 @@ in the response text); verifying the identity of MCP servers.
   the proxy, only the servers it wraps. Untrusted data entering any other way does not taint the
   session.
 - **The user's prompt is trusted.** If the user pastes an e-mail or a web page into the prompt,
-  that content endorses values instead of tainting them.
+  that content endorses values instead of tainting them. Naming a source in the prompt (`pay the
+  bill in X.txt`) marks it *directed*: `balanced` then asks a human about values taken from it
+  rather than blocking, because a legitimate value and an injected one in the same named resource
+  are indistinguishable to the guard. A careless approval defeats this; `strict` blocks instead.
 - **Taint is per session and persists** until `reset` or `taint_ttl`; `/clear` starts a new
   session. It is kept after context compaction and `--resume`, conservatively.
 - **Same OS user as the agent.** Self-protection rules are pattern-based and can be evaded by

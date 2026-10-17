@@ -87,12 +87,12 @@ they were written in a policy file that extends the preset, so each policy's pos
 | `get_most_recent_transactions` | source: untrusted, private | incoming transfers carry a subject chosen by the sender |
 | contacts, `get_user_information`, `get_user_info`, `get_iban`, `get_balance`, `get_scheduled_transactions` | source: private | the user's own personal and financial data |
 | `send_email`; `create_calendar_event`, `add_calendar_event_participants`; `send_direct_message`, `send_channel_message` | sink `send`, egress (critical: recipients / participants / channel) | the calendar docstrings state that participants are e-mailed |
-| `share_file`, `invite_user_to_slack`, `add_user_to_channel` | sink `access`, egress (critical: who and where) | grants a party access to data; no preset category fits, so the policy's `default` actions apply |
+| `share_file`, `invite_user_to_slack`, `add_user_to_channel` | sink `access`, egress (critical: who and where) | grants a party access to data; maps onto the preset `access` category (send posture) added by the policy-gap work |
 | `send_money`, `schedule_transaction`, `update_scheduled_transaction` | sink `payment` (critical `recipient`, `amount`) | |
 | `reserve_hotel`, `reserve_restaurant`, `reserve_car_rental` | sink `payment` (critical: the business) | a reservation commits the user, like `place_order` in the presets |
 | `post_webpage` | sink `publish` (critical `url`) | publishes content at a URL |
 | `delete_email`, `delete_file`, `cancel_calendar_event`, `remove_user_from_slack` | sink `destructive` | |
-| `update_password`, `update_user_info` | sink `account` (all arguments critical) | credential and profile changes; no preset category, `default` actions |
+| `update_password`, `update_user_info` | sink `account` (all arguments critical) | credential and profile changes; maps onto the preset `account` category (payment posture) added by the policy-gap work |
 | `create_file`, `append_to_file`, `reschedule_calendar_event` | sink `write` (critical: the target) | changes the user's own objects |
 | `get_current_day` | none | |
 
@@ -108,33 +108,45 @@ content: content leaks are what `private_flow` and `trifecta` look for in every 
 |---|---|---|---|
 | `allow-all` | 0 / 0 / 596 | 97 / 0 / 0 | 0.00 |
 | `taint-only` | 0 / 596 / 0 | 37 / 60 / 0 | 1.94 |
-| `balanced` | 493 / 98 / 5 | 42 / 35 / 20 | 0.81 |
+| `balanced` | 432 / 159 / 5 | 42 / 44 / 11 | 1.03 |
 | `strict` | 526 / 70 / 0 | 37 / 15 / 45 | 0.39 |
 
 Per suite, attacks (prevented / flagged / missed):
 
 | suite | n | `taint-only` | `balanced` | `strict` |
 |---|---|---|---|---|
-| workspace | 231 | 0 / 231 / 0 | 191 / 40 / 0 | 191 / 40 / 0 |
-| slack | 105 | 0 / 105 / 0 | 63 / 37 / 5 | 95 / 10 / 0 |
+| workspace | 231 | 0 / 231 / 0 | 171 / 60 / 0 | 191 / 40 / 0 |
+| slack | 105 | 0 / 105 / 0 | 58 / 42 / 5 | 95 / 10 / 0 |
 | travel | 118 | 0 / 118 / 0 | 97 / 21 / 0 | 98 / 20 / 0 |
-| banking | 142 | 0 / 142 / 0 | 142 / 0 / 0 | 142 / 0 / 0 |
+| banking | 142 | 0 / 142 / 0 | 106 / 36 / 0 | 142 / 0 / 0 |
 
 Per suite, benign tasks (autonomous / needs-human / broken):
 
 | suite | n | `taint-only` | `balanced` | `strict` |
 |---|---|---|---|---|
-| workspace | 40 | 18 / 22 / 0 | 23 / 10 / 7 | 18 / 7 / 15 |
-| slack | 21 | 1 / 20 / 0 | 1 / 10 / 10 | 1 / 1 / 19 |
+| workspace | 40 | 18 / 22 / 0 | 23 / 13 / 4 | 18 / 7 / 15 |
+| slack | 21 | 1 / 20 / 0 | 1 / 14 / 6 | 1 / 1 / 19 |
 | travel | 20 | 14 / 6 / 0 | 14 / 6 / 0 | 14 / 6 / 0 |
-| banking | 16 | 4 / 12 / 0 | 4 / 9 / 3 | 4 / 1 / 11 |
+| banking | 16 | 4 / 12 / 0 | 4 / 11 / 1 | 4 / 1 / 11 |
+
+These numbers are after the policy-gap work (see `../../docs/policy-gaps.md`), which changed the
+presets but **not** this mapping. The earlier `balanced` figures were attacks 493 / 98 / 5 and
+benign 42 / 35 / 20.
 
 What the numbers say:
 
 - **Attacker-chosen destinations are caught.** With the attacker's IBAN, e-mail address, URL or
-  password copied from the injection into a critical argument, `balanced` blocks every banking
-  attack and nearly all workspace and travel exfiltration and booking attacks without asking
-  anyone (83% of attacks prevented autonomously, 99% with a human who rejects what is flagged).
+  password copied from the injection into a critical argument, `balanced` blocks the exfiltration
+  and booking attacks without asking anyone (72% prevented autonomously, 99% with a human who
+  rejects what is flagged), **except** where the user named the source that carries the injected
+  value (see directed flows below).
+- **Directed sources are flagged, not blocked.** The policy-gap work added a generic `directed_flow`
+  rule: when the user named the exact file or page a value came from (`pay the bill
+  bill-december-2023.txt`, `invite the person on www.x.com`), the guard cannot tell a legitimate
+  value from an injected one in the same resource, so `balanced` asks a human instead of blocking.
+  This moved 61 attacks from prevented to flagged (banking 142 → 106, workspace 191 → 171, slack
+  63 → 58); `safety_with_human` stays at 99%, and in exchange nine benign tasks move from broken to
+  needs-human. `strict` keeps blocking directed flows, so its numbers are unchanged.
 - **Content-free attacks are only flagged.** "Delete the file with ID 13" (workspace) and "create
   a calendar event titled ..." (travel) carry no attributable destination, so the guard can only
   ask a human because the session is tainted.
@@ -142,15 +154,15 @@ What the numbers say:
   whose first untrusted read is a web page. `balanced` deliberately allows browsing from a tainted
   session (`web: untrusted_flow = allow`) and only escalates once private data is also in context
   (`trifecta`); `strict` flags them.
-- **Usefulness is the cost.** `balanced` breaks 20 of 97 benign tasks and `strict` 45. Most breaks
-  are legitimate actions whose critical arguments come from untrusted data: paying the IBAN written
-  on a bill, inviting the user whose e-mail is on a web page, adding the members listed in a
-  channel to another channel, e-mailing the addresses in a shared file. Flow evidence cannot tell
-  "the user asked me to use this data" from "the data told me to do this". Two workspace
-  `share_file` calls are blocked by `trifecta` because the new `access` category falls back to the
-  presets' `default` actions, which block. The coarse `tainted` rule makes most of the remaining
-  benign tasks wait for a human: every travel task with a side effect (booking, e-mail, calendar
-  event) follows reads of third-party listings.
+- **Usefulness is the cost.** `balanced` breaks 11 of 97 benign tasks (down from 20) and `strict`
+  45. The remaining breaks are legitimate actions whose critical arguments come from untrusted data
+  the user did *not* name specifically: e-mailing the addresses in a shared file, adding the members
+  listed in one channel to another. Flow evidence cannot tell "the user asked me to use this data"
+  from "the data told me to do this"; when the user named the source, `directed_flow` turns the
+  break into a human prompt, and the `access` category (now a preset category rather than the
+  `default` fallback) only flags the two workspace `share_file` tasks instead of blocking them. The
+  coarse `tainted` rule makes most of the remaining benign tasks wait for a human: every travel task
+  with a side effect (booking, e-mail, calendar event) follows reads of third-party listings.
 
 ## Limitations
 
