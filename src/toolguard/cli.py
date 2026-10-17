@@ -358,7 +358,9 @@ def cmd_policy(args: argparse.Namespace) -> int:
     print(f"policy {policy.name} (mode {policy.mode}, digest {policy.digest[:12]})")
     print(
         f"  {len(policy.sources)} source rule(s), {len(policy.sinks)} sink rule(s), "
-        f"{len(policy.protect)} protect rule(s), taint_ttl={policy.taint_ttl:g}s"
+        f"{len(policy.protect)} protect rule(s), "
+        + (f"{len(policy.trust)} trust rule(s), " if policy.trust else "")
+        + f"taint_ttl={policy.taint_ttl:g}s"
     )
     print("  actions (tainted / untrusted_flow / private_flow / trifecta):")
     for category, table in sorted(policy.actions.items()):

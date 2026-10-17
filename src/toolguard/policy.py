@@ -31,6 +31,7 @@ _TOP_KEYS = {
     "sink",
     "actions",
     "protect",
+    "trust",
 }
 _RULE_FIELDS = ("tainted", "untrusted_flow", "directed_flow", "private_flow", "trifecta")
 
@@ -122,6 +123,21 @@ class SourceRule:
 
 
 @dataclass(frozen=True)
+class TrustRule:
+    """Tool results that are not untrusted even when a source rule says they are.
+
+    It declares content the user vouches for, such as the resources of their own
+    documentation server; private data stays private.
+    """
+
+    tools: tuple[str, ...]
+    when: dict[str, tuple[str, ...]] = field(default_factory=dict)
+
+    def matches(self, tool: str, args: Any) -> bool:
+        return _tool_matches(tool, self.tools) and _when_matches(args, self.when)
+
+
+@dataclass(frozen=True)
 class SinkRule:
     """A sensitive action; ``critical`` names the arguments checked for untrusted flows."""
 
@@ -199,6 +215,7 @@ class Policy:
     sinks: tuple[SinkRule, ...] = ()
     actions: dict[str, ActionTable] = field(default_factory=dict)
     protect: tuple[ProtectRule, ...] = ()
+    trust: tuple[TrustRule, ...] = ()
     digest: str = ""
 
     # ------------------------------------------------------------------ loading
@@ -217,6 +234,7 @@ class Policy:
         sinks = tuple(_sink(i, s) for i, s in enumerate(raw.get("sink", [])))
         actions = {str(k): _table(k, v) for k, v in raw.get("actions", {}).items()}
         protect = tuple(_protect(i, p) for i, p in enumerate(raw.get("protect", [])))
+        trust = tuple(_trust(i, t) for i, t in enumerate(raw.get("trust", [])))
         ttl = raw.get("taint_ttl", 0)
         if not isinstance(ttl, int | float) or ttl < 0:
             raise PolicyError("taint_ttl must be a non-negative number of seconds")
@@ -233,6 +251,7 @@ class Policy:
             sinks=sinks,
             actions=actions,
             protect=protect,
+            trust=trust,
             digest=hashlib.sha256(canonical_json(raw).encode()).hexdigest(),
         )
 
@@ -274,15 +293,20 @@ class Policy:
     # ------------------------------------------------------------------ queries
 
     def source_for(self, tool: str, args: Any) -> SourceMatch | None:
-        """Return the union of all matching source rules (the most cautious combination)."""
+        """Return the union of all matching source rules (the most cautious combination).
+
+        A matching trust rule clears ``untrusted``; a result that is then neither
+        untrusted nor private is not a source.
+        """
         matched = [rule for rule in self.sources if rule.matches(tool, args)]
         if not matched:
             return None
-        return SourceMatch(
-            kind=matched[0].kind,
-            untrusted=any(r.untrusted for r in matched),
-            private=any(r.private for r in matched),
-        )
+        trusted = any(rule.matches(tool, args) for rule in self.trust)
+        untrusted = any(r.untrusted for r in matched) and not trusted
+        private = any(r.private for r in matched)
+        if not (untrusted or private):
+            return None
+        return SourceMatch(kind=matched[0].kind, untrusted=untrusted, private=private)
 
     def sink_for(self, tool: str, args: Any) -> SinkRule | None:
         """Return the first matching sink rule; user rules precede the preset's."""
@@ -362,6 +386,15 @@ def _source(index: int, entry: Any) -> SourceRule:
     if not (rule.untrusted or rule.private):
         raise PolicyError(f"{where}: a source must be untrusted, private or both")
     return rule
+
+
+def _trust(index: int, entry: Any) -> TrustRule:
+    where = f"trust[{index}]"
+    entry = _check_keys(entry, {"tools", "when"}, where)
+    return TrustRule(
+        tools=_strings(entry["tools"], f"{where}.tools"),
+        when=_patterns(entry.get("when"), f"{where}.when"),
+    )
 
 
 def _sink(index: int, entry: Any) -> SinkRule:

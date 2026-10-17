@@ -92,10 +92,29 @@ tools = [
   "mcp__*__get_document*", "mcp__*__read_document*", "mcp__*__get_page", "mcp__*__get_file_by_id*",
 ]
 
+# MCP resources (`resources/read`, including reads of resource templates) and prompts
+# (`prompts/get`) carry whatever the server fronts (files, pages, records) or text its
+# author wrote, so they are third-party content. The MCP proxy observes them as
+# mcp__<server>__resources/read (argument `uri`) and mcp__<server>__prompts/get
+# (`name`, `arguments`); Claude Code reads resources with ReadMcpResourceTool (`server`,
+# `uri`). A policy declares content it vouches for with a [[trust]] rule.
+[[source]]
+kind = "resource"
+untrusted = true
+tools = ["mcp__*__resources/read", "ReadMcpResourceTool"]
+
+[[source]]
+kind = "prompt"
+untrusted = true
+tools = ["mcp__*__prompts/get"]
+
 [[source]]
 kind = "secret-file"
 private = true
-tools = ["Read", "mcp__*__read_file", "mcp__*__read_text_file", "mcp__*__read_multiple_files"]
+tools = [
+  "Read", "mcp__*__read_file", "mcp__*__read_text_file", "mcp__*__read_multiple_files",
+  "mcp__*__resources/read", "ReadMcpResourceTool",
+]
 when = { "*" = [
   "*/.ssh/*", "*/.aws/*", "*/.azure/*", "*/.config/gcloud/*", "*/.kube/*", "*/.docker/config.json",
   "*/.npmrc", "*/.pypirc", "*/.netrc", "*/.git-credentials", "*/.gnupg/*",

@@ -242,6 +242,12 @@ Replace each server's command with the proxy (full example in
   below); without a configured notifier it is refused.
 - All proxies with the same `--session` share taint: an e-mail read through one server counts when
   its data reaches another.
+- What the server returns to the model is observed: tool results, and the contents of
+  `resources/read` (including reads of resource templates) and `prompts/get`, as
+  `mcp__<server-name>__resources/read` (argument `uri`) and `mcp__<server-name>__prompts/get`
+  (`name`, `arguments`). The presets treat resources and prompts as third-party content
+  (untrusted; resource URIs that look like secret files are private too); a `[[trust]]` rule in
+  your policy declares the ones you vouch for (see [Policies](#policies)).
 - The proxy forwards only what it has inspected: a client line that is not JSON gets a parse
   error, a line that is not valid UTF-8 is guarded and forwarded as decoded, batches are split and
   every `tools/call` in them is guarded, and a `tools/call` with malformed parameters is refused.
@@ -466,6 +472,16 @@ tools = ["mcp__deployer__*"]
 [actions.deploy]
 tainted = "confirm"
 untrusted_flow = "block"
+```
+
+A `[[trust]]` rule (`tools`, optional `when`) declares results you vouch for: they are not
+untrusted even if a source rule says so, although private data stays private. Use it for content
+your team writes, such as an internal documentation server's MCP resources:
+
+```toml
+[[trust]]
+tools = ["mcp__docs__resources/read"]
+when = { uri = ["docs://handbook/*"] }
 ```
 
 `toolguard policy <file>` validates and summarizes a policy; `--monitor` (or `mode = "monitor"`)
@@ -706,10 +722,11 @@ in the response text); verifying the identity of MCP servers.
 - **MCP proxy**: verified with real servers on Linux (see [Verified
   behaviour](#verified-behaviour-real-mcp-servers)); not exercised with a desktop client's UI
   (Claude Desktop, IDEs) or on Windows and macOS beyond unit tests. It speaks **stdio only**:
-  servers reached over Streamable HTTP or SSE cannot be wrapped. Only `tools/call` results (and
-  their `tasks/result`) are observed; content the model gets from `resources/read` or `prompts/get`
-  (for example `mcp-server-fetch`'s `fetch` prompt) does not taint the session. On protocol
-  2026-07-28 there is no `initialize`, so the proxy does not know whether the client supports
+  servers reached over Streamable HTTP or SSE cannot be wrapped. Tool, resource and prompt results
+  are observed, but server-written metadata (tool, resource and prompt descriptions from the
+  `*/list` methods) is not, and a `resources/read` or `prompts/get` request is not guarded as a
+  sink: a URI or prompt argument built from untrusted or private data reaches the server
+  unchecked. On protocol 2026-07-28 there is no `initialize`, so the proxy does not know whether the client supports
   elicitation and confirmations always go to the out-of-band queue (confirming through
   `InputRequiredResult` is not implemented). The proxy trusts the client to show its elicitation
   to the user, not to the model. On Windows a batch launcher (`npx.cmd`) passes its arguments

@@ -104,6 +104,8 @@ def test_unknown_category_uses_default_table():
         ({"actions": {"send": {"sometimes": "allow"}}}, "unknown key"),
         ({"protect": [{"tools": ["x"], "action": "nuke"}]}, "unknown action"),
         ({"source": [{"tools": "x", "untrusted": True, "when": "y"}]}, "table of argument"),
+        ({"trust": [{"when": {"uri": "x"}}]}, "'tools' is required"),
+        ({"trust": [{"tools": ["x"], "untrusted": False}]}, "unknown key"),
     ],
 )
 def test_validation_errors(data, message):
@@ -174,3 +176,38 @@ def test_with_mode():
     policy = Policy.preset("balanced").with_mode("monitor")
     assert policy.mode == "monitor"
     assert Policy.preset("balanced").mode == "enforce"
+
+
+def test_mcp_resources_and_prompts_are_third_party_content():
+    policy = Policy.preset("balanced")
+    resource = policy.source_for("mcp__docs__resources/read", {"uri": "docs://guide.md"})
+    assert resource.kind == "resource" and resource.untrusted and not resource.private
+    prompt = policy.source_for("mcp__docs__prompts/get", {"name": "review"})
+    assert prompt.kind == "prompt" and prompt.untrusted
+    claude = policy.source_for("ReadMcpResourceTool", {"server": "docs", "uri": "docs://a"})
+    assert claude.untrusted
+    secret = policy.source_for("mcp__fs__resources/read", {"uri": "file:///work/app/.env"})
+    assert secret.untrusted and secret.private
+    # A server whose name marks web content keeps that kind.
+    assert policy.source_for("mcp__fetch__prompts/get", {"name": "fetch"}).kind == "web"
+
+
+def test_trust_rules_clear_untrusted_but_keep_private():
+    policy = Policy.from_dict(
+        {
+            "extends": "balanced",
+            "trust": [
+                {"tools": ["mcp__docs__resources/read"], "when": {"uri": ["docs://*"]}},
+                {"tools": ["mcp__fs__resources/read", "mcp__gmail__*"]},
+            ],
+        }
+    )
+    assert len(policy.trust) == 2
+    assert policy.source_for("mcp__docs__resources/read", {"uri": "docs://guide.md"}) is None
+    other = policy.source_for("mcp__docs__resources/read", {"uri": "https://x.example/"})
+    assert other.untrusted  # Outside the trusted URIs
+    assert policy.source_for("mcp__docs__prompts/get", {"name": "review"}).untrusted
+    secret = policy.source_for("mcp__fs__resources/read", {"uri": "file:///work/.env"})
+    assert secret.private and not secret.untrusted
+    mail = policy.source_for("mcp__gmail__read_email", {})
+    assert mail.private and not mail.untrusted
