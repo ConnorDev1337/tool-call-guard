@@ -402,18 +402,23 @@ class TelegramNotifier:
         body = json.dumps(
             {"chat_id": self.chat_id, "text": text, "disable_web_page_preview": True}
         ).encode()
-        url = f"{self.api_url}/bot{urllib.parse.quote(token, safe=':')}/sendMessage"
+        quoted = urllib.parse.quote(token, safe=":")
+        url = f"{self.api_url}/bot{quoted}/sendMessage"
+
+        def scrub(message: str) -> str:
+            return message.replace(token, "***").replace(quoted, "***")
+
         try:
             status, response = _post_json(url, body, {}, self.timeout)
         except NotifyError as exc:
-            raise NotifyError(str(exc).replace(token, "***")) from None
+            raise NotifyError(scrub(str(exc))) from None
         try:
             answer = json.loads(response or b"{}")
         except ValueError:
             answer = {}
         if status != 200 or not isinstance(answer, dict) or answer.get("ok") is not True:
             detail = str(answer.get("description", "")) if isinstance(answer, dict) else ""
-            detail = detail.replace(token, "***")[:200]
+            detail = scrub(detail)[:200]
             raise NotifyError(
                 f"telegram answered HTTP {status}" + (f": {detail}" if detail else "")
             )
