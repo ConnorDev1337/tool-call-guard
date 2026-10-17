@@ -12,10 +12,12 @@
 #   * Personal data (mailbox, calendar, files, chats, contacts, profile, bank
 #     data) is PRIVATE.
 #   * A tool that acts on the world is a sink. Preset categories are reused when
-#     the semantics match (send, payment, publish, web, destructive, write); two
-#     new categories cover what no preset category describes (`access` grants a
-#     party access to data, `account` changes credentials or the profile) and
-#     therefore get the policy's `default` actions.
+#     the semantics match (send, payment, publish, web, destructive, write), and
+#     two more, `access` (granting a party access to data) and `account` (changing
+#     credentials or the profile), map onto the preset categories of the same
+#     names (added by the policy-gap work; `access` mirrors send, `account`
+#     mirrors payment). This file maps tools to categories only; postures live in
+#     the policy.
 #   * Critical arguments name WHO receives data, money or access (or WHICH object
 #     is modified), not the content; content leaks are covered by `private_flow`
 #     and `trifecta`, which look at every argument.
