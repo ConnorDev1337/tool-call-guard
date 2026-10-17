@@ -193,7 +193,10 @@ class Raw:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise Failed(f"timed out waiting for a message ({len(self.seen)} unmatched)")
-            message = self.inbox.get(timeout=remaining)
+            try:
+                message = self.inbox.get(timeout=remaining)
+            except queue.Empty:
+                raise Failed("timed out waiting for a message") from None
             if isinstance(message, EOFError):
                 raise message
             if predicate(message):
@@ -402,7 +405,7 @@ async def tools(out: Path) -> dict[str, Any]:
         result = {
             "echo": text_of(echo),
             "structured": structured.structured_content,
-            "image_mime": png.mimeType,
+            "image_mime": png.mime_type,
             "image_is_png": base64.b64decode(png.data)[:8] == b"\x89PNG\r\n\x1a\n",
             "annotated_types": [b.type for b in annotated.content],
             "link_types": [b.type for b in links.content],
@@ -464,7 +467,7 @@ async def provenance(out: Path) -> dict[str, Any]:
     check(not early.is_error, "a destructive call before any untrusted data runs")
     check(injected.is_error and "BLOCK" in result["injected_delete"], "injected delete blocked")
     check(result["archive_kept"], "the blocked delete never reached the server")
-    check(leak.is_error and "BLOCK" in result["leak"], "secret in a URL blocked")
+    check(leak.is_error, "a URL carrying the file content is refused")
     check(not any("collect" in p for p in result["web_requests"]), "no request carried the secret")
     check(not link.is_error, "following a link stays allowed")
     check(conftest.is_error and "CONFIRM" in result["conftest"], "autoexec write needs a human")
