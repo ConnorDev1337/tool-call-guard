@@ -110,6 +110,10 @@ def test_check_exit_codes_and_approval_flow(capsys, db, monkeypatch, tmp_path, h
     assert events == ["created", "notified", "failed_attempt", "approved", "created", "notified"]
     code, out, _ = run(capsys, "audit", "export", "--db", db)
     assert secret not in out
+    # Neither form of the code is anywhere in the state database (or its WAL).
+    raw = b"".join(p.read_bytes() for p in Path(db).parent.glob("guard.db*"))
+    for form in (secret, secret.replace("-", "")):
+        assert form.encode() not in raw
 
 
 def no_tty(monkeypatch):
