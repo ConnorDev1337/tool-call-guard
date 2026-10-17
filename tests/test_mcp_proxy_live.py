@@ -268,6 +268,16 @@ def test_handshake_and_capabilities_pass_through(replay):
     methods = {m.get("method") for m in sent}
     assert {"tools/list", "prompts/get", "resources/read", "completion/complete"} <= methods
     assert {"resources/subscribe", "logging/setLevel"} <= methods
+    # Resource and prompt contents reach the model, so they are observed like tool output.
+    observed = [(o.tool, o.kind, o.untrusted) for o in r.store.observations("s1")]
+    assert observed == [
+        ("mcp__everything__resources/read", "resource", True),  # A static document
+        ("mcp__everything__resources/read", "resource", True),  # Read through a template
+        ("mcp__everything__prompts/get", "prompt", True),
+        ("mcp__everything__prompts/get", "prompt", True),
+    ]
+    instructions = r.store.observations("s1")[0]
+    assert "written for an llm or autonomous agent" in instructions.text
 
 
 def test_notifications_and_server_requests_pass_through(replay):

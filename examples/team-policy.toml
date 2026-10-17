@@ -19,6 +19,12 @@ kind = "crm"
 private = true
 tools = ["mcp__crm__get_*", "mcp__crm__search_*"]
 
+# The resources of our documentation server are written by the team, so reading them
+# does not taint the session (MCP resources are third-party content by default).
+[[trust]]
+tools = ["mcp__docs__resources/read"]
+when = { uri = ["docs://handbook/*"] }
+
 # Exporting contacts is a form of sending data out.
 [[sink]]
 category = "send"

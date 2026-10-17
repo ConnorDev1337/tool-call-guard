@@ -1,7 +1,11 @@
 """MCP stdio proxy that guards ``tools/call`` requests between a client and a server.
 
 Calls are evaluated as ``mcp__<server-name>__<tool>`` (Claude Code naming), so the
-presets apply to any client. Confirmations use MCP elicitation when the client
+presets apply to any client. Results that reach the model are observed as sources:
+those of tools, and those of ``resources/read`` (including reads of resource
+templates) and ``prompts/get``, under the names ``mcp__<server-name>__resources/read``
+and ``mcp__<server-name>__prompts/get``, which no real tool can take (tool names
+cannot contain ``/``). Confirmations use MCP elicitation when the client
 supports it, since the model cannot answer an elicitation; otherwise they go to
 the approval queue, whose one-time code reaches the human only through an
 out-of-band notifier (never the error text the model reads). Proxies that share a
@@ -39,6 +43,14 @@ PROTOCOL_VERSION_META = "io.modelcontextprotocol/protocolVersion"
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
 INVALID_PARAMS = -32602
+
+# Requests other than ``tools/call`` whose results reach the model: the parameters
+# observed as the call's arguments and the result fields that carry the content.
+OBSERVED_READS = {
+    "resources/read": (("uri",), ("contents",)),
+    "prompts/get": (("name", "arguments"), ("description", "messages")),
+}
+TOOL_RESULT_FIELDS = ("content", "structuredContent")
 
 
 def _valid_id(value: Any) -> bool:
@@ -92,10 +104,11 @@ class McpProxy:
         self._out_lock = threading.Lock()
         self._in_lock = threading.Lock()
         self._state_lock = threading.Lock()
-        # Forwarded ``tools/call`` and ``tasks/result`` request ids -> (tool, arguments).
-        self._calls: dict[Any, tuple[str, Any]] = {}
-        # Tasks created by a task-augmented ``tools/call`` -> (tool, arguments).
-        self._tasks: dict[str, tuple[str, Any]] = {}
+        # Forwarded requests whose results are observed (``tools/call``, ``tasks/result``
+        # and the reads in OBSERVED_READS) -> (tool, arguments, result fields).
+        self._calls: dict[Any, tuple[str, Any, tuple[str, ...]]] = {}
+        # Tasks created by a task-augmented ``tools/call`` -> (tool, arguments, fields).
+        self._tasks: dict[str, tuple[str, Any, tuple[str, ...]]] = {}
         # Client request ids of calls waiting for a confirmation.
         self._pending: dict[Any, _Pending] = {}
         # Elicitations sent by the proxy: every id issued, and the ones still awaited.
@@ -240,6 +253,8 @@ class McpProxy:
             return
         elif method == "tasks/result":
             self._track_task_result(message)
+        elif isinstance(method, str) and method in OBSERVED_READS:
+            self._track_read(message, method)
         elif method == "notifications/cancelled" and self._cancel_pending(message):
             return
         if raw is not None:
@@ -306,8 +321,19 @@ class McpProxy:
 
     def _forward_call(self, message: dict[str, Any], tool: str, args: Any) -> None:
         with self._state_lock:
-            self._calls[message["id"]] = (tool, args)
+            self._calls[message["id"]] = (tool, args, TOOL_RESULT_FIELDS)
         self._send_server(message)
+
+    def _track_read(self, message: dict[str, Any], method: str) -> None:
+        """Remember a ``resources/read`` or ``prompts/get`` so its result is observed."""
+        request_id = message.get("id")
+        params = message.get("params")
+        if not _valid_id(request_id) or not isinstance(params, dict):
+            return  # The server answers it with an error, which is not observed
+        names, fields = OBSERVED_READS[method]
+        args = {name: params[name] for name in names if name in params}
+        with self._state_lock:
+            self._calls[request_id] = (f"mcp__{self.server_name}__{method}", args, fields)
 
     def _refuse(self, message: dict[str, Any], decision: Decision) -> None:
         result: dict[str, Any] = {
@@ -483,12 +509,12 @@ class McpProxy:
         result = message.get("result")
         if call is None or not isinstance(result, dict):
             return
-        tool, args = call
+        tool, args, fields = call
         task = result.get("task")
         if isinstance(task, dict) and isinstance(task.get("taskId"), str):
             # A task-augmented call: the content arrives later, through tasks/result.
             with self._state_lock:
                 self._tasks[task["taskId"]] = call
             return
-        payload = {k: result.get(k) for k in ("content", "structuredContent")}
+        payload = {k: result.get(k) for k in fields}
         self.guard.observe(tool, payload, args)

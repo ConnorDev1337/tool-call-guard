@@ -2,8 +2,9 @@
 
 ``test/received`` returns every line the server has read, so tests can check what
 the proxy forwarded. A ``tools/call`` with a ``task`` parameter creates a task whose
-result is fetched with ``tasks/result``. With ``--linger`` the server keeps running
-after its stdin closes, like a server with timers still active.
+result is fetched with ``tasks/result``. ``mail://inbox`` and ``mail://handbook/*`` are
+resources and ``summarize_inbox`` is a prompt that embeds the inbox. With ``--linger``
+the server keeps running after its stdin closes, like a server with timers still active.
 """
 
 import json
@@ -24,6 +25,28 @@ sys.stdout.reconfigure(encoding="utf-8")
 def send(message):
     sys.stdout.write(json.dumps(message) + "\n")
     sys.stdout.flush()
+
+
+def read_resource(params):
+    uri = params["uri"]
+    if uri == "mail://inbox":
+        text = INBOX
+    elif uri.startswith("mail://handbook/"):
+        text = "Reply to customers within one business day. Contact: help@corp.example"
+    else:
+        raise LookupError(uri)
+    return {"contents": [{"uri": uri, "mimeType": "text/plain", "text": text}]}
+
+
+def get_prompt(params):
+    resource = {"uri": "mail://inbox", "mimeType": "text/plain", "text": INBOX}
+    return {
+        "description": f"Summarize the inbox ({params['name']})",
+        "messages": [
+            {"role": "user", "content": {"type": "text", "text": "Summarize this inbox:"}},
+            {"role": "user", "content": {"type": "resource", "resource": resource}},
+        ],
+    }
 
 
 def call_result(params):
@@ -54,6 +77,16 @@ for line in sys.stdin:
     elif method == "tasks/result":
         result = tasks[message["params"]["taskId"]]
         send({"jsonrpc": "2.0", "id": message["id"], "result": result})
+    elif method in ("resources/read", "prompts/get") and "id" in message:
+        try:
+            handler = read_resource if method == "resources/read" else get_prompt
+            send({"jsonrpc": "2.0", "id": message["id"], "result": handler(message["params"])})
+        except LookupError:
+            error = {"code": -32002, "message": "Resource not found"}
+            send({"jsonrpc": "2.0", "id": message["id"], "error": error})
+        except (TypeError, KeyError):
+            error = {"code": -32602, "message": "Invalid params"}
+            send({"jsonrpc": "2.0", "id": message["id"], "error": error})
     elif method == "test/received":
         send({"jsonrpc": "2.0", "id": message["id"], "result": {"lines": received}})
     elif method == "ping":
