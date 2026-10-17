@@ -23,6 +23,7 @@ import json
 import os
 import queue
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -779,7 +780,8 @@ async def large(out: Path) -> dict[str, Any]:
 
 def versions() -> dict[str, str]:
     """Return the versions of the client, the servers and their SDKs in this image."""
-    found = {"python": sys.version.split()[0]}
+    # The hostname (the container id) is only used by build.py to check it is not leaked.
+    found = {"python": sys.version.split()[0], "hostname": socket.gethostname()}
     node = subprocess.run(["/usr/local/bin/node", "--version"], capture_output=True, check=False)
     found["node"] = node.stdout.decode().strip()
     modules = Path("/usr/local/lib/node_modules/@modelcontextprotocol")
