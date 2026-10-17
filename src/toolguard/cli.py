@@ -363,7 +363,10 @@ def cmd_policy(args: argparse.Namespace) -> int:
     print("  actions (tainted / untrusted_flow / private_flow / trifecta):")
     for category, table in sorted(policy.actions.items()):
         values = [table.tainted, table.untrusted_flow, table.private_flow, table.trifecta]
-        print(f"    {category:<12} " + " / ".join(a.label for a in values))
+        line = f"    {category:<12} " + " / ".join(a.label for a in values)
+        if table.directed_flow is not None and table.directed_flow != table.untrusted_flow:
+            line += f"  (directed_flow {table.directed_flow.label})"
+        print(line)
     return 0
 
 
