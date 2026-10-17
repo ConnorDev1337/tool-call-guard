@@ -133,8 +133,8 @@ What the numbers say:
 
 - **Attacker-chosen destinations are caught.** With the attacker's IBAN, e-mail address, URL or
   password copied from the injection into a critical argument, `balanced` blocks every banking
-  attack and the workspace and travel exfiltration attacks without asking anyone (83% of attacks
-  prevented autonomously, 99% with a human who rejects what is flagged).
+  attack and nearly all workspace and travel exfiltration and booking attacks without asking
+  anyone (83% of attacks prevented autonomously, 99% with a human who rejects what is flagged).
 - **Content-free attacks are only flagged.** "Delete the file with ID 13" (workspace) and "create
   a calendar event titled ..." (travel) carry no attributable destination, so the guard can only
   ask a human because the session is tainted.
@@ -149,7 +149,8 @@ What the numbers say:
   "the user asked me to use this data" from "the data told me to do this". Two workspace
   `share_file` calls are blocked by `trifecta` because the new `access` category falls back to the
   presets' `default` actions, which block. The coarse `tainted` rule makes most of the remaining
-  benign tasks wait for a human, including every travel booking.
+  benign tasks wait for a human: every travel task with a side effect (booking, e-mail, calendar
+  event) follows reads of third-party listings.
 
 ## Limitations
 

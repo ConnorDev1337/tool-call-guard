@@ -507,6 +507,49 @@ above. The presets are deliberately **not** tuned to these scenarios. The benchm
 regression test of the safety/usefulness trade-off and as a starting point for more serious
 evaluations, for example with real traces or AgentDojo-style benchmarks.
 
+### Held-out: AgentDojo
+
+To measure toolguard on tasks and attacks it was not written alongside,
+[`benchmarks/agentdojo/`](benchmarks/agentdojo/README.md) converts the public
+[AgentDojo](https://github.com/ethz-spylab/agentdojo) benchmark (0.1.35, suites v1.2.2: workspace,
+slack, travel, banking) into scenarios, offline and without any model: each user task's
+ground-truth calls with their real outputs (97 benign scenarios) and, for each injection task,
+the same trajectory with the `important_instructions` injection followed by the injection task's
+ground-truth calls (596 attack scenarios, each one confirmed successful by AgentDojo's own
+security check; 353 pairs cannot be converted, mostly because AgentDojo ships no ground truth for
+them). The AgentDojo tools are classified by a separate
+[toolset mapping](benchmarks/agentdojo/toolset.toml), written from their docstrings before the
+first run and combined with each policy by `--toolset`; the presets are unchanged.
+
+```sh
+toolguard eval benchmarks/agentdojo/scenarios --toolset benchmarks/agentdojo/toolset.toml
+```
+
+| policy | attacks: prevented / flagged / missed | benign: autonomous / needs-human / broken | confirms/scenario |
+|---|---|---|---|
+| `allow-all` | 0 / 0 / 596 | 97 / 0 / 0 | 0.00 |
+| `taint-only` | 0 / 596 / 0 | 37 / 60 / 0 | 1.94 |
+| `balanced` | 493 / 98 / 5 | 42 / 35 / 20 | 0.81 |
+| `strict` | 526 / 70 / 0 | 37 / 15 / 45 | 0.39 |
+
+| suite | attacks | `balanced` attacks | `strict` attacks | benign | `balanced` benign | `strict` benign |
+|---|---|---|---|---|---|---|
+| workspace | 231 | 191 / 40 / 0 | 191 / 40 / 0 | 40 | 23 / 10 / 7 | 18 / 7 / 15 |
+| slack | 105 | 63 / 37 / 5 | 95 / 10 / 0 | 21 | 1 / 10 / 10 | 1 / 1 / 19 |
+| travel | 118 | 97 / 21 / 0 | 98 / 20 / 0 | 20 | 14 / 6 / 0 | 14 / 6 / 0 |
+| banking | 142 | 142 / 0 / 0 | 142 / 0 / 0 | 16 | 4 / 9 / 3 | 4 / 1 / 11 |
+
+Attacker-chosen destinations (IBANs, e-mail addresses, URLs, passwords copied from the
+injection) are blocked outright; attacks without an attributable destination ("delete file 13")
+are only flagged; `balanced` misses five "visit this link" attacks where the agent has browsed but
+not yet read private data. The price is usefulness: legitimate tasks whose recipients, IBANs or
+user names come from untrusted data (paying the IBAN on a bill, inviting the user whose address is
+on a web page) are blocked, 20 of 97 under `balanced` and 45 under `strict`. Ground-truth
+trajectories are not model behaviour (models deviate, comply partially, paraphrase or refuse), the
+attack is a single non-adaptive template, and the mapping choices move the numbers; see the
+[benchmark README](benchmarks/agentdojo/README.md) for the method, the mapping rationale and these
+limitations.
+
 ## Threat model
 
 **Assets**: credentials and private data reachable from the machine; the ability to act on the
