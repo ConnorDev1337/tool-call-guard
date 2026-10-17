@@ -112,6 +112,7 @@ class Decision:
     approval_id: str | None = None
     approval_status: str | None = None  # "approved" | "denied" | "pending" | "delegated"
     approved_by: str | None = None
+    approval_channel: str | None = None  # Out-of-band notifier that delivered the code
 
     def __post_init__(self) -> None:
         if self.effective is None:
@@ -140,10 +141,12 @@ class Decision:
                 match = f"arg '{ev.arg}' {ev.method} match {ev.matched!r}"
                 lines.append(f"    {match} from {ev.source}{endorsed}")
         if self.approval_status == "pending" and self.approval_id:
+            via = f" via {self.approval_channel}" if self.approval_channel else ""
             lines.append(
-                f"- approval {self.approval_id} is pending; a human must run "
-                f"'toolguard approve {self.approval_id}' in an interactive terminal, "
-                "then the identical call can be retried"
+                f"- approval {self.approval_id} is pending and must be given out of band: a "
+                f"one-time code was sent to the human operator{via} and is never shown to "
+                f"the agent. The operator approves with 'toolguard approve {self.approval_id}' "
+                "and that code; then the identical call can be retried"
             )
         elif self.approval_status:
             by = f" by {self.approved_by}" if self.approved_by else ""

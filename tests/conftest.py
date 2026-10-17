@@ -38,6 +38,26 @@ def store() -> Store:
     return Store(":memory:")
 
 
+class Inbox:
+    """Out-of-band notifier for tests: the human's phone, which the agent never sees."""
+
+    def __init__(self, name: str = "inbox") -> None:
+        self.name = name
+        self.notices = []
+
+    def send(self, notice) -> None:
+        self.notices.append(notice)
+
+    @property
+    def code(self) -> str:
+        return self.notices[-1].code
+
+
+@pytest.fixture
+def inbox() -> Inbox:
+    return Inbox()
+
+
 @pytest.fixture
 def make_guard(store, clock):
     def _make(policy: str | Policy = "balanced", approve: bool | None = None, **kwargs) -> Guard:

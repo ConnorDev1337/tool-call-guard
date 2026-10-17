@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from .approvals import ApprovalRequest, Approver, DenyApprover
+from .approvals import ApprovalRequest, Approver, DenyApprover, apply_outcome
 from .audit import AuditLog, key_from_env
 from .model import Action, Decision, Observation, Reason, ToolBlocked
 from .policy import Policy, iter_strings, select_args
@@ -258,13 +258,7 @@ class Guard:
                 summary=decision.explain(),
                 args_preview=redact_args(decision.args, 200),
             )
-            outcome = (approver or self.approver).request(request)
-            decision.approval_status = outcome.status
-            decision.approval_id = outcome.approval_id
-            decision.approved_by = outcome.by
-            decision.effective = Action.ALLOW if outcome.status == "approved" else Action.BLOCK
-            if outcome.note and outcome.status != "approved":
-                decision.reasons.append(Reason("approval", Action.BLOCK, outcome.note))
+            apply_outcome(decision, (approver or self.approver).request(request))
         self.audit.append("decision", session, self.decision_record(decision))
         return decision
 
@@ -302,6 +296,7 @@ class Guard:
                 "status": decision.approval_status,
                 "id": decision.approval_id,
                 "by": decision.approved_by,
+                "channel": decision.approval_channel,
             }
             if decision.approval_status
             else None,

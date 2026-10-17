@@ -3,8 +3,10 @@
 Approvals must come from a channel the agent cannot drive: a tool the model can
 call, or text it can write, is never an approval. Hence the console channel uses
 the controlling terminal rather than stdin/stdout, which may belong to the agent,
-and queued requests are decided with ``toolguard approve`` in an interactive
-terminal.
+and a queued request can only be approved with a one-time code that a notifier
+delivers out of band and the model never sees. Even a command the agent manages
+to run (``toolguard approve`` behind an obfuscation that evades the protect
+rules) fails without that code.
 """
 
 from __future__ import annotations
@@ -15,15 +17,21 @@ import hmac
 import os
 import secrets
 import time
-from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+import tomllib
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol, TextIO
 
-from .model import canonical_json
-from .store import Approval, Store
+from .audit import AuditLog
+from .audit import key_from_env as audit_key_from_env
+from .model import Action, Decision, Reason, canonical_json
+from .notifiers import ConfigError, Notice, Notifier, build_notifier, deliver
+from .store import Approval, Store, default_home
 
 APPROVAL_TTL = 600.0  # Seconds an approval stays usable after a human decides
 ENV_APPROVAL_KEY = "TOOLGUARD_APPROVAL_KEY"
+ENV_APPROVALS_CONFIG = "TOOLGUARD_APPROVALS_CONFIG"
 
 # Crockford base32: no I, L, O or U, so codes survive being read aloud or retyped.
 CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -163,6 +171,79 @@ def answer_challenge(
     return ChallengeResult(status, approval, left)
 
 
+# --------------------------------------------------------------------------- configuration
+
+_CHALLENGE_KEYS = {"code_ttl", "max_attempts", "length", "key_env"}
+
+
+@dataclass(frozen=True)
+class ApprovalConfig:
+    """Challenge settings and notifiers, from ``approvals.toml``.
+
+    The file is looked up in ``$TOOLGUARD_APPROVALS_CONFIG``, then in
+    ``$TOOLGUARD_HOME/approvals.toml``. Without one there is no notifier, so queued
+    approvals are impossible (fail closed). Secrets are never read from the file.
+    """
+
+    settings: ChallengeSettings = field(default_factory=ChallengeSettings)
+    notifiers: tuple[Notifier, ...] = ()
+    path: str | None = None
+
+    @classmethod
+    def load(cls, path: str | Path | None = None) -> ApprovalConfig:
+        """Load the configuration; raise ConfigError if it is invalid or missing.
+
+        An explicit ``path`` (or the environment variable) must exist; the default
+        location is optional.
+        """
+        explicit = path or os.environ.get(ENV_APPROVALS_CONFIG)
+        file = Path(explicit) if explicit else default_home() / "approvals.toml"
+        if not file.is_file():
+            if explicit:
+                raise ConfigError(f"approvals configuration not found: {file}")
+            return cls(ChallengeSettings(key=approval_key_from_env()))
+        try:
+            data = tomllib.loads(file.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+            raise ConfigError(f"{file}: {exc}") from None
+        return cls.from_dict(data, path=str(file))
+
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any], path: str | None = None) -> ApprovalConfig:
+        where = path or "approvals"
+        unknown = sorted(set(data) - {"challenge", "notifier"})
+        if unknown:
+            raise ConfigError(f"{where}: unknown key(s) {', '.join(unknown)}")
+        challenge = data.get("challenge", {})
+        if not isinstance(challenge, dict) or set(challenge) - _CHALLENGE_KEYS:
+            raise ConfigError(
+                f"{where}: [challenge] accepts only {', '.join(sorted(_CHALLENGE_KEYS))}"
+            )
+        key_env = challenge.get("key_env", ENV_APPROVAL_KEY)
+        if not isinstance(key_env, str) or not key_env:
+            raise ConfigError(f"{where}: challenge.key_env must name an environment variable")
+        try:
+            settings = ChallengeSettings(
+                code_ttl=float(challenge.get("code_ttl", 300.0)),
+                max_attempts=int(challenge.get("max_attempts", 5)),
+                length=int(challenge.get("length", 12)),
+                key=approval_key_from_env(key_env),
+            )
+        except (TypeError, ValueError) as exc:
+            raise ConfigError(f"{where}: [challenge] {exc}") from None
+        tables = data.get("notifier", [])
+        if not isinstance(tables, list) or not all(isinstance(t, dict) for t in tables):
+            raise ConfigError(f"{where}: notifiers are declared as [[notifier]] tables")
+        notifiers = tuple(
+            build_notifier(table, f"{where}: notifier[{index}]")
+            for index, table in enumerate(tables)
+        )
+        names = [n.name for n in notifiers]
+        if len(set(names)) != len(names):
+            raise ConfigError(f"{where}: notifier names must be unique (set name = ...)")
+        return cls(settings, notifiers, path)
+
+
 @dataclass(frozen=True)
 class ApprovalRequest:
     """A tool call submitted for human approval."""
@@ -182,6 +263,18 @@ class ApprovalOutcome:
     by: str | None = None
     approval_id: str | None = None
     note: str | None = None
+    channel: str | None = None  # Notifier that delivered the approval code
+
+
+def apply_outcome(decision: Decision, outcome: ApprovalOutcome) -> None:
+    """Record an approval outcome on ``decision`` and set its effective action."""
+    decision.approval_status = outcome.status
+    decision.approval_id = outcome.approval_id
+    decision.approved_by = outcome.by
+    decision.approval_channel = outcome.channel
+    decision.effective = Action.ALLOW if outcome.status == "approved" else Action.BLOCK
+    if outcome.note and outcome.status != "approved":
+        decision.reasons.append(Reason("approval", Action.BLOCK, outcome.note))
 
 
 class Approver(Protocol):
@@ -258,40 +351,160 @@ class ConsoleApprover:
 
 
 class QueueApprover:
-    """Queue requests in the store for ``toolguard approve`` or ``toolguard deny``.
+    """Queue requests for a human who approves with a one-time code sent out of band.
 
+    Each new request gets a code from the CSPRNG that is handed only to the
+    ``notifiers``, tried in order until one delivers it; the store keeps a hash. The
+    human runs ``toolguard approve <id>`` and enters the code. If no notifier
+    delivers it, the request is closed as undeliverable and denied (fail closed).
     The agent retries the identical call to use an approval, which is bound to the
     call fingerprint, single use and valid for ``ttl`` seconds after the decision.
+    Events go to ``audit`` (by default the log of ``store`` with the key from the
+    environment); they record channels, never codes.
     """
 
     def __init__(
-        self, store: Store, ttl: float = APPROVAL_TTL, clock: Callable[[], float] = time.time
+        self,
+        store: Store,
+        ttl: float = APPROVAL_TTL,
+        clock: Callable[[], float] = time.time,
+        *,
+        notifiers: Sequence[Notifier] = (),
+        settings: ChallengeSettings | None = None,
+        audit: AuditLog | None = None,
     ):
         self.store = store
         self.ttl = ttl
         self.clock = clock
+        self.notifiers = list(notifiers)
+        self.settings = settings or ChallengeSettings()
+        self._audit = audit
+
+    @classmethod
+    def from_config(
+        cls,
+        store: Store,
+        config: ApprovalConfig,
+        *,
+        audit: AuditLog | None = None,
+        clock: Callable[[], float] = time.time,
+    ) -> QueueApprover:
+        return cls(
+            store, clock=clock, notifiers=config.notifiers, settings=config.settings, audit=audit
+        )
+
+    @property
+    def audit(self) -> AuditLog:
+        if self._audit is None:
+            self._audit = AuditLog(self.store, audit_key_from_env())
+        return self._audit
+
+    def _event(self, session: str, **data: Any) -> None:
+        self.audit.append("approval", session, data)
+
+    def expire(self, now: float) -> None:
+        """Close pending approvals whose code has expired, recording each one."""
+        for approval in self.store.expire_approvals(now):
+            self._event(approval.session, id=approval.id, status="expired", tool=approval.tool)
 
     def request(self, req: ApprovalRequest) -> ApprovalOutcome:
         now = self.clock()
+        self.expire(now)
         latest = self.store.latest_approval(req.fingerprint, req.session)
-        fresh = (
-            latest is not None and latest.decided is not None and now - latest.decided <= self.ttl
-        )
-        approved = latest is not None and latest.status == "approved" and fresh
-        if approved and self.store.consume_approval(latest.id):
-            return ApprovalOutcome("approved", by=latest.decided_by, approval_id=latest.id)
-        if latest is not None and latest.status == "denied" and fresh:
-            return ApprovalOutcome("denied", by=latest.decided_by, approval_id=latest.id)
-        if latest is not None and latest.status == "pending":
-            return ApprovalOutcome("pending", approval_id=latest.id)
-        created = self.store.create_approval(
+        if latest is not None:
+            fresh = latest.decided is not None and now - latest.decided <= self.ttl
+            if latest.status == "approved" and fresh:
+                authentic = decision_is_authentic(latest, self.settings.key)
+                if self.store.consume_approval(latest.id):
+                    if authentic:
+                        return ApprovalOutcome(
+                            "approved",
+                            by=latest.decided_by,
+                            approval_id=latest.id,
+                            channel=latest.channel,
+                        )
+                    self._event(
+                        req.session,
+                        id=latest.id,
+                        status="rejected",
+                        tool=req.tool,
+                        reason="the decision has no valid MAC",
+                    )
+                    return ApprovalOutcome(
+                        "denied",
+                        approval_id=latest.id,
+                        note="the stored approval failed its integrity check (not made with "
+                        "the approval key); a new approval is needed",
+                    )
+            if latest.status in {"denied", "locked"} and fresh:
+                note = None
+                if latest.status == "locked":
+                    note = f"approval {latest.id} was locked after too many wrong codes"
+                return ApprovalOutcome(
+                    "denied", by=latest.decided_by, approval_id=latest.id, note=note
+                )
+            if latest.status == "pending" and latest.code_hash:
+                return ApprovalOutcome("pending", approval_id=latest.id, channel=latest.channel)
+            if latest.status == "pending" and self.store.close_approval(latest.id, "expired", now):
+                # Created before approvals required a code: it can never be approved.
+                self._event(req.session, id=latest.id, status="expired", tool=req.tool)
+        return self._create(req, now)
+
+    def _create(self, req: ApprovalRequest, now: float) -> ApprovalOutcome:
+        settings = self.settings
+        approval_id = secrets.token_hex(4)
+        code = new_code(settings.length)
+        salt = secrets.token_hex(16)
+        approval = self.store.create_approval(
             session=req.session,
             fingerprint=req.fingerprint,
             tool=req.tool,
             summary=req.summary,
             now=now,
+            expires=now + settings.code_ttl,
+            code_hash=hash_code(code, approval_id=approval_id, salt=salt, key=settings.key),
+            code_salt=salt,
+            code_alg=settings.algorithm,
+            approval_id=approval_id,
         )
-        return ApprovalOutcome("pending", approval_id=created.id)
+        self._event(
+            req.session,
+            id=approval.id,
+            status="created",
+            tool=req.tool,
+            fingerprint=req.fingerprint,
+            expires=approval.expires,
+            code_alg=settings.algorithm,
+        )
+        notice = Notice(
+            approval.id,
+            req.tool,
+            req.session,
+            code,
+            now + settings.code_ttl,
+            req.summary,
+            req.args_preview,
+        )
+        failed = []
+        for channel, error in deliver(self.notifiers, notice):
+            if error is None:
+                self.store.set_approval_channel(approval.id, channel)
+                self._event(req.session, id=approval.id, status="notified", channel=channel)
+                return ApprovalOutcome("pending", approval_id=approval.id, channel=channel)
+            failed.append(channel)
+            self._event(
+                req.session, id=approval.id, status="notify_failed", channel=channel, error=error
+            )
+        self.store.close_approval(approval.id, "undeliverable", now)
+        self._event(req.session, id=approval.id, status="undeliverable", channels=failed)
+        why = (
+            "the approval code could not be delivered out of band"
+            if self.notifiers
+            else "no out-of-band notifier is configured for approval codes"
+        )
+        return ApprovalOutcome(
+            "denied", approval_id=approval.id, note=f"{why}, so nobody can approve this call"
+        )
 
 
 class ChainApprover:

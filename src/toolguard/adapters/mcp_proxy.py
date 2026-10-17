@@ -3,8 +3,10 @@
 Calls are evaluated as ``mcp__<server-name>__<tool>`` (Claude Code naming), so the
 presets apply to any client. Confirmations use MCP elicitation when the client
 supports it, since the model cannot answer an elicitation; otherwise they go to
-the approval queue. Proxies that share a ``--session`` and state directory share
-taint, so data read through one server is tracked when it reaches another.
+the approval queue, whose one-time code reaches the human only through an
+out-of-band notifier (never the error text the model reads). Proxies that share a
+``--session`` and state directory share taint, so data read through one server is
+tracked when it reaches another.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import threading
 from collections.abc import Callable
 from typing import IO, Any
 
-from ..approvals import ApprovalRequest, QueueApprover
+from ..approvals import ApprovalRequest, QueueApprover, apply_outcome
 from ..guard import Guard
 from ..model import Action, Decision
 from ..redact import redact_args
@@ -43,6 +45,7 @@ class McpProxy:
         client_out: IO[bytes] | None = None,
         elicitation_timeout: float = ELICITATION_TIMEOUT,
         popen: Callable[..., subprocess.Popen[bytes]] = subprocess.Popen,
+        queue: QueueApprover | None = None,
     ) -> None:
         self.guard = guard
         self.server_name = server_name
@@ -51,7 +54,8 @@ class McpProxy:
         self.client_out = client_out or sys.stdout.buffer
         self.elicitation_timeout = elicitation_timeout
         self.popen = popen
-        self.queue = QueueApprover(guard.store, clock=guard.clock)
+        # Without configured notifiers the queue denies (fail closed).
+        self.queue = queue or QueueApprover(guard.store, clock=guard.clock, audit=guard.audit)
         self.client_elicitation = False
         self._out_lock = threading.Lock()
         self._in_lock = threading.Lock()
@@ -191,10 +195,7 @@ class McpProxy:
                 args_preview=redact_args(args, 200),
             )
         )
-        decision.approval_status = outcome.status
-        decision.approval_id = outcome.approval_id
-        decision.approved_by = outcome.by
-        decision.effective = Action.ALLOW if outcome.status == "approved" else Action.BLOCK
+        apply_outcome(decision, outcome)
         self._audit(decision)
         if decision.effective == Action.ALLOW:
             self._forward_call(message, tool, args)

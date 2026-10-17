@@ -291,8 +291,9 @@ class Store:
         code_hash: str | None = None,
         code_salt: str | None = None,
         code_alg: str | None = None,
+        approval_id: str | None = None,
     ) -> Approval:
-        approval_id = secrets.token_hex(4)
+        approval_id = approval_id or secrets.token_hex(4)
         with self.transaction() as conn:
             conn.execute(
                 "INSERT INTO approvals (id, session, fingerprint, tool, summary, status, created, "
