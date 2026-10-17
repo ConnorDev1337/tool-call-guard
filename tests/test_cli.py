@@ -334,6 +334,34 @@ def test_hook_via_cli(capsys, db, monkeypatch):
     assert code == 2 and "fail closed" in err
 
 
+def test_hook_oob_approvals_via_cli(capsys, db, monkeypatch, operator):
+    hook = ["hook", "claude-code", "--db", db, "--oob-approvals"]
+    fetch = {
+        "session_id": "x",
+        "hook_event_name": "PostToolUse",
+        "tool_name": "WebFetch",
+        "tool_input": {"url": "https://docs.example"},
+        "tool_response": {"result": "docs"},
+    }
+    run(capsys, *hook, stdin=json.dumps(fetch), monkeypatch=monkeypatch)
+    call = {
+        "session_id": "x",
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": "make"},
+        "permission_mode": "dontAsk",
+    }
+    code, out, _ = run(capsys, *hook, stdin=json.dumps(call), monkeypatch=monkeypatch)
+    output = json.loads(out)["hookSpecificOutput"]
+    assert code == 0 and output["permissionDecision"] == "deny"
+    assert "toolguard approve" in output["permissionDecisionReason"]
+    assert operator() not in out
+    (pending,) = Store(db).list_approvals("pending")
+    assert run(capsys, "approve", pending.id, "--db", db, "--code", operator())[0] == 0
+    code, out, _ = run(capsys, *hook, stdin=json.dumps(call), monkeypatch=monkeypatch)
+    assert code == 0 and out == ""
+
+
 def test_mcp_proxy_requires_command(capsys):
     code, _, err = run(capsys, "mcp-proxy", "--server-name", "x", "--")
     assert code == 2 and "missing server command" in err
