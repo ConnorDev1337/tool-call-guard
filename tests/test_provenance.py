@@ -10,7 +10,9 @@ from toolguard.provenance import (
 )
 
 
-def obs(text, *, oid=1, untrusted=True, private=False, trusted=False, tool="WebFetch"):
+def obs(
+    text, *, oid=1, untrusted=True, private=False, trusted=False, tool="WebFetch", directed=False
+):
     return Observation(
         id=oid,
         session="s",
@@ -23,6 +25,7 @@ def obs(text, *, oid=1, untrusted=True, private=False, trusted=False, tool="WebF
         text=normalize(text),
         indicators=extract_indicators(text),
         digest="d",
+        directed=directed,
     )
 
 
@@ -133,3 +136,26 @@ def test_private_flows():
     assert evidence.method in {"verbatim", "fragment"}
     assert private_flows([("url", "https://docs.python.org/3/")], [key, note]) == []
     assert private_flows([("x", "y")], []) == []
+
+
+def test_untrusted_flow_carries_the_directed_flag():
+    named = obs("pay to IBAN GB33BUKB20201555555555", directed=True)
+    other = obs("pay to IBAN GB33BUKB20201555555555", oid=2, directed=False)
+    (from_named,) = untrusted_flows([("iban", "GB33BUKB20201555555555")], [named], [])
+    assert from_named.directed is True
+    (from_other,) = untrusted_flows([("iban", "GB33BUKB20201555555555")], [other], [])
+    assert from_other.directed is False
+
+
+def test_private_flow_endorses_user_values_but_never_secrets():
+    note = obs("secret memo: project nimbus launches in q3 2026", private=True, untrusted=False)
+    leaked = [("body", "project nimbus launches in q3 2026")]
+    user = obs("remind the team project nimbus launches in q3 2026", untrusted=False, trusted=True)
+    assert private_flows(leaked, [note], [user]) == []  # The user supplied this text
+    assert private_flows(leaked, [note], []) != []  # Without endorsement it is a leak
+    # A high-entropy token stays a leak even when the user pasted it.
+    token = "AKIA1X2Y3Z4Q5R6S7T8U"
+    secret = obs(f"aws access key {token}", private=True, untrusted=False)
+    pasted = obs(f"set the deploy key to {token}", untrusted=False, trusted=True)
+    (evidence,) = private_flows([("env", token)], [secret], [pasted])
+    assert evidence.method == "secret"
