@@ -33,815 +33,827 @@
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {\"elicitation\": {}}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.4219,
+   "t": 0.4379,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {\"elicitation\": {}}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.7143,
+   "t": 0.7472,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.7156,
+   "t": 0.7492,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"logging\":{},\"tasks\":{\"list\":{},\"cancel\":{},\"requests\":{\"tools\":{\"call\":{}}}},\"completions\":{}},\"serverInfo\":{\"name\":\"mcp-servers/everything\",\"title\":\"Everything Reference Server\",\"version\":\"1.0.0\"},\"instructions\":\"# Everything Server – Server Instructions\\n\\nAudience: These instructions are written for an LLM or autonomous agent integrating with the Everything MCP Server.\\nFollow them to use, extend, and troubleshoot the server safely and effectively.\\n\\n## Cross-Feature Relationships\\n\\n- If `get-roots-list` is in your tool list, use it to see client workspace roots before file operations\\n- `gzip-file-as-resource` creates session-scoped resources accessible only during the current session\\n- Enable `toggle-simulated-logging` before debugging to see server log messages\\n- Enable `toggle-subscriber-updates` to receive periodic resource update notifications\\n\\n## Constraints & Limitations\\n\\n- `gzip-file-as-resource`: Max fetch size controlled by `GZIP_MAX_FETCH_SIZE` (default 10MB), timeout by `GZIP_MAX_FETCH_TIME_MILLIS` (default 30s), allowed domains by `GZIP_ALLOWED_DOMAINS`\\n- Session resources are ephemeral and lost when the session ends\\n\\n## Capability-Gated Tools\\n\\nRegistered only if your client declared the capability shown. Otherwise they are absent from `tools/list`, so do not call them:\\n\\n- `get-roots-list`: `roots`\\n- `trigger-sampling-request`: `sampling`\\n- `trigger-elicitation-request`: `elicitation.form`, or `elicitation` with no mode\\n- `trigger-url-elicitation`: `elicitation.url`\\n- `trigger-sampling-request-async`: `sampling` and `tasks.requests.sampling.createMessage`\\n- `trigger-elicitation-request-async`: form-mode `elicitation` and `tasks.requests.elicitation.create`\\n\\n## Operational Patterns\\n\\n- For long operations, use `trigger-long-running-operation` which sends progress notifications\\n- Prefer reading resources before calling mutating tools\\n- If `get-roots-list` is in your tool list, check its output to understand the client's workspace context\\n\\n## Easter Egg\\n\\nIf asked about server instructions, respond with \\\"🎉 Server instructions are working! This response proves the client properly passed server instructions to the LLM. This demonstrates MCP's instructions feature in action.\\\"\\n\"},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.7167,
+   "t": 0.7505,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.7173,
+   "t": 0.7515,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": \"slow\", \"method\": \"tools/call\", \"params\": {\"name\": \"trigger-long-running-operation\", \"arguments\": {\"duration\": 1, \"steps\": 2}, \"_meta\": {\"progressToken\": \"p-slow\"}}}\n"
   },
   {
-   "t": 0.7174,
+   "t": 0.7517,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.7177,
+   "t": 0.7522,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-0\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 0, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7182,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 101, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 1, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7186,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-2\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 2, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7191,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 103, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 3, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7196,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-4\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 4, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.72,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 105, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 5, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7204,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
-  },
-  {
-   "t": 0.7206,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-6\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 6, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7211,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
-  },
-  {
-   "t": 0.7211,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 107, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 7, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7216,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-8\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 8, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7221,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 109, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 9, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7226,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-10\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 10, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.723,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 111, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 11, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7235,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-12\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 12, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7239,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 113, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 13, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7243,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-14\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 14, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7249,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 115, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 15, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7254,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-16\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 16, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7255,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
-  },
-  {
-   "t": 0.7259,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 117, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 17, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7259,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"slow\", \"method\": \"tools/call\", \"params\": {\"name\": \"trigger-long-running-operation\", \"arguments\": {\"duration\": 1, \"steps\": 2}, \"_meta\": {\"progressToken\": \"p-slow\"}}}\n"
-  },
-  {
-   "t": 0.7263,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-18\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 18, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7264,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-0\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 0, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7268,
-   "dir": "c2p",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 119, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 19, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7269,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 101, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 1, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7274,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-2\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 2, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7275,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
-  },
-  {
-   "t": 0.7278,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 103, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 3, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7283,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-4\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 4, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7289,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 105, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 5, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7293,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-6\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 6, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7298,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 107, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 7, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7302,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-8\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 8, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7307,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 109, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 9, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7312,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-10\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 10, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7317,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 111, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 11, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7321,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-12\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 12, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7326,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 113, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 13, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.733,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-14\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 14, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7332,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 0 and 1 is 1.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-0\"}\n"
-  },
-  {
-   "t": 0.7335,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 115, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 15, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7339,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-16\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 16, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7344,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 117, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 17, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7349,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 1 and 1 is 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":101}\n"
-  },
-  {
-   "t": 0.7353,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-18\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 18, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7358,
-   "dir": "p2s",
-   "server": "everything",
-   "line": "{\"jsonrpc\": \"2.0\", \"id\": 119, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 19, \"b\": 1}}}\n"
-  },
-  {
-   "t": 0.7361,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 2 and 1 is 3.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-2\"}\n"
-  },
-  {
-   "t": 0.7366,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 3 and 1 is 4.\"}]},\"jsonrpc\":\"2.0\",\"id\":103}\n"
-  },
-  {
-   "t": 0.7371,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 4 and 1 is 5.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-4\"}\n"
-  },
-  {
-   "t": 0.738,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 5 and 1 is 6.\"}]},\"jsonrpc\":\"2.0\",\"id\":105}\n"
-  },
-  {
-   "t": 0.7385,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 6 and 1 is 7.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-6\"}\n"
-  },
-  {
-   "t": 0.7389,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 7 and 1 is 8.\"}]},\"jsonrpc\":\"2.0\",\"id\":107}\n"
-  },
-  {
-   "t": 0.7394,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 8 and 1 is 9.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-8\"}\n"
-  },
-  {
-   "t": 0.7399,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 9 and 1 is 10.\"}]},\"jsonrpc\":\"2.0\",\"id\":109}\n"
-  },
-  {
-   "t": 0.7404,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 10 and 1 is 11.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-10\"}\n"
-  },
-  {
-   "t": 0.7409,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 11 and 1 is 12.\"}]},\"jsonrpc\":\"2.0\",\"id\":111}\n"
-  },
-  {
-   "t": 0.7414,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 12 and 1 is 13.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-12\"}\n"
-  },
-  {
-   "t": 0.7419,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 13 and 1 is 14.\"}]},\"jsonrpc\":\"2.0\",\"id\":113}\n"
-  },
-  {
-   "t": 0.7423,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 14 and 1 is 15.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-14\"}\n"
-  },
-  {
-   "t": 0.7426,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 15 and 1 is 16.\"}]},\"jsonrpc\":\"2.0\",\"id\":115}\n"
-  },
-  {
-   "t": 0.743,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 16 and 1 is 17.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-16\"}\n"
-  },
-  {
-   "t": 0.7434,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 17 and 1 is 18.\"}]},\"jsonrpc\":\"2.0\",\"id\":117}\n"
-  },
-  {
-   "t": 0.7437,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 18 and 1 is 19.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-18\"}\n"
-  },
-  {
-   "t": 0.7441,
-   "dir": "s2p",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 19 and 1 is 20.\"}]},\"jsonrpc\":\"2.0\",\"id\":119}\n"
-  },
-  {
-   "t": 0.7464,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 0 and 1 is 1.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-0\"}\n"
-  },
-  {
-   "t": 0.7473,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 1 and 1 is 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":101}\n"
-  },
-  {
-   "t": 0.7479,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 2 and 1 is 3.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-2\"}\n"
-  },
-  {
-   "t": 0.7485,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 3 and 1 is 4.\"}]},\"jsonrpc\":\"2.0\",\"id\":103}\n"
-  },
-  {
-   "t": 0.7491,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 4 and 1 is 5.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-4\"}\n"
-  },
-  {
-   "t": 0.7497,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 5 and 1 is 6.\"}]},\"jsonrpc\":\"2.0\",\"id\":105}\n"
-  },
-  {
-   "t": 0.7504,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 6 and 1 is 7.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-6\"}\n"
-  },
-  {
-   "t": 0.7509,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 7 and 1 is 8.\"}]},\"jsonrpc\":\"2.0\",\"id\":107}\n"
-  },
-  {
-   "t": 0.7514,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 8 and 1 is 9.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-8\"}\n"
-  },
-  {
-   "t": 0.7519,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 9 and 1 is 10.\"}]},\"jsonrpc\":\"2.0\",\"id\":109}\n"
-  },
-  {
-   "t": 0.7524,
-   "dir": "p2c",
-   "server": "everything",
-   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 10 and 1 is 11.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-10\"}\n"
   },
   {
    "t": 0.7529,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 101, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 1, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7535,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-2\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 2, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7544,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 103, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 3, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7552,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-4\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 4, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7561,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 105, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 5, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7569,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-6\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 6, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7575,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 0.7575,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 107, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 7, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7588,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-8\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 8, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.759,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 0.7605,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 109, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 9, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7613,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-10\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 10, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7621,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 111, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 11, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7645,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 0.7653,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-12\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 12, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7665,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"slow\", \"method\": \"tools/call\", \"params\": {\"name\": \"trigger-long-running-operation\", \"arguments\": {\"duration\": 1, \"steps\": 2}, \"_meta\": {\"progressToken\": \"p-slow\"}}}\n"
+  },
+  {
+   "t": 0.7666,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 113, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 13, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7674,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-0\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 0, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7677,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/tools/list_changed\",\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 0.7685,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 101, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 1, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7685,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-14\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 14, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7693,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-2\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 2, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7693,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 115, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 15, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7701,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 103, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 3, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7711,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-16\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 16, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7711,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-4\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 4, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7718,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 117, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 17, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7718,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 105, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 5, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7726,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-6\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 6, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7726,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-18\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 18, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7733,
+   "dir": "c2p",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 119, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 19, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7733,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 107, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 7, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.774,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-8\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 8, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7751,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 109, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 9, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7763,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-10\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 10, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7772,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 111, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 11, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.778,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-12\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 12, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7789,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 113, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 13, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7791,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 0 and 1 is 1.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-0\"}\n"
+  },
+  {
+   "t": 0.7797,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-14\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 14, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7805,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 115, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 15, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7813,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 1 and 1 is 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":101}\n"
+  },
+  {
+   "t": 0.7818,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-16\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 16, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7824,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 117, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 17, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7831,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 2 and 1 is 3.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-2\"}\n"
+  },
+  {
+   "t": 0.7837,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 3 and 1 is 4.\"}]},\"jsonrpc\":\"2.0\",\"id\":103}\n"
+  },
+  {
+   "t": 0.7843,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": \"req-18\", \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 18, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7848,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 4 and 1 is 5.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-4\"}\n"
+  },
+  {
+   "t": 0.7853,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 5 and 1 is 6.\"}]},\"jsonrpc\":\"2.0\",\"id\":105}\n"
+  },
+  {
+   "t": 0.7858,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 6 and 1 is 7.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-6\"}\n"
+  },
+  {
+   "t": 0.7864,
+   "dir": "p2s",
+   "server": "everything",
+   "line": "{\"jsonrpc\": \"2.0\", \"id\": 119, \"method\": \"tools/call\", \"params\": {\"name\": \"get-sum\", \"arguments\": {\"a\": 19, \"b\": 1}}}\n"
+  },
+  {
+   "t": 0.7869,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 7 and 1 is 8.\"}]},\"jsonrpc\":\"2.0\",\"id\":107}\n"
+  },
+  {
+   "t": 0.7875,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 8 and 1 is 9.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-8\"}\n"
+  },
+  {
+   "t": 0.7885,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 9 and 1 is 10.\"}]},\"jsonrpc\":\"2.0\",\"id\":109}\n"
+  },
+  {
+   "t": 0.789,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 10 and 1 is 11.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-10\"}\n"
+  },
+  {
+   "t": 0.7894,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 11 and 1 is 12.\"}]},\"jsonrpc\":\"2.0\",\"id\":111}\n"
+  },
+  {
+   "t": 0.7898,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 12 and 1 is 13.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-12\"}\n"
+  },
+  {
+   "t": 0.7903,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 13 and 1 is 14.\"}]},\"jsonrpc\":\"2.0\",\"id\":113}\n"
+  },
+  {
+   "t": 0.7907,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 14 and 1 is 15.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-14\"}\n"
+  },
+  {
+   "t": 0.7913,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 15 and 1 is 16.\"}]},\"jsonrpc\":\"2.0\",\"id\":115}\n"
+  },
+  {
+   "t": 0.7917,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 16 and 1 is 17.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-16\"}\n"
+  },
+  {
+   "t": 0.7922,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 17 and 1 is 18.\"}]},\"jsonrpc\":\"2.0\",\"id\":117}\n"
+  },
+  {
+   "t": 0.7926,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 18 and 1 is 19.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-18\"}\n"
+  },
+  {
+   "t": 0.793,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 19 and 1 is 20.\"}]},\"jsonrpc\":\"2.0\",\"id\":119}\n"
+  },
+  {
+   "t": 0.7957,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 0 and 1 is 1.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-0\"}\n"
+  },
+  {
+   "t": 0.7963,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 1 and 1 is 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":101}\n"
+  },
+  {
+   "t": 0.7969,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 2 and 1 is 3.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-2\"}\n"
+  },
+  {
+   "t": 0.7975,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 3 and 1 is 4.\"}]},\"jsonrpc\":\"2.0\",\"id\":103}\n"
+  },
+  {
+   "t": 0.7981,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 4 and 1 is 5.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-4\"}\n"
+  },
+  {
+   "t": 0.7986,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 5 and 1 is 6.\"}]},\"jsonrpc\":\"2.0\",\"id\":105}\n"
+  },
+  {
+   "t": 0.7991,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 6 and 1 is 7.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-6\"}\n"
+  },
+  {
+   "t": 0.7996,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 7 and 1 is 8.\"}]},\"jsonrpc\":\"2.0\",\"id\":107}\n"
+  },
+  {
+   "t": 0.8,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 8 and 1 is 9.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-8\"}\n"
+  },
+  {
+   "t": 0.8005,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 9 and 1 is 10.\"}]},\"jsonrpc\":\"2.0\",\"id\":109}\n"
+  },
+  {
+   "t": 0.8009,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 10 and 1 is 11.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-10\"}\n"
+  },
+  {
+   "t": 0.8014,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 11 and 1 is 12.\"}]},\"jsonrpc\":\"2.0\",\"id\":111}\n"
   },
   {
-   "t": 0.7534,
+   "t": 0.8018,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 12 and 1 is 13.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-12\"}\n"
   },
   {
-   "t": 0.754,
+   "t": 0.8023,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 13 and 1 is 14.\"}]},\"jsonrpc\":\"2.0\",\"id\":113}\n"
   },
   {
-   "t": 0.7545,
+   "t": 0.8028,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 14 and 1 is 15.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-14\"}\n"
   },
   {
-   "t": 0.755,
+   "t": 0.8033,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 15 and 1 is 16.\"}]},\"jsonrpc\":\"2.0\",\"id\":115}\n"
   },
   {
-   "t": 0.7556,
+   "t": 0.8038,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 16 and 1 is 17.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-16\"}\n"
   },
   {
-   "t": 0.7561,
+   "t": 0.8043,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 17 and 1 is 18.\"}]},\"jsonrpc\":\"2.0\",\"id\":117}\n"
   },
   {
-   "t": 0.7566,
+   "t": 0.8047,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 18 and 1 is 19.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"req-18\"}\n"
   },
   {
-   "t": 0.7572,
+   "t": 0.8052,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"The sum of 19 and 1 is 20.\"}]},\"jsonrpc\":\"2.0\",\"id\":119}\n"
   },
   {
-   "t": 1.2303,
+   "t": 1.2725,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":1,\"total\":2,\"progressToken\":\"p-slow\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.2311,
+   "t": 1.2733,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":1,\"total\":2,\"progressToken\":\"p-slow\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.7315,
+   "t": 1.7736,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":2,\"total\":2,\"progressToken\":\"p-slow\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.7328,
+   "t": 1.7747,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Long running operation completed. Duration: 1 seconds, Steps: 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"slow\"}\n"
   },
   {
-   "t": 1.733,
+   "t": 1.775,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":2,\"total\":2,\"progressToken\":\"p-slow\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 1.7341,
+   "t": 1.7758,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Long running operation completed. Duration: 1 seconds, Steps: 2.\"}]},\"jsonrpc\":\"2.0\",\"id\":\"slow\"}\n"
   },
   {
-   "t": 1.7353,
+   "t": 1.777,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": \"cancel-me\", \"method\": \"tools/call\", \"params\": {\"name\": \"trigger-long-running-operation\", \"arguments\": {\"duration\": 6, \"steps\": 3}, \"_meta\": {\"progressToken\": \"p-cancel\"}}}\n"
   },
   {
-   "t": 1.7361,
+   "t": 1.7776,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/cancelled\", \"params\": {\"requestId\": \"cancel-me\", \"reason\": \"user stopped\"}}\n"
   },
   {
-   "t": 1.7368,
+   "t": 1.7787,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": \"cancel-me\", \"method\": \"tools/call\", \"params\": {\"name\": \"trigger-long-running-operation\", \"arguments\": {\"duration\": 6, \"steps\": 3}, \"_meta\": {\"progressToken\": \"p-cancel\"}}}\n"
   },
   {
-   "t": 1.7375,
+   "t": 1.7795,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/cancelled\", \"params\": {\"requestId\": \"cancel-me\", \"reason\": \"user stopped\"}}\n"
   },
   {
-   "t": 3.7401,
+   "t": 3.7833,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":1,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 3.7409,
+   "t": 3.7847,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":1,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 5.7429,
+   "t": 5.7854,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":2,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 5.7444,
+   "t": 5.7869,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":2,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 7.7456,
+   "t": 7.7879,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":3,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 7.7473,
+   "t": 7.7893,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"method\":\"notifications/progress\",\"params\":{\"progress\":3,\"total\":3,\"progressToken\":\"p-cancel\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 9.7356,
+   "t": 9.7786,
    "dir": "c2p",
    "server": "everything",
    "line": "this is not json\n"
   },
   {
-   "t": 9.737,
+   "t": 9.7805,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": null, \"error\": {\"code\": -32700, \"message\": \"Parse error\"}}\n"
   },
   {
-   "t": 9.7386,
+   "t": 9.7842,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 40, \"method\": \"tools/call\", \"params\": [\"echo\"]}\n"
   },
   {
-   "t": 9.7398,
+   "t": 9.7874,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 40, \"error\": {\"code\": -32602, \"message\": \"Invalid params: params must be an object\"}}\n"
   },
   {
-   "t": 9.741,
+   "t": 9.7918,
    "dir": "c2p",
    "server": "everything",
    "b64": "eyJqc29ucnBjIjogIjIuMCIsICJpZCI6IDQxLCAibWV0aG9kIjogInRvb2xzL2NhbGwiLCAicGFyYW1zIjogeyJuYW1lIjogImVjaG8iLCAiYXJndW1lbnRzIjogeyJtZXNzYWdlIjogImNhZukifX19Cg=="
   },
   {
-   "t": 9.7432,
+   "t": 9.8024,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 41, \"method\": \"tools/call\", \"params\": {\"name\": \"echo\", \"arguments\": {\"message\": \"caf�\"}}}\n"
   },
   {
-   "t": 9.747,
+   "t": 9.8069,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: caf�\"}]},\"jsonrpc\":\"2.0\",\"id\":41}\n"
   },
   {
-   "t": 9.7498,
+   "t": 9.8097,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: caf�\"}]},\"jsonrpc\":\"2.0\",\"id\":41}\n"
   },
   {
-   "t": 9.7533,
+   "t": 9.8115,
    "dir": "c2p",
    "server": "everything",
    "line": "[{\"jsonrpc\": \"2.0\", \"id\": 42, \"method\": \"tools/call\", \"params\": {\"name\": \"echo\", \"arguments\": {\"message\": \"first\"}}}, {\"jsonrpc\": \"2.0\", \"id\": 43, \"method\": \"tools/call\", \"params\": {\"name\": \"echo\", \"arguments\": {\"message\": \"second\"}}}]\n"
   },
   {
-   "t": 9.7561,
+   "t": 9.8132,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 42, \"method\": \"tools/call\", \"params\": {\"name\": \"echo\", \"arguments\": {\"message\": \"first\"}}}\n"
   },
   {
-   "t": 9.7571,
+   "t": 9.8142,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 43, \"method\": \"tools/call\", \"params\": {\"name\": \"echo\", \"arguments\": {\"message\": \"second\"}}}\n"
   },
   {
-   "t": 9.7582,
+   "t": 9.8154,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: first\"}]},\"jsonrpc\":\"2.0\",\"id\":42}\n"
   },
   {
-   "t": 9.7593,
+   "t": 9.8162,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: second\"}]},\"jsonrpc\":\"2.0\",\"id\":43}\n"
   },
   {
-   "t": 9.7597,
+   "t": 9.8164,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: first\"}]},\"jsonrpc\":\"2.0\",\"id\":42}\n"
   },
   {
-   "t": 9.7608,
+   "t": 9.8172,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Echo: second\"}]},\"jsonrpc\":\"2.0\",\"id\":43}\n"
   },
   {
-   "t": 9.7619,
+   "t": 9.8182,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 44, \"method\": \"ping\"}\n"
   },
   {
-   "t": 9.7631,
+   "t": 9.819,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 44, \"method\": \"ping\"}\n"
   },
   {
-   "t": 9.7657,
+   "t": 9.8215,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":44}\n"
   },
   {
-   "t": 9.7697,
+   "t": 9.8228,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{},\"jsonrpc\":\"2.0\",\"id\":44}\n"
   },
   {
-   "t": 9.7725,
+   "t": 9.8241,
    "dir": "c2p",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 45, \"method\": \"tools/call\", \"params\": {\"name\": \"toggle-simulated-logging\", \"arguments\": {}}}\n"
   },
   {
-   "t": 9.7768,
+   "t": 9.8259,
    "dir": "p2s",
    "server": "everything",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 45, \"method\": \"tools/call\", \"params\": {\"name\": \"toggle-simulated-logging\", \"arguments\": {}}}\n"
   },
   {
-   "t": 9.7798,
+   "t": 9.8289,
    "dir": "s2p",
    "server": "everything",
-   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"alert\",\"data\":\"Alert level-message\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"critical\",\"data\":\"Critical-level message\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 9.781,
+   "t": 9.8301,
    "dir": "s2p",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Started simulated, random-leveled logging for session undefined at a 5 second pace. Client's selected logging level will be respected. If an interval elapses and the message to be sent is below the selected level, it will not be sent. Thus at higher chosen logging levels, messages should arrive further apart. \"}]},\"jsonrpc\":\"2.0\",\"id\":45}\n"
   },
   {
-   "t": 9.7812,
+   "t": 9.8304,
    "dir": "p2c",
    "server": "everything",
-   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"alert\",\"data\":\"Alert level-message\"},\"jsonrpc\":\"2.0\"}\n"
+   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"critical\",\"data\":\"Critical-level message\"},\"jsonrpc\":\"2.0\"}\n"
   },
   {
-   "t": 9.7823,
+   "t": 9.8313,
    "dir": "p2c",
    "server": "everything",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Started simulated, random-leveled logging for session undefined at a 5 second pace. Client's selected logging level will be respected. If an interval elapses and the message to be sent is below the selected level, it will not be sent. Thus at higher chosen logging levels, messages should arrive further apart. \"}]},\"jsonrpc\":\"2.0\",\"id\":45}\n"
   },
   {
-   "t": 9.784,
+   "t": 9.8323,
    "dir": "client-eof",
    "server": "everything"
   },
   {
-   "t": 9.7843,
+   "t": 9.8325,
    "dir": "server-eof",
    "server": "everything"
   },
   {
-   "t": 14.7918,
+   "t": 14.831,
+   "dir": "s2p",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"debug\",\"data\":\"Debug-level message\"},\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 14.8332,
+   "dir": "p2c",
+   "server": "everything",
+   "line": "{\"method\":\"notifications/message\",\"params\":{\"level\":\"debug\",\"data\":\"Debug-level message\"},\"jsonrpc\":\"2.0\"}\n"
+  },
+  {
+   "t": 14.844,
    "dir": "server-exit",
    "server": "everything",
    "code": -15
   },
   {
-   "t": 14.7994,
+   "t": 14.855,
    "dir": "client-exit",
    "server": "everything",
    "code": 143

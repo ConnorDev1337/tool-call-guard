@@ -17,73 +17,73 @@
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.3966,
+   "t": 0.4114,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 0, \"method\": \"initialize\", \"params\": {\"protocolVersion\": \"2025-11-25\", \"capabilities\": {}, \"clientInfo\": {\"name\": \"toolguard-live-driver\", \"version\": \"1\"}}}\n"
   },
   {
-   "t": 0.6658,
+   "t": 0.6738,
    "dir": "s2p",
    "server": "memory",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"resources\":{\"listChanged\":true,\"subscribe\":true}},\"serverInfo\":{\"name\":\"memory-server\",\"version\":\"1.0.0\"}},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.6679,
+   "t": 0.6757,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"result\":{\"protocolVersion\":\"2025-11-25\",\"capabilities\":{\"tools\":{\"listChanged\":true},\"resources\":{\"listChanged\":true,\"subscribe\":true}},\"serverInfo\":{\"name\":\"memory-server\",\"version\":\"1.0.0\"}},\"jsonrpc\":\"2.0\",\"id\":0}\n"
   },
   {
-   "t": 0.669,
+   "t": 0.6773,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.6697,
+   "t": 0.6784,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"read_graph\", \"arguments\": {}}}\n"
   },
   {
-   "t": 0.6699,
+   "t": 0.6786,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"method\": \"notifications/initialized\"}\n"
   },
   {
-   "t": 0.6805,
+   "t": 0.689,
    "dir": "p2s",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"tools/call\", \"params\": {\"name\": \"read_graph\", \"arguments\": {}}}\n"
   },
   {
-   "t": 0.6873,
+   "t": 0.6978,
    "dir": "s2p",
    "server": "memory",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\n  \\\"entities\\\": [\\n    {\\n      \\\"name\\\": \\\"Archive-2019\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"kept for the test\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Team-Roster\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"kept for the test\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Old-Agenda\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"x\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Old-Budget\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"x\\\"\\n      ]\\n    }\\n  ],\\n  \\\"relations\\\": []\\n}\"}],\"structuredContent\":{\"entities\":[{\"name\":\"Archive-2019\",\"entityType\":\"note\",\"observations\":[\"kept for the test\"]},{\"name\":\"Team-Roster\",\"entityType\":\"note\",\"observations\":[\"kept for the test\"]},{\"name\":\"Old-Agenda\",\"entityType\":\"note\",\"observations\":[\"x\"]},{\"name\":\"Old-Budget\",\"entityType\":\"note\",\"observations\":[\"x\"]}],\"relations\":[]}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 0.6987,
+   "t": 0.7103,
    "dir": "p2c",
    "server": "memory",
    "line": "{\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"{\\n  \\\"entities\\\": [\\n    {\\n      \\\"name\\\": \\\"Archive-2019\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"kept for the test\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Team-Roster\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"kept for the test\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Old-Agenda\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"x\\\"\\n      ]\\n    },\\n    {\\n      \\\"name\\\": \\\"Old-Budget\\\",\\n      \\\"entityType\\\": \\\"note\\\",\\n      \\\"observations\\\": [\\n        \\\"x\\\"\\n      ]\\n    }\\n  ],\\n  \\\"relations\\\": []\\n}\"}],\"structuredContent\":{\"entities\":[{\"name\":\"Archive-2019\",\"entityType\":\"note\",\"observations\":[\"kept for the test\"]},{\"name\":\"Team-Roster\",\"entityType\":\"note\",\"observations\":[\"kept for the test\"]},{\"name\":\"Old-Agenda\",\"entityType\":\"note\",\"observations\":[\"x\"]},{\"name\":\"Old-Budget\",\"entityType\":\"note\",\"observations\":[\"x\"]}],\"relations\":[]}},\"jsonrpc\":\"2.0\",\"id\":1}\n"
   },
   {
-   "t": 0.7001,
+   "t": 0.7126,
    "dir": "c2p",
    "server": "memory",
    "line": "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"tools/call\", \"params\": {\"name\": \"read_graph\", \"arguments\": {}}}\n"
   },
   {
-   "t": 0.7006,
+   "t": 0.7136,
    "dir": "server-exit",
    "server": "memory",
    "code": -9
   },
   {
-   "t": 0.7042,
+   "t": 0.7208,
    "dir": "client-exit",
    "server": "memory",
    "code": 137

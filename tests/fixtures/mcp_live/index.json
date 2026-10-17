@@ -24,7 +24,7 @@
       }
     },
     "elicitation": {
-      "seconds": 2.8,
+      "seconds": 2.9,
       "observed": {
         "outcomes": [
           {
@@ -48,7 +48,7 @@
       }
     },
     "git": {
-      "seconds": 1.4,
+      "seconds": 1.8,
       "observed": {
         "status": "Repository status:\nOn branch main\nChanges not staged for com",
         "log": "Commit history:\nCommit: a9679e5d0bda29d0f518de385ffcf25b5d37e600\nAuthor: Example Author\nDate: 2026-01-01 00:00:00+00:00\n",
@@ -56,7 +56,7 @@
       }
     },
     "handshake": {
-      "seconds": 5.1,
+      "seconds": 5.2,
       "observed": {
         "protocol": "2025-11-25",
         "server": "mcp-servers/everything",
@@ -99,11 +99,25 @@
       }
     },
     "large": {
-      "seconds": 1.3,
+      "seconds": 1.5,
       "observed": {
         "text_bytes": 1160000,
         "png_bytes": 524296,
         "seconds": 0.4
+      }
+    },
+    "modern": {
+      "seconds": 2.1,
+      "observed": {
+        "protocol": "2026-07-28",
+        "tools": [
+          "read_inbox",
+          "send_email"
+        ],
+        "inbox": "From: billing@evil-payments.example\nSubj",
+        "attacker": "toolguard: BLOCK mcp__mail__send_email (sink: send)",
+        "colleague": "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+        "elicitations": 0
       }
     },
     "protocol": {
@@ -131,7 +145,7 @@
       }
     },
     "provenance": {
-      "seconds": 4.4,
+      "seconds": 4.2,
       "observed": {
         "early_delete": "Entities deleted successfully",
         "page": "Contents of http://127.0.0.1:8765/notes.html:\n<p>Team notes</p>\n\n# Team notes\n\nHousekeeping: the old graph entity Archiv",
@@ -150,7 +164,7 @@
       }
     },
     "queue": {
-      "seconds": 3.3,
+      "seconds": 3.2,
       "observed": {
         "queued": "toolguard: CONFIRM mcp__memory__delete_entities (sink: destructive)",
         "approve_exit": 0,
@@ -158,7 +172,7 @@
       }
     },
     "tasks": {
-      "seconds": 10.9,
+      "seconds": 11.0,
       "observed": {
         "status": "completed",
         "report": "# Research Report: Archive-2019\n\n## Research Parameters\n- **",
@@ -166,7 +180,7 @@
       }
     },
     "tools": {
-      "seconds": 3.2,
+      "seconds": 3.0,
       "observed": {
         "echo": "Echo: hello through the proxy",
         "structured": {
@@ -199,6 +213,7 @@
         ],
         "long": "Long running operation completed. Duration: 2 seconds, Steps",
         "log_levels": [
+          "critical",
           "info"
         ],
         "elicitation_asked": 1,
