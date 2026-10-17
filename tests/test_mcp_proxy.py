@@ -1,6 +1,7 @@
 import json
 import os
 import queue
+import subprocess
 import sys
 import threading
 
@@ -477,3 +478,24 @@ def test_batch_launcher_on_path_starts_on_windows(harness, tmp_path, monkeypatch
     monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ['PATH']}")
     h = harness(command=["fake-mail"])
     assert h.initialize()["result"]["serverInfo"]["name"] == "fake-mail"
+
+
+def test_proxy_process_exits_with_the_server_while_the_client_is_connected(tmp_path):
+    # The client pump is still blocked reading stdin when the server exits; a normal
+    # interpreter shutdown then aborted with "could not acquire lock for <stdin>".
+    env = {**os.environ, "TOOLGUARD_HOME": str(tmp_path / "home")}
+    server = [sys.executable, "-c", "import sys; sys.exit(3)"]
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "toolguard", "mcp-proxy", "--server-name", "x", "--", *server],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+    )
+    try:
+        assert proc.wait(30) == 3
+        assert b"Fatal Python error" not in proc.stderr.read()
+    finally:
+        proc.stdin.close()
+        proc.stdout.close()
+        proc.stderr.close()
