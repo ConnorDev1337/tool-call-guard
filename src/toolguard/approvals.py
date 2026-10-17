@@ -399,13 +399,16 @@ class QueueApprover:
             self._audit = AuditLog(self.store, audit_key_from_env())
         return self._audit
 
-    def _event(self, session: str, **data: Any) -> None:
+    def record_event(self, session: str, **data: Any) -> None:
+        """Append an ``approval`` audit event; callers never pass the code."""
         self.audit.append("approval", session, data)
 
     def expire(self, now: float) -> None:
         """Close pending approvals whose code has expired, recording each one."""
         for approval in self.store.expire_approvals(now):
-            self._event(approval.session, id=approval.id, status="expired", tool=approval.tool)
+            self.record_event(
+                approval.session, id=approval.id, status="expired", tool=approval.tool
+            )
 
     def request(self, req: ApprovalRequest) -> ApprovalOutcome:
         now = self.clock()
@@ -423,7 +426,7 @@ class QueueApprover:
                             approval_id=latest.id,
                             channel=latest.channel,
                         )
-                    self._event(
+                    self.record_event(
                         req.session,
                         id=latest.id,
                         status="rejected",
@@ -447,7 +450,7 @@ class QueueApprover:
                 return ApprovalOutcome("pending", approval_id=latest.id, channel=latest.channel)
             if latest.status == "pending" and self.store.close_approval(latest.id, "expired", now):
                 # Created before approvals required a code: it can never be approved.
-                self._event(req.session, id=latest.id, status="expired", tool=req.tool)
+                self.record_event(req.session, id=latest.id, status="expired", tool=req.tool)
         return self._create(req, now)
 
     def _create(self, req: ApprovalRequest, now: float) -> ApprovalOutcome:
@@ -467,7 +470,7 @@ class QueueApprover:
             code_alg=settings.algorithm,
             approval_id=approval_id,
         )
-        self._event(
+        self.record_event(
             req.session,
             id=approval.id,
             status="created",
@@ -489,14 +492,14 @@ class QueueApprover:
         for channel, error in deliver(self.notifiers, notice):
             if error is None:
                 self.store.set_approval_channel(approval.id, channel)
-                self._event(req.session, id=approval.id, status="notified", channel=channel)
+                self.record_event(req.session, id=approval.id, status="notified", channel=channel)
                 return ApprovalOutcome("pending", approval_id=approval.id, channel=channel)
             failed.append(channel)
-            self._event(
+            self.record_event(
                 req.session, id=approval.id, status="notify_failed", channel=channel, error=error
             )
         self.store.close_approval(approval.id, "undeliverable", now)
-        self._event(req.session, id=approval.id, status="undeliverable", channels=failed)
+        self.record_event(req.session, id=approval.id, status="undeliverable", channels=failed)
         why = (
             "the approval code could not be delivered out of band"
             if self.notifiers

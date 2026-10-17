@@ -218,20 +218,22 @@ def cmd_approve(args: argparse.Namespace) -> int:
     )
     session, base = approval.session, {"id": approval.id, "tool": approval.tool}
     if result.status == "approved":
-        queue._event(session, **base, status="approved", by=by)
+        queue.record_event(session, **base, status="approved", by=by)
         print(f"{approval.id}: approved. The agent may now retry the identical call.")
         return 0
     if result.status == "wrong":
-        queue._event(session, **base, status="failed_attempt", by=by, left=result.attempts_left)
+        queue.record_event(
+            session, **base, status="failed_attempt", by=by, left=result.attempts_left
+        )
         print(f"error: wrong code ({result.attempts_left} attempt(s) left)", file=sys.stderr)
         return 1
     if result.status == "locked":
-        queue._event(session, **base, status="failed_attempt", by=by, left=0)
-        queue._event(session, **base, status="locked", attempts=config.settings.max_attempts)
+        queue.record_event(session, **base, status="failed_attempt", by=by, left=0)
+        queue.record_event(session, **base, status="locked", attempts=config.settings.max_attempts)
         print(f"error: wrong code; approval {approval.id} is now locked", file=sys.stderr)
         return 1
     if result.status == "expired":
-        queue._event(session, **base, status="expired")
+        queue.record_event(session, **base, status="expired")
     print(f"error: {_APPROVE_ERRORS[result.status]}", file=sys.stderr)
     return 1 if result.status == "expired" else 2
 
@@ -254,7 +256,9 @@ def cmd_deny(args: argparse.Namespace) -> int:
     if not store.decide_approval(approval.id, "denied", by, time.time()):
         print("error: approval was decided concurrently", file=sys.stderr)
         return 2
-    queue._event(approval.session, id=approval.id, tool=approval.tool, status="denied", by=by)
+    queue.record_event(
+        approval.session, id=approval.id, tool=approval.tool, status="denied", by=by
+    )
     print(f"{approval.id}: denied.")
     return 0
 
