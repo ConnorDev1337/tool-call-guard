@@ -39,6 +39,17 @@ Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and
 The `large` scenario (a 1.16 MB text file and a 512 KiB image through the filesystem server) is
 checked live but not kept: its summary is in `index.json`.
 
+## Changes since the capture
+
+The files are kept exactly as recorded. When an engine fix changes a refusal written by the
+proxy, the replay replaces that refusal in memory and the test lists the new text and the reason
+in `AMENDED` ([`test_mcp_proxy_live.py`](../../test_mcp_proxy_live.py)); `observed` in the
+fixture and in `index.json` still shows what was seen at capture time.
+
+| Scenario | Recorded | Replayed today | Why |
+|---|---|---|---|
+| `provenance` | `CONFIRM mcp__fetch__fetch` for the URL carrying the `.env` token | `BLOCK` (`private_flow`) | The page echoes its own URL, so the exfiltration URL's host was attributed to the page and that attribution hid the private flow of the token in its query. A private flow is now only explained away by an untrusted source that contains the same data |
+
 ## Format
 
 ```json

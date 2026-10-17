@@ -263,15 +263,15 @@ class Guard:
                     endorsed,
                 )
             )
-        # An argument already attributed to an untrusted source (e.g. the attacker's
-        # address inside a private e-mail) is explained by that flow; do not report
-        # it again as a leak of private data.
-        attributed_args = {e.arg for e in attributed}
-        leaks = tuple(
-            e
-            for e in private_flows(select_args(args, ("*",)), private, trusted)
-            if e.arg not in attributed_args
-        )
+        # Private data that the untrusted source of the same argument also contains (the
+        # attacker's address inside a private e-mail) is explained by that flow and not
+        # reported again; other private data in that argument (a key appended to a URL
+        # whose host came from a page) is still a leak.
+        by_id = {o.id: o for o in untrusted}
+        explained: dict[str, list[Observation]] = {}
+        for e in attributed:
+            explained.setdefault(e.arg, []).append(by_id[e.observation_id])
+        leaks = tuple(private_flows(select_args(args, ("*",)), private, trusted, explained))
         if leaks:
             names = ", ".join(dict.fromkeys(e.arg for e in leaks))
             reasons.append(

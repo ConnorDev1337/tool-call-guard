@@ -15,8 +15,9 @@ import math
 import re
 import unicodedata
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
+from urllib.parse import unquote
 
 from .model import Evidence, Indicator, Observation
 from .redact import redact_value
@@ -207,49 +208,81 @@ def untrusted_flows(
     return evidence
 
 
+def _private_hits(value: str, private: list[Observation]) -> Iterator[_Hit]:
+    """Yield the attributions of ``value`` to ``private`` observations, strongest first.
+
+    Secret-shaped tokens come first, then the whole value, then copied fragments. A
+    percent-encoded value (``?t=abc%2Bdef``) is also matched decoded, so URL encoding
+    does not hide a copied secret.
+    """
+    texts = [value]
+    if "%" in value and (decoded := unquote(value)) != value:
+        texts.append(decoded)
+    tokens = set().union(*(secret_tokens(text) for text in texts))
+    for token in sorted(tokens, key=lambda t: (-len(t), t)):
+        obs = next((o for o in private if token.lower() in o.text), None)
+        if obs is not None:
+            yield _Hit("secret", token, obs)
+    for text in texts:
+        norm = normalize(text)
+        if len(norm) >= FRAGMENT_MIN_CHARS:
+            obs = next((o for o in private if norm in o.text), None)
+            if obs is not None:
+                yield _Hit("verbatim", norm, obs)
+        for piece in _fragments(norm):
+            obs = next((o for o in private if piece in o.text), None)
+            if obs is not None:
+                yield _Hit("fragment", piece, obs)
+
+
+def _contains(matched: str, observations: Iterable[Observation]) -> bool:
+    lowered = matched.lower()
+    return any(
+        lowered in obs.text or any(i.value in (matched, lowered) for i in obs.indicators)
+        for obs in observations
+    )
+
+
 def private_flows(
     values: Iterable[tuple[str, str]],
     private: list[Observation],
     trusted: list[Observation] | None = None,
+    explained: Mapping[str, list[Observation]] | None = None,
 ) -> list[Evidence]:
     """Return evidence that ``(path, value)`` pairs carry private data (secrets or copied text).
 
     Copied text that also appears verbatim in ``trusted`` (user) input is endorsed, not
     reported: the user supplied the value. Secret-shaped tokens are never endorsed, since
     a key the user pasted is still a key that must not leak.
+
+    ``explained`` maps an argument path to the untrusted observations it is already
+    attributed to. Private data that those observations also contain (the attacker's
+    address inside a private e-mail) is explained by that flow and not reported again,
+    but other private data in the same argument (a key appended to an attacker's URL)
+    still is.
     """
     if not private:
         return []
     trusted = trusted or []
+    explained = explained or {}
     evidence = []
     for path, value in values:
-        hit: _Hit | None = None
-        for token in sorted(secret_tokens(value), key=len, reverse=True):
-            obs = next((o for o in private if token.lower() in o.text), None)
-            if obs is not None:
-                hit = _Hit("secret", token, obs)
-                break
+        sources = explained.get(path, [])
+        hit = next(
+            (h for h in _private_hits(value, private) if not _contains(h.matched, sources)),
+            None,
+        )
         if hit is None:
-            norm = normalize(value)
-            if len(norm) >= FRAGMENT_MIN_CHARS:
-                obs = next((o for o in private if norm in o.text), None)
-                hit = _Hit("verbatim", norm, obs) if obs else None
-            if hit is None:
-                for piece in _fragments(norm):
-                    obs = next((o for o in private if piece in o.text), None)
-                    if obs is not None:
-                        hit = _Hit("fragment", piece, obs)
-                        break
-        if hit is not None:
-            if hit.method != "secret" and _endorsed(hit.matched, trusted):
-                continue  # The user supplied this value; it is not a private leak
-            evidence.append(
-                Evidence(
-                    arg=path,
-                    method=hit.method,
-                    matched=redact_value(hit.matched, 80, force=hit.method == "secret"),
-                    observation_id=hit.observation.id,
-                    source=hit.observation.label,
-                )
+            continue
+        if hit.method != "secret" and _endorsed(hit.matched, trusted):
+            continue  # The user supplied this value; it is not a private leak
+        evidence.append(
+            Evidence(
+                arg=path,
+                method=hit.method,
+                matched=redact_value(hit.matched, 80, force=hit.method == "secret"),
+                observation_id=hit.observation.id,
+                source=hit.observation.label,
             )
+        )
     return evidence

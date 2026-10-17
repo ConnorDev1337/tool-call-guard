@@ -107,7 +107,11 @@ their **critical arguments** (`to`, `iban`, `command`, `file_path`...) and wheth
 **Evidence** comes from indicators, verbatim matches, fragments of ≥ 4 consecutive tokens and
 high-entropy tokens. If the value also appears in what the user typed, it is **endorsed**
 (`endorsed_flow`) and not attributed to the untrusted source; private text the user typed is
-endorsed too, but secret-shaped tokens never are. `directed_flow` is softer than `untrusted_flow`
+endorsed too, but secret-shaped tokens never are. Private data that the untrusted source of the
+same argument also contains (the attacker's address inside a private e-mail) is reported once, as
+an untrusted flow; other private data in that argument (a key appended to a URL whose host came
+from a page) is still a `private_flow`. Percent-encoded arguments are also matched decoded.
+`directed_flow` is softer than `untrusted_flow`
 (the user pointed at the source, but it may still carry injected instructions the guard cannot
 distinguish from legitimate data), so `balanced` asks a human where it would otherwise block.
 **Self-protection rules** always
