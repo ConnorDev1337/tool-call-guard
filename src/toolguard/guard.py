@@ -292,7 +292,9 @@ class Guard:
                 )
             )
         action = max((r.action for r in reasons), default=Action.ALLOW)
-        return Decision(tool, args, action, sink.category, reasons, policy.mode)
+        return Decision(
+            tool, args, action, sink.category, reasons, policy.mode, critical=sink.critical
+        )
 
     def check(
         self,
@@ -309,13 +311,7 @@ class Guard:
         if self.policy.mode == "monitor":
             decision.effective = Action.ALLOW
         elif decision.action == Action.CONFIRM:
-            request = ApprovalRequest(
-                session=session,
-                tool=tool,
-                fingerprint=decision.fingerprint,
-                summary=decision.explain(),
-                args_preview=redact_args(decision.args, 200),
-            )
+            request = ApprovalRequest.for_decision(session, decision)
             apply_outcome(decision, (approver or self.approver).request(request))
         self.audit.append("decision", session, self.decision_record(decision))
         return decision

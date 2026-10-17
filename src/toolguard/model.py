@@ -115,6 +115,7 @@ class Decision:
     approval_status: str | None = None  # "approved" | "denied" | "pending" | "delegated"
     approved_by: str | None = None
     approval_channel: str | None = None  # Out-of-band notifier that delivered the code
+    critical: tuple[str, ...] = ()  # Critical arguments of the matched sink
 
     def __post_init__(self) -> None:
         if self.effective is None:

@@ -384,15 +384,7 @@ class McpProxy:
     def _confirm_via_queue(
         self, message: dict[str, Any], tool: str, args: Any, decision: Decision
     ) -> None:
-        outcome = self.queue.request(
-            ApprovalRequest(
-                session=self.guard.session,
-                tool=tool,
-                fingerprint=decision.fingerprint,
-                summary=decision.explain(),
-                args_preview=redact_args(args, 200),
-            )
-        )
+        outcome = self.queue.request(ApprovalRequest.for_decision(self.guard.session, decision))
         apply_outcome(decision, outcome)
         self._audit(decision)
         if decision.effective == Action.ALLOW:

@@ -55,6 +55,7 @@ class Notice:
     summary: str = ""
     args_preview: Any = None
     test: bool = False
+    brief: str = ""  # What the human approves (call, values, rules, provenance)
 
     @property
     def title(self) -> str:
@@ -63,7 +64,11 @@ class Notice:
         return f"toolguard: approval {self.approval_id} for {self.tool}"
 
     def text(self, details: bool = True) -> str:
-        """Return the notice as plain text; ``details`` adds the evidence and arguments."""
+        """Return the notice as plain text; ``details`` adds the brief (or the evidence).
+
+        Without ``details`` only the brief's first line (the call, its sink and the
+        rules that fired) follows the approval instructions, for short channels.
+        """
         if self.test:
             return "This is a test of the toolguard approval channel; no action is needed."
         expires = _dt.datetime.fromtimestamp(self.expires).isoformat(sep=" ", timespec="seconds")
@@ -73,11 +78,15 @@ class Notice:
             f"Approve: toolguard approve {self.approval_id} (enter the code when asked).",
             f"Deny: toolguard deny {self.approval_id}. Never paste the code into the agent.",
         ]
-        if details:
+        if details and self.brief:
+            lines += ["", self.brief]
+        elif details:
             lines += ["", self.summary]
             if self.args_preview is not None:
                 preview = json.dumps(self.args_preview, ensure_ascii=False, default=str)
                 lines.append(f"Arguments (redacted): {preview}")
+        elif self.brief:
+            lines.append(self.brief.split("\n", 1)[0])
         return "\n".join(lines).rstrip()
 
     def payload(self, details: bool = True) -> dict[str, Any]:
@@ -94,7 +103,7 @@ class Notice:
             "text": self.text(details),
         }
         if details:
-            body.update(summary=self.summary, args=self.args_preview)
+            body.update(summary=self.summary, args=self.args_preview, brief=self.brief)
         return body
 
 
