@@ -9,7 +9,7 @@ Clients are the official Python SDK (``mcp``) or, for malformed and concurrent
 input that the SDK never sends, a minimal JSON-RPC client. Each scenario checks
 its own expectations; failures are listed in ``summary.json``.
 
-Usage: ``python driver.py OUT_DIR`` writes ``<scenario>-<server>.client.jsonl`` and
+Usage: ``python driver.py OUT_DIR [SCENARIO...]`` writes ``<scenario>-<server>.client.jsonl`` and
 ``<scenario>-<server>.server.jsonl`` tap logs and ``summary.json`` into OUT_DIR.
 """
 
@@ -62,6 +62,7 @@ SERVERS = {
         "--allow-private-ips",
     ],
     "git": ["/opt/git/bin/mcp-server-git", "--repository", "/work/repo"],
+    "mail": ["/opt/client/bin/python", str(CAPTURE / "mail_server.py")],
 }
 
 PAGE = (
@@ -759,6 +760,30 @@ async def git(out: Path) -> dict[str, Any]:
     return {"status": text_of(status)[:60], "log": text_of(log)[:120], "diff": text_of(diff)[:80]}
 
 
+async def modern(out: Path) -> dict[str, Any]:
+    """Protocol 2026-07-28 end to end: no initialize, per-request capabilities."""
+    asked = Elicitations([APPROVE])
+    async with sdk(out, "modern", "mail", mode="auto", elicitation_callback=asked) as c:
+        listed = [t.name for t in (await c.list_tools()).tools]
+        inbox = await c.call_tool("read_inbox", {})
+        attacker = await c.call_tool("send_email", {"to": ATTACKER, "body": "invoices"})
+        colleague = await c.call_tool("send_email", {"to": "alice@corp.example", "body": "hi"})
+        result = {
+            "protocol": c.protocol_version,
+            "tools": listed,
+            "inbox": text_of(inbox)[:40],
+            "attacker": text_of(attacker).splitlines()[0],
+            "colleague": text_of(colleague).splitlines()[0],
+            "elicitations": len(asked.asked),
+        }
+    check(result["protocol"] == "2026-07-28", "negotiated the stateless revision")
+    check(attacker.is_error and "BLOCK" in result["attacker"], "injected recipient blocked")
+    # Without an initialize the proxy cannot know the client supports elicitation, so the
+    # confirmation goes to the queue, which refuses without a notifier (fail closed).
+    check(colleague.is_error and result["elicitations"] == 0, "confirmation fails closed")
+    return result
+
+
 async def large(out: Path) -> dict[str, Any]:
     """Large text and binary results cross the proxy intact (not kept as fixtures)."""
     data = WORK / "data"
@@ -814,6 +839,7 @@ SCENARIOS = [
     protocol,
     crash,
     git,
+    modern,
     large,
 ]
 
@@ -843,12 +869,14 @@ def prepare() -> ThreadingHTTPServer:
     return server
 
 
-async def main(out_dir: str) -> int:
+async def main(out_dir: str, only: list[str]) -> int:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     web = prepare()
     entries = []
     for scenario in SCENARIOS:
+        if only and scenario.__name__ not in only:
+            continue
         entry: dict[str, Any] = {"scenario": scenario.__name__}
         started = time.monotonic()
         try:
@@ -869,4 +897,4 @@ async def main(out_dir: str) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main(sys.argv[1] if len(sys.argv) > 1 else "/out")))
+    sys.exit(asyncio.run(main(sys.argv[1] if len(sys.argv) > 1 else "/out", sys.argv[2:])))
