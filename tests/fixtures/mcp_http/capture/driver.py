@@ -96,6 +96,9 @@ def wait_port(port: int, timeout: float = 30.0) -> None:
     raise Failed(f"nothing listens on port {port}")
 
 
+SERVER_OF: dict[str, str] = {}  # Scenario -> the --server-name of its proxy
+
+
 class Stack:
     """The processes of one scenario: server, taps and proxy."""
 
@@ -104,6 +107,7 @@ class Stack:
         self.procs: list[subprocess.Popen[bytes]] = []
         self.proxy: subprocess.Popen[bytes] | None = None
         self.session = f"live-{scenario}"
+        SERVER_OF[scenario] = server
 
     def start(self, args: list[str], **kwargs: Any) -> subprocess.Popen[bytes]:
         proc = subprocess.Popen(args, env=environment(**kwargs.pop("env", {})), **kwargs)
@@ -202,26 +206,37 @@ class Elicitations:
 APPROVE = ElicitResult(action="accept", content={"approve": True})
 
 
-def observe_secret(session: str) -> None:
-    """Record a .env read in the session, as another integration of the same agent would."""
+SECRET_READ = {
+    "tool": "Read",
+    "args": {"file_path": "/work/app/.env"},
+    "content": f"API_TOKEN={TOKEN}",
+}
+
+
+def observe_secret(session: str) -> dict[str, Any]:
+    """Record a .env read in the session, as another integration of the same agent would.
+
+    Return the observation: the replay records it before the traffic.
+    """
     subprocess.run(
         [
             PYTHON,
             "-m",
             "toolguard",
             "observe",
-            "Read",
+            SECRET_READ["tool"],
             "--session",
             session,
             "--db",
             DB,
             "--args",
-            json.dumps({"file_path": "/work/app/.env"}),
+            json.dumps(SECRET_READ["args"]),
         ],
-        input=f"API_TOKEN={TOKEN}\n".encode(),
+        input=SECRET_READ["content"].encode(),
         env=environment(),
         check=True,
     )
+    return SECRET_READ
 
 
 # --------------------------------------------------------------------------- raw HTTP
@@ -341,7 +356,7 @@ async def mail_legacy(out: Path) -> dict[str, Any]:
         ]
     )
     with Stack(out, "mail_legacy", "mail") as stack, no_bearer_in_audit():
-        observe_secret(stack.session)
+        setup = [observe_secret(stack.session)]
         async with create_mcp_http_client(headers={"Authorization": BEARER}) as http:
             transport = streamable_http_client(URL, http_client=http)
             async with Client(
@@ -380,6 +395,7 @@ async def mail_legacy(out: Path) -> dict[str, Any]:
                     "synced": text_of(synced)[:40],
                     "elicitations": asked.asked,
                 }
+    result["setup"] = setup
     result["observations"] = stack.observations()
     result["decisions"] = stack.decisions()
     check(result["attacker"].startswith("toolguard: BLOCK"), "injected recipient blocked")
@@ -584,6 +600,7 @@ async def main(out_dir: str, only: list[str]) -> int:
             entry["error"] = f"{type(exc).__name__}: {exc}"
             entry["trace"] = traceback.format_exc()[-3000:]
         entry["seconds"] = round(time.monotonic() - started, 1)
+        entry["server"] = SERVER_OF.get(scenario.__name__)
         entries.append(entry)
         status = "ok" if entry["ok"] else "FAILED " + entry["error"]
         print(f"{scenario.__name__}: {status}", flush=True)

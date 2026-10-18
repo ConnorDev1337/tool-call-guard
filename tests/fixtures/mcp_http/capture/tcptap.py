@@ -6,8 +6,9 @@ The tap listens on ``127.0.0.1:LISTEN_PORT`` and relays each connection to
 ``127.0.0.1:TARGET_PORT``. Each chunk goes to LOG as one JSON object: ``t``
 (``CLOCK_MONOTONIC`` seconds, shared by all processes on the host, so the logs of
 several taps can be merged), ``conn`` (a connection number), ``dir`` (``up`` for
-bytes from the connecting side, ``down`` for bytes back to it, ``open`` and
-``close``) and ``b64`` (the bytes). The tap prints ``ready`` once it listens.
+bytes from the connecting side, ``down`` for bytes back to it, ``eof-up`` and
+``eof-down`` when a side stops sending, ``open`` and ``close``) and ``b64`` (the
+bytes). The tap prints ``ready`` once it listens.
 """
 
 from __future__ import annotations
@@ -48,6 +49,7 @@ class TcpTap:
         except OSError:
             pass
         finally:
+            self.record(conn, f"eof-{direction}")
             # Pass the half-close on, as a proxy that ends a stream does.
             with contextlib.suppress(OSError):
                 target.shutdown(socket.SHUT_WR)
