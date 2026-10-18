@@ -17,3 +17,6 @@ htmlcov/
 *.db
 *.db-wal
 *.db-shm
+
+# Local agent conventions, not published
+CLAUDE.md
