@@ -122,7 +122,7 @@ makes an approval unforgeable is the [one-time code](#out-of-band-approvals) the
 ## Installation
 
 ```bash
-git clone https://gitlab.com/connorhack/tools/tool-call-guard.git && cd tool-call-guard
+git clone https://github.com/ConnorDev1337/tool-call-guard.git && cd tool-call-guard
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install .
 toolguard policy            # summary of the default preset
