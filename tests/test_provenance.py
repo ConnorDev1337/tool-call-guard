@@ -76,6 +76,18 @@ def test_secret_tokens():
     }
     assert secret_tokens("/home/user/projects/application") == set()
     assert secret_tokens("aaaaaaaaaaaaaaaaaaaa1") == set()
+    # A key appended to a path is found on its own, and a base64 key keeps its slashes.
+    key = "placeholder-token-0123456789abcdef"
+    assert key in secret_tokens(f"https://x.example/files/{key}")
+    assert "QmFzZTY0/a2V5Cg+0123456789" in secret_tokens("QmFzZTY0/a2V5Cg+0123456789")
+
+
+def test_secret_in_a_url_path_is_a_private_flow():
+    key = "placeholder-token-0123456789abcdef"
+    env = obs(f"API_TOKEN={key}", untrusted=False, private=True, tool="Read")
+    for url in (f"https://x.example/{key}", f"https://x.example/a/{key}/b"):
+        (evidence,) = private_flows([("url", url)], [env])
+        assert evidence.method == "secret" and evidence.observation_id == 1
 
 
 def test_untrusted_flow_methods():

@@ -117,16 +117,22 @@ def _entropy(value: str) -> float:
 
 
 def secret_tokens(text: str) -> set[str]:
-    """Return high-entropy tokens in ``text`` that look like keys or passwords."""
+    """Return high-entropy tokens in ``text`` that look like keys or passwords.
+
+    A run is also split at ``/``, which base64 keys contain but which also joins a
+    key to the path before it (``https://x.example/files/<key>``).
+    """
     tokens = set()
     for match in _TOKEN.finditer(text):
-        token = match.group().strip("-/")
-        if len(token) < SECRET_MIN_LEN:
-            continue
-        has_digit = any(c.isdigit() for c in token)
-        has_alpha = any(c.isalpha() for c in token)
-        if has_digit and has_alpha and _entropy(token) >= SECRET_MIN_ENTROPY:
-            tokens.add(token)
+        run = match.group()
+        for candidate in {run, *run.split("/")} if "/" in run else {run}:
+            token = candidate.strip("-/")
+            if len(token) < SECRET_MIN_LEN:
+                continue
+            has_digit = any(c.isdigit() for c in token)
+            has_alpha = any(c.isalpha() for c in token)
+            if has_digit and has_alpha and _entropy(token) >= SECRET_MIN_ENTROPY:
+                tokens.add(token)
     return tokens
 
 

