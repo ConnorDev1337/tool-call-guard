@@ -402,3 +402,54 @@ def test_help_and_bad_policy(capsys):
     assert run(capsys)[0] == 2
     code, _, err = run(capsys, "check", "Bash", "--policy", "nope")
     assert code == 2 and "unknown policy" in err
+
+
+@pytest.mark.parametrize(
+    ("args", "message"),
+    [
+        (("--upstream", "http://127.0.0.1:1/mcp"), "needs --listen"),
+        (("--listen", "0", "--upstream", "http://127.0.0.1:1/mcp", "--", "x"), "not both"),
+        (("--listen", "nope", "--", "x"), "expects [HOST:]PORT"),
+        (("--listen", "0.0.0.0:0", "--", "x"), "not a loopback address"),
+        (("--listen", "0", "--upstream", "ftp://x/mcp"), "not an http"),
+        (("--listen", "0", "--upstream", "http://example.com/mcp"), "plain HTTP"),
+    ],
+)
+def test_mcp_proxy_http_options_are_checked(capsys, tmp_path, args, message):
+    db = str(tmp_path / "guard.db")
+    code, _, err = run(capsys, "mcp-proxy", "--server-name", "x", "--db", db, *args)
+    assert code == 2 and message in err
+
+
+def test_mcp_proxy_http_runs_and_maps_signals(capsys, monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_run(self, announce):
+        seen.update(url=self.url, origins=self.allowed_origins, body=self.max_body)
+        announce(self.url)
+        return -9
+
+    monkeypatch.setattr(cli.mcp_http.HttpProxy, "run", fake_run)
+    db = str(tmp_path / "guard.db")
+    argv = ("mcp-proxy", "--server-name", "x", "--db", db, "--listen", "127.0.0.1:0")
+    argv += ("--allow-origin", "https://app.example", "--max-body", "1000", "--", "server")
+    code, _, err = run(capsys, *argv)
+    assert code == 137 and "listening on http://127.0.0.1:" in err
+    assert seen["origins"] == ["https://app.example"] and seen["body"] == 1000
+    monkeypatch.setattr(cli.mcp_http.HttpProxy, "run", lambda self, announce: 0)
+    remote = ("--listen", "0", "--upstream", "http://example.com/mcp", "--allow-plain-http")
+    assert run(capsys, "mcp-proxy", "--server-name", "x", "--db", db, *remote)[0] == 0
+
+
+def test_mcp_proxy_http_reports_startup_failures(capsys, monkeypatch, tmp_path):
+    db = str(tmp_path / "guard.db")
+    argv = ("mcp-proxy", "--server-name", "x", "--db", db, "--listen", "127.0.0.1:0", "--")
+    code, _, err = run(capsys, *argv, "no-such-mcp-server-x9")
+    assert code == 127 and "cannot start the MCP server" in err
+
+    def busy(*args, **kwargs):
+        raise OSError("address in use")
+
+    monkeypatch.setattr(cli.mcp_http, "HttpProxy", busy)
+    code, _, err = run(capsys, *argv, "server")
+    assert code == 2 and "cannot listen on 127.0.0.1:0" in err

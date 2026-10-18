@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from . import __version__
-from .adapters import claude_code
+from .adapters import claude_code, mcp_http
 from .adapters.mcp_proxy import McpProxy
 from .approvals import (
     ApprovalConfig,
@@ -405,13 +405,85 @@ def cmd_install(args: argparse.Namespace) -> int:
     return 0
 
 
+def _listen_address(value: str) -> tuple[str, int]:
+    """Parse ``--listen``: ``PORT``, ``HOST:PORT`` or ``[IPV6]:PORT``."""
+    host, _, port = value.rpartition(":")
+    host = host.strip("[]") or "127.0.0.1"
+    if not port.isdigit() or int(port) > 65535:
+        raise ValueError(f"--listen expects [HOST:]PORT, not {value!r}")
+    return host, int(port)
+
+
+def _http_proxy(args: argparse.Namespace, command: list[str]) -> int:
+    """Run the proxy on a Streamable HTTP endpoint (``--listen``)."""
+    try:
+        host, port = _listen_address(args.listen)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if not mcp_http.is_loopback(host) and not args.allow_non_loopback:
+        print(
+            f"error: refusing to listen on {host}, which is not a loopback address: any "
+            "machine that reaches it could use the server (pass --allow-non-loopback)",
+            file=sys.stderr,
+        )
+        return 2
+    upstream = args.upstream
+    if upstream is not None:
+        try:
+            target = mcp_http.Upstream(upstream)
+        except ValueError as exc:
+            print(f"error: --upstream: {exc}", file=sys.stderr)
+            return 2
+        if not target.https and not target.loopback and not args.allow_plain_http:
+            print(
+                "error: the upstream is reached over plain HTTP on another machine, which "
+                "exposes the credentials it is sent (use https or pass --allow-plain-http)",
+                file=sys.stderr,
+            )
+            return 2
+    guard = _guard(args)
+    try:
+        proxy = mcp_http.HttpProxy(
+            guard,
+            args.server_name,
+            upstream=upstream,
+            command=command or None,
+            host=host,
+            port=port,
+            path=args.path,
+            allowed_hosts=args.allow_host,
+            allowed_origins=args.allow_origin,
+            max_body=args.max_body,
+            timeout=args.timeout,
+            queue=_queue(args, guard),
+        )
+    except OSError as exc:
+        print(f"error: cannot listen on {args.listen}: {exc}", file=sys.stderr)
+        return 2
+    try:
+        return proxy.run(mcp_http.announce_to_stderr)
+    except OSError as exc:
+        print(f"error: cannot start the MCP server {command[0]!r}: {exc}", file=sys.stderr)
+        return 127
+
+
 def cmd_mcp_proxy(args: argparse.Namespace) -> int:
     command = list(args.server_command)
     if command and command[0] == "--":
         command = command[1:]
-    if not command:
+    if args.upstream is not None and command:
+        print("error: give either --upstream or a server command, not both", file=sys.stderr)
+        return 2
+    if args.upstream is not None and args.listen is None:
+        print("error: --upstream needs --listen (the proxy serves HTTP clients)", file=sys.stderr)
+        return 2
+    if not command and args.upstream is None:
         print("error: missing server command after --", file=sys.stderr)
         return 2
+    if args.listen is not None:
+        code = _http_proxy(args, command)  # No stdin pump to unblock: return normally
+        return code if code >= 0 else 128 - code
     guard = _guard(args)
     try:
         code = McpProxy(guard, args.server_name, command, queue=_queue(args, guard)).run()
@@ -502,10 +574,60 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--policy")
     p.set_defaults(func=cmd_install)
 
-    p = sub.add_parser("mcp-proxy", help="guard an MCP stdio server")
+    p = sub.add_parser("mcp-proxy", help="guard an MCP server (stdio or Streamable HTTP)")
     _common(p)
     p.add_argument("--server-name", required=True, help="name used in mcp__<name>__<tool>")
     p.add_argument("--monitor", action="store_true", help="log only, never block")
+    http = p.add_argument_group("Streamable HTTP")
+    http.add_argument(
+        "--listen",
+        metavar="[HOST:]PORT",
+        help="serve clients over Streamable HTTP on this loopback address (port 0: any)",
+    )
+    http.add_argument(
+        "--upstream", metavar="URL", help="forward to this Streamable HTTP server endpoint"
+    )
+    http.add_argument(
+        "--path", default=mcp_http.DEFAULT_PATH, help="endpoint path (default: %(default)s)"
+    )
+    http.add_argument(
+        "--allow-origin",
+        action="append",
+        default=[],
+        metavar="ORIGIN",
+        help="browser origin allowed besides loopback pages (repeatable)",
+    )
+    http.add_argument(
+        "--allow-host",
+        action="append",
+        default=[],
+        metavar="HOST:PORT",
+        help="Host header accepted besides the loopback names (repeatable)",
+    )
+    http.add_argument(
+        "--max-body",
+        type=int,
+        default=mcp_http.MAX_BODY,
+        metavar="BYTES",
+        help="largest request body (default: %(default)s)",
+    )
+    http.add_argument(
+        "--timeout",
+        type=float,
+        default=mcp_http.UPSTREAM_TIMEOUT,
+        metavar="SECONDS",
+        help="how long the upstream may stay silent (default: %(default)s)",
+    )
+    http.add_argument(
+        "--allow-non-loopback",
+        action="store_true",
+        help="allow --listen on an address other machines can reach",
+    )
+    http.add_argument(
+        "--allow-plain-http",
+        action="store_true",
+        help="allow an http:// upstream that is not on this machine",
+    )
     p.add_argument("server_command", nargs=argparse.REMAINDER, help="-- command [args...]")
     p.set_defaults(func=cmd_mcp_proxy)
 
