@@ -1,0 +1,259 @@
+{
+  "versions": {
+    "python": "3.13.16",
+    "node": "v22.23.3",
+    "@modelcontextprotocol/server-everything": "1.0.0",
+    "@modelcontextprotocol/sdk (server-everything)": "1.32.1",
+    "mcp (client)": "2.3.0",
+    "uvicorn (client)": "0.54.0",
+    "starlette (client)": "1.9.0"
+  },
+  "scenarios": {
+    "everything": {
+      "seconds": 3.1,
+      "observed": {
+        "protocol": "2025-11-25",
+        "tools": 16,
+        "prompts": 4,
+        "echo": "Echo: hello over HTTP",
+        "structured": {
+          "temperature": 36,
+          "conditions": "Light rain / drizzle",
+          "humidity": 82
+        },
+        "static_chars": 2004,
+        "templated": "demo://resource/dynamic/text/1",
+        "prompt_messages": 1,
+        "progress": [
+          1.0,
+          2.0,
+          3.0
+        ],
+        "long": "Long running operation completed. Duration: 1 seco",
+        "elicitation_asked": [
+          "Please provide inputs for the following fields:"
+        ],
+        "elicited": "- Name: Ada ",
+        "sampled": true,
+        "log_levels": [
+          "error"
+        ],
+        "observations": [
+          [
+            "mcp__everything__resources/read",
+            "resource",
+            true,
+            false
+          ],
+          [
+            "mcp__everything__resources/read",
+            "resource",
+            true,
+            false
+          ],
+          [
+            "mcp__everything__prompts/get",
+            "prompt",
+            true,
+            false
+          ]
+        ]
+      }
+    },
+    "mail_legacy": {
+      "seconds": 2.9,
+      "observed": {
+        "protocol": "2025-11-25",
+        "inbox": "From: billing@evil-payments.example\nSubj",
+        "attacker": "toolguard: BLOCK mcp__mail__send_email (sink: send)",
+        "colleague": "sent to alice@corp.example",
+        "declined": "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+        "folder": "From: billing@evil-payments.example\nSubj",
+        "refusals": [
+          "-32003 toolguard: BLOCK mcp__mail__resources/read (sink: web)",
+          "-32003 toolguard: CONFIRM mcp__mail__resources/read (sink: resource)"
+        ],
+        "archived": "archive: accept",
+        "synced": "From: billing@evil-payments.example\nSubj",
+        "elicitations": [
+          "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+          "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+          "toolguard: CONFIRM mcp__mail__resources/read (sink: resource)",
+          "Archive every message in the inbox?"
+        ],
+        "observations": [
+          [
+            "Read",
+            "secret-file",
+            false,
+            true
+          ],
+          [
+            "mcp__mail__read_inbox",
+            "message",
+            true,
+            true
+          ],
+          [
+            "mcp__mail__resources/read",
+            "message",
+            true,
+            true
+          ],
+          [
+            "mcp__mail__get_new_mail",
+            "message",
+            true,
+            true
+          ]
+        ],
+        "decisions": [
+          [
+            "mcp__mail__read_inbox",
+            "allow",
+            "allow"
+          ],
+          [
+            "mcp__mail__send_email",
+            "block",
+            "block"
+          ],
+          [
+            "mcp__mail__send_email",
+            "confirm",
+            "allow"
+          ],
+          [
+            "mcp__mail__send_email",
+            "confirm",
+            "block"
+          ],
+          [
+            "mcp__mail__resources/read",
+            "allow",
+            "allow"
+          ],
+          [
+            "mcp__mail__resources/read",
+            "block",
+            "block"
+          ],
+          [
+            "mcp__mail__resources/read",
+            "confirm",
+            "block"
+          ],
+          [
+            "mcp__mail__archive_inbox",
+            "allow",
+            "allow"
+          ],
+          [
+            "mcp__mail__get_new_mail",
+            "allow",
+            "allow"
+          ]
+        ]
+      }
+    },
+    "mail_modern": {
+      "seconds": 3.0,
+      "observed": {
+        "protocol": "2026-07-28",
+        "inbox": "From: billing@evil-payments.example\nSubj",
+        "attacker": "toolguard: BLOCK mcp__mail__send_email (sink: send)",
+        "colleague": "toolguard: CONFIRM mcp__mail__send_email (sink: send)",
+        "folder": "no messages in archive",
+        "observations": [
+          [
+            "mcp__mail__read_inbox",
+            "message",
+            true,
+            true
+          ],
+          [
+            "mcp__mail__resources/read",
+            "message",
+            true,
+            true
+          ]
+        ]
+      }
+    },
+    "mail_stateless": {
+      "seconds": 2.4,
+      "observed": {
+        "protocol": "2025-11-25",
+        "inbox": "From: billing@evil-payments.example\nSubj",
+        "attacker": "toolguard: BLOCK mcp__mail-json__send_email (sink: send)",
+        "observations": [
+          [
+            "mcp__mail-json__read_inbox",
+            "message",
+            true,
+            true
+          ]
+        ]
+      }
+    },
+    "protocol": {
+      "seconds": 2.6,
+      "observed": {
+        "bad_origin": 403,
+        "bad_host": 421,
+        "bad_path": 404,
+        "bad_type": 415,
+        "not_json": 400,
+        "batch": 400,
+        "oversized": 413,
+        "put": 405,
+        "loopback_origin": 200,
+        "initialized": 202,
+        "name_mismatch": [
+          400,
+          -32020
+        ],
+        "call": [
+          200,
+          true
+        ],
+        "bad_params": [
+          400,
+          -32602
+        ],
+        "unknown_session": 404,
+        "delete": 200,
+        "after_delete": 404
+      }
+    },
+    "stdio_front": {
+      "seconds": 2.7,
+      "observed": {
+        "protocol": "2025-11-25",
+        "echo": "Echo: hello stdio",
+        "static_chars": 2004,
+        "progress": [
+          1.0,
+          2.0
+        ],
+        "long": "Long running operation completed. Duration: 1 seco",
+        "elicitation_asked": [
+          "Please provide inputs for the following fields:"
+        ],
+        "elicited": "❌ User declined to provide the requested information. \nRaw r",
+        "sampled": true,
+        "log_levels": [
+          "critical"
+        ],
+        "observations": [
+          [
+            "mcp__everything-stdio__resources/read",
+            "resource",
+            true,
+            false
+          ]
+        ]
+      }
+    }
+  }
+}
