@@ -1,4 +1,4 @@
-# tool-call-guard
+# Tool-Call Guard
 
 A tool-call guard for LLM agents: a **deterministic** layer between the agent and its tools that
 
