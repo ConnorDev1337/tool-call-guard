@@ -3,7 +3,9 @@
 ``test/received`` returns every line the server has read, so tests can check what
 the proxy forwarded. A ``tools/call`` with a ``task`` parameter creates a task whose
 result is fetched with ``tasks/result``. ``mail://inbox`` and ``mail://handbook/*`` are
-resources and ``summarize_inbox`` is a prompt that embeds the inbox. With ``--linger``
+resources and ``summarize_inbox`` is a prompt that embeds the inbox. A call with a
+progress token gets a progress notification first; ``test/notify`` makes the server
+send a log message and a ``roots/list`` request of its own. With ``--linger``
 the server keeps running after its stdin closes, like a server with timers still active.
 """
 
@@ -73,6 +75,10 @@ for line in sys.stdin:
         task = {"taskId": task_id, "status": "working", "ttl": 60000}
         send({"jsonrpc": "2.0", "id": message["id"], "result": {"task": task}})
     elif method == "tools/call":
+        token = message["params"].get("_meta", {}).get("progressToken")
+        if token is not None:
+            progress = {"progressToken": token, "progress": 1, "total": 2}
+            send({"jsonrpc": "2.0", "method": "notifications/progress", "params": progress})
         send({"jsonrpc": "2.0", "id": message["id"], "result": call_result(message["params"])})
     elif method == "tasks/result":
         result = tasks[message["params"]["taskId"]]
@@ -87,6 +93,12 @@ for line in sys.stdin:
         except (TypeError, KeyError):
             error = {"code": -32602, "message": "Invalid params"}
             send({"jsonrpc": "2.0", "id": message["id"], "error": error})
+    elif method == "test/notify":
+        # Answered at once; then a message unrelated to any request and a server request.
+        send({"jsonrpc": "2.0", "id": message["id"], "result": {}})
+        notice = {"level": "info", "data": message["params"].get("text", "")}
+        send({"jsonrpc": "2.0", "method": "notifications/message", "params": notice})
+        send({"jsonrpc": "2.0", "id": "srv-roots", "method": "roots/list"})
     elif method == "test/received":
         send({"jsonrpc": "2.0", "id": message["id"], "result": {"lines": received}})
     elif method == "ping":
