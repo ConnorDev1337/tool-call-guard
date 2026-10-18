@@ -9,8 +9,8 @@ A tool-call guard for LLM agents: a **deterministic** layer between the agent an
    from which source;
 3. **keeps an audit log** chained by hashes (optionally HMAC) that can be verified.
 
-It integrates with **Claude Code** (hooks), **any MCP client** (stdio proxy) and custom agents
-(Python API or CLI). No runtime dependencies; Python ≥ 3.11.
+It integrates with **Claude Code** (hooks), **any MCP client** (stdio or Streamable HTTP proxy)
+and custom agents (Python API or CLI). No runtime dependencies; Python ≥ 3.11.
 
 ```text
 toolguard: BLOCK mcp__gmail__send_email (sink: send)
@@ -25,7 +25,7 @@ toolguard: BLOCK mcp__gmail__send_email (sink: send)
 - [Why: AI control](#why-ai-control)
 - [How it works](#how-it-works)
 - [Installation](#installation)
-- [Integrations](#integrations): [Claude Code](#claude-code-hooks) · [MCP](#any-mcp-client-stdio-proxy) · [Python](#python-api) · [CLI](#generic-cli)
+- [Integrations](#integrations): [Claude Code](#claude-code-hooks) · [MCP](#any-mcp-client-mcp-proxy) · [Python](#python-api) · [CLI](#generic-cli)
 - [Out-of-band approvals](#out-of-band-approvals)
 - [Audit](#audit)
 - [Policies](#policies)
@@ -220,7 +220,7 @@ recorded; an `executed` record with the same `tool_use_id` shows that it ran.
 In `-p` mode Claude Code runs project hooks even in a workspace that was never trusted, but ignores
 the project's `permissions.allow` until it is (it says so on stderr).
 
-### Any MCP client (stdio proxy)
+### Any MCP client (MCP proxy)
 
 Replace each server's command with the proxy (full example in
 [`examples/claude-desktop-mcp.json`](examples/claude-desktop-mcp.json)):
@@ -289,6 +289,60 @@ it silently, task results were never observed, it hung when a server outlived it
 cancelled while awaiting confirmation still ran once approved, elicitation ids were predictable and
 any answer with the prefix was swallowed, the process aborted at exit while still reading stdin,
 and refusals were rejected by 2026-07-28 clients for lacking `resultType`.
+
+#### Streamable HTTP
+
+With `--listen` the proxy serves clients over Streamable HTTP (MCP 2025-03-26 to 2025-11-25, and
+the stateless 2026-07-28 revision) and forwards either to an upstream Streamable HTTP server or
+to a stdio server it starts:
+
+```bash
+# Guard a server that already speaks Streamable HTTP
+toolguard mcp-proxy --server-name crm --session work --listen 127.0.0.1:8931 \
+  --upstream https://crm.example/mcp
+# Give a stdio server a Streamable HTTP endpoint
+toolguard mcp-proxy --server-name gmail --session work --listen 8932 -- npx -y @example/gmail-mcp@1.4.0
+# Point the client at the proxy, e.g. Claude Code:
+claude mcp add --transport http crm http://127.0.0.1:8931/mcp
+```
+
+The guard is the same as over stdio (the message-level core is shared): the same names, the same
+observation of results and resource reads, the same refusals, elicitation and approval queue.
+What changes is the wire:
+
+- **Upstream mode** relays each POST, GET and DELETE to the upstream endpoint. JSON bodies and SSE
+  streams are parsed and re-encoded event by event, so the client reads exactly what the proxy
+  inspected; an upstream event that is not JSON is dropped rather than relayed uninspected.
+  `Mcp-Session-Id`, `MCP-Protocol-Version`, `Last-Event-ID` (resumption) and the other request
+  headers pass through, so sessions, resumable streams and the GET stream are the upstream's. A
+  response that arrives on a resumed stream is still observed as its request's result.
+- **Stdio mode** makes the proxy the Streamable HTTP server of the stdio process: it issues an
+  unguessable `Mcp-Session-Id` on `initialize`, sends each response and its progress on the POST
+  that caused it (JSON when nothing came first, SSE otherwise), and other server messages on the
+  client's GET stream (kept until one opens). `DELETE` ends the session.
+- Confirmations through elicitation are asked on the request's own SSE stream; the client answers
+  with a POST (`202`). A client that hangs up meanwhile cancels the call, since nobody could read
+  its result.
+- `Mcp-Method`, `Mcp-Name` and `Mcp-Param-*` (protocol 2026-07-28) must agree with the body (`400`,
+  code `-32020`, otherwise): they reach the server, so a value that was not inspected must not.
+
+Security notes:
+
+- **Loopback only by default.** `--listen` refuses an address other machines can reach unless
+  `--allow-non-loopback` is given; then the endpoint has no authentication of its own.
+- **DNS-rebinding protection.** A request whose `Host` is not the proxy's loopback address gets
+  `421`, and one whose `Origin` is not a loopback page gets `403` (`--allow-host` and
+  `--allow-origin` add more); both are audited as `transport` events.
+- **Credentials pass through and are never logged.** `Authorization`, cookies and other headers go
+  to the upstream unchanged (only hop-by-hop headers, `Origin` and `Accept-Encoding` are not
+  forwarded). The proxy writes no request log; audit records hold redacted arguments, never
+  headers. A plain `http://` upstream on another machine is refused unless `--allow-plain-http`,
+  since it would expose those credentials.
+- **Nothing reaches the server around the guard.** Batches are refused (the transport dropped them
+  in 2025-06-18), an upstream redirect is answered with `502` instead of being relayed (a client
+  that followed it would talk to the server directly), and bodies are capped (`--max-body`,
+  4 MiB; `413` before the body is read). Clients get 30 s to send a request; the upstream may stay
+  silent for `--timeout` (300 s); idle SSE streams get a keepalive comment every 15 s.
 
 ### Python API
 
@@ -799,7 +853,8 @@ src/toolguard/
   store.py          SQLite state shared across processes
   audit.py          audit chain (SHA-256 / HMAC), verification, export
   redact.py         secret redaction for logs and explanations
-  adapters/         claude_code.py (hooks), mcp_proxy.py (stdio proxy)
+  adapters/         claude_code.py (hooks), mcp_core.py (MCP guard), mcp_proxy.py (stdio),
+                    mcp_http.py (Streamable HTTP)
   evaluation.py     safety/usefulness benchmark (+ scenarios/)
   cli.py            toolguard ...
 tests/              pytest: core, adapters, proxy (fake server and replayed real traffic), CLI, benchmark
