@@ -25,8 +25,8 @@ classifiers = [
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
 
 [project.urls]
-Homepage = "https://github.com/ConnorDev1337/tool-call-guard"
-Issues = "https://github.com/ConnorDev1337/tool-call-guard/issues"
+Homepage = "https://gitlab.com/connorhack/tools/tool-call-guard"
+Issues = "https://gitlab.com/connorhack/tools/tool-call-guard/-/issues"
 
 [project.scripts]
 toolguard = "toolguard.cli:main"

@@ -560,7 +560,6 @@ class Exchange:
         self.request_id = message.get("id") if self.is_request else None
         self.tracked: Tracked | None = None
         self.answered = False  # The final response was written
-        self.pending = True  # The core may still answer or forward (requests only)
         self.forwarded = False
         self.reader: UpstreamReply | None = None
         self.progress_token: Any = None
@@ -831,8 +830,6 @@ class UpstreamBackend:
     def get(self, exchange: Exchange) -> None:
         """Relay a GET (the server's SSE stream, or its resumption)."""
         self.relay(exchange, "GET")
-        exchange.is_request = False
-        exchange.pending = False
         # Run the events of an SSE stream until it ends or the client goes away.
         while exchange.out.mode == "sse":
             try:
@@ -847,13 +844,6 @@ class UpstreamBackend:
 
     def release(self, exchange: Exchange) -> None:
         """Nothing to release: upstream connections close with their exchange."""
-
-
-class _GetStream:
-    """The client's open GET stream for one session (stdio mode)."""
-
-    def __init__(self, exchange: Exchange) -> None:
-        self.exchange = exchange
 
 
 class StdioBackend(StdioServer):
