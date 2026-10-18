@@ -845,3 +845,20 @@ def test_upstream_headers_that_describe_its_connection_stay_behind():
         "Mcp-Session-Id",
         "WWW-Authenticate",
     ]
+
+
+def test_refused_requests_with_unread_bodies_close_the_connection(proxy, upstream):
+    server = upstream()
+    p = proxy(upstream=server.url)
+    conn = http.client.HTTPConnection("127.0.0.1", p.port, timeout=10)
+    body = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize"}).encode()
+    headers = {"Origin": "http://evil.example", "Content-Type": "application/json"}
+    conn.request("POST", "/mcp", body, headers)
+    response = conn.getresponse()
+    assert response.status == 403 and response.getheader("Connection") == "close"
+    response.read()
+    conn.close()
+    # A body sent with GET is read (and ignored) before the request is relayed.
+    stream = Client(p).send("GET", b"ignored", headers={"Accept": "text/event-stream"})
+    assert stream.status == 200
+    stream.close()

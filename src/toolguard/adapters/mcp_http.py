@@ -1019,7 +1019,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
         return self.server.front
 
     def plain(self, status: int, message: Any = None, headers: list[tuple[str, str]] = ()) -> None:
-        """Answer with a complete response written by the proxy."""
+        """Answer with a complete response written by the proxy.
+
+        If the request body was not read, the connection is closed afterwards: its
+        bytes would otherwise be parsed as the next request.
+        """
+        if not getattr(self, "consumed", True):
+            headers = [*headers, ("Connection", "close")]
+            self.close_connection = True
         out = ClientResponse(self)
         with contextlib.suppress(ClientGone):
             if message is None:
@@ -1027,11 +1034,18 @@ class ProxyHandler(BaseHTTPRequestHandler):
             else:
                 out.json(message, status, headers)
 
+    def _note_body(self) -> None:
+        """Remember whether the request carries a body that has not been read yet."""
+        coding = (self.headers.get("Transfer-Encoding") or "").lower()
+        length = self.headers.get("Content-Length")
+        self.consumed = coding in ("", "identity") and length in (None, "0")
+
     def _lower_headers(self) -> dict[str, str]:
         return {name.lower(): value for name, value in self.headers.items()}
 
     def _admit(self) -> bool:
         """Check path, Host and Origin; answer and return ``False`` if refused."""
+        self._note_body()
         front = self.front
         path = self.path.split("?", 1)[0]
         if path != front.path:
@@ -1070,6 +1084,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
         if len(data) < length:
             self.close_connection = True
             return None
+        self.consumed = True
         return data
 
     def _read_chunked(self) -> bytes | None:
@@ -1085,6 +1100,7 @@ class ProxyHandler(BaseHTTPRequestHandler):
             if size == 0:
                 while self.rfile.readline(1024).strip():
                     pass  # Trailers
+                self.consumed = True
                 return data
             if len(data) + size > self.front.max_body:
                 self.close_connection = True
@@ -1127,15 +1143,16 @@ class ProxyHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         """Open (or resume) the server's SSE stream."""
-        if self._admit():
+        if self._admit() and (self.consumed or self._read_body() is not None):
             self.front.get(self, self._lower_headers())
 
     def do_DELETE(self) -> None:
         """End the session."""
-        if self._admit():
+        if self._admit() and (self.consumed or self._read_body() is not None):
             self.front.delete(self, self._lower_headers())
 
     def _not_allowed(self) -> None:
+        self._note_body()
         self.plain(405, None, [("Allow", "GET, POST, DELETE")])
 
     do_PUT = do_PATCH = do_HEAD = do_OPTIONS = _not_allowed
