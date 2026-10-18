@@ -211,3 +211,33 @@ def test_trust_rules_clear_untrusted_but_keep_private():
     assert secret.private and not secret.untrusted
     mail = policy.source_for("mcp__gmail__read_email", {})
     assert mail.private and not mail.untrusted
+
+
+@pytest.mark.parametrize(
+    ("tool", "uri", "category", "egress"),
+    [
+        ("mcp__fs__resources/read", "file:///work/notes.md", "local-read", False),
+        ("mcp__fs__resources/read", "FILE:///C:/work/notes.md", "local-read", False),
+        ("mcp__fetch__resources/read", "https://x.example/a", "web", True),
+        ("mcp__docs__resources/read", "wss://x.example/feed", "web", True),
+        ("ReadMcpResourceTool", "http://127.0.0.1/a", "web", True),
+        ("mcp__db__resources/read", "postgres://db/users/schema", "resource", True),
+        ("mcp__docs__resources/read", "docs://guide.md", "resource", True),
+    ],
+)
+def test_resource_uris_are_sinks_by_scheme(tool, uri, category, egress):
+    for name in ("balanced", "strict"):
+        sink = Policy.preset(name).sink_for(tool, {"server": "x", "uri": uri})
+        assert (sink.category, sink.egress, sink.critical) == (category, egress, ("uri",))
+
+
+def test_resource_actions_check_what_the_uri_carries():
+    balanced, strict = Policy.preset("balanced"), Policy.preset("strict")
+    local = balanced.actions_for("local-read")
+    assert {local.tainted, local.untrusted_flow, local.private_flow, local.trifecta} == {
+        Action.ALLOW
+    }
+    resource = balanced.actions_for("resource")
+    assert (resource.private_flow, resource.trifecta) == (Action.CONFIRM, Action.ALLOW)
+    assert strict.actions_for("resource").private_flow == Action.BLOCK
+    assert balanced.actions_for("web").private_flow == Action.BLOCK

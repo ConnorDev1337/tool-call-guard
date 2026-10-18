@@ -248,6 +248,12 @@ Replace each server's command with the proxy (full example in
   (`name`, `arguments`). The presets treat resources and prompts as third-party content
   (untrusted; resource URIs that look like secret files are private too); a `[[trust]]` rule in
   your policy declares the ones you vouch for (see [Policies](#policies)).
+- The URI of a `resources/read` is guarded too, since the server fetches it and resource templates
+  let the agent build it: the read is evaluated as `mcp__<server-name>__resources/read` with its
+  `uri`. In the presets a `file://` URI is a local read (`local-read`, never an egress), an
+  `http(s)`, `ws(s)` or `ftp` URI is a `web` sink (a secret in it is blocked, like in a `WebFetch`
+  URL), and any other scheme is a `resource` sink (a private value in the URI needs a human;
+  `strict` blocks it). A refused read gets a JSON-RPC error (code `-32003`) that explains why.
 - The proxy forwards only what it has inspected: a client line that is not JSON gets a parse
   error, a line that is not valid UTF-8 is guarded and forwarded as decoded, batches are split and
   every `tools/call` in them is guarded, and a `tools/call` with malformed parameters is refused.
@@ -761,9 +767,10 @@ in the response text); verifying the identity of MCP servers.
   (Claude Desktop, IDEs) or on Windows and macOS beyond unit tests. It speaks **stdio only**:
   servers reached over Streamable HTTP or SSE cannot be wrapped. Tool, resource and prompt results
   are observed, but server-written metadata (tool, resource and prompt descriptions from the
-  `*/list` methods) is not, and a `resources/read` or `prompts/get` request is not guarded as a
-  sink: a URI or prompt argument built from untrusted or private data reaches the server
-  unchecked. On protocol 2026-07-28 there is no `initialize`, so the proxy does not know whether the client supports
+  `*/list` methods) is not, and a `prompts/get` request is not guarded as a sink: a prompt
+  argument built from untrusted or private data reaches the server unchecked. A `file://`
+  resource URI is treated as local, which is wrong for a remote server (its files, but the URI
+  travels over the network). On protocol 2026-07-28 there is no `initialize`, so the proxy does not know whether the client supports
   elicitation and confirmations always go to the out-of-band queue (confirming through
   `InputRequiredResult` is not implemented). The proxy trusts the client to show its elicitation
   to the user, not to the model. On Windows a batch launcher (`npx.cmd`) passes its arguments

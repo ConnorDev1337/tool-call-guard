@@ -43,6 +43,9 @@ PROTOCOL_VERSION_META = "io.modelcontextprotocol/protocolVersion"
 PARSE_ERROR = -32700
 INVALID_REQUEST = -32600
 INVALID_PARAMS = -32602
+# A refused request that has no result to carry the explanation (a resource read). An
+# implementation-defined server error; the SDKs use -32000 to -32002 and -32042.
+REFUSED = -32003
 
 # Requests other than ``tools/call`` whose results reach the model: the parameters
 # observed as the call's arguments and the result fields that carry the content.
@@ -251,16 +254,16 @@ class McpProxy:
         elif method == "tools/call":
             self._guard_call(message)
             return
+        elif method == "resources/read":
+            self._guard_read(message, raw)
+            return
         elif method == "tasks/result":
             self._track_task_result(message)
         elif isinstance(method, str) and method in OBSERVED_READS:
             self._track_read(message, method)
         elif method == "notifications/cancelled" and self._cancel_pending(message):
             return
-        if raw is not None:
-            self._send_server_raw(raw)
-        else:
-            self._send_server(message)
+        self._relay(message, raw)
 
     def _note_capabilities(self, message: dict[str, Any]) -> None:
         params = message.get("params")
@@ -298,26 +301,74 @@ class McpProxy:
         except ValueError as exc:
             self._send_client(_error(request_id, INVALID_PARAMS, f"Invalid params: {exc}"))
             return
+        self._decide(
+            message,
+            self.guard.evaluate(tool, args),
+            lambda: self._forward_call(message, tool, args),
+            lambda decision: self._refuse(message, decision),
+        )
+
+    def _guard_read(self, message: dict[str, Any], raw: bytes | None) -> None:
+        """Guard the URI of a ``resources/read``, which the server may fetch from anywhere.
+
+        The read is evaluated as ``mcp__<server-name>__resources/read`` with its ``uri``,
+        so a policy can treat URIs that leave the machine as egress. A read the policy
+        does not refuse is relayed as received and its result observed.
+        """
+        params = message.get("params")
+        if not isinstance(params, dict):
+            self._relay(message, raw)  # No URI to check: the server answers with an error
+            return
+        tool = f"mcp__{self.server_name}__resources/read"
+        args = {"uri": params["uri"]} if "uri" in params else {}
         decision = self.guard.evaluate(tool, args)
+
+        def forward() -> None:
+            self._track_read(message, "resources/read")
+            self._relay(message, raw)
+
+        if decision.category is None and not decision.reasons:
+            forward()  # Not a sink: nothing to decide or audit
+        elif not _valid_id(message.get("id")):
+            if decision.mode == "monitor" or decision.action == Action.ALLOW:
+                self._relay(message, raw)  # An invalid notification, with a harmless URI
+        else:
+            self._decide(message, decision, forward, lambda d: self._refuse_read(message, d))
+
+    def _decide(
+        self,
+        message: dict[str, Any],
+        decision: Decision,
+        forward: Callable[[], None],
+        refuse: Callable[[Decision], None],
+    ) -> None:
+        """Run ``forward`` or ``refuse`` for a guarded request, asking a human if required."""
         if decision.mode == "monitor" or decision.action == Action.ALLOW:
             decision.effective = Action.ALLOW
             self._audit(decision)
-            self._forward_call(message, tool, args)
+            forward()
         elif decision.action == Action.BLOCK:
             self._audit(decision)
-            self._refuse(message, decision)
+            refuse(decision)
         elif self.client_elicitation:
             pending = _Pending()
             with self._state_lock:
-                self._pending[request_id] = pending
+                self._pending[message["id"]] = pending
             # Wait off the client pump, which must keep reading to receive the answer.
             threading.Thread(
                 target=self._confirm_via_elicitation,
-                args=(message, tool, args, decision, pending),
+                args=(message, decision, pending, forward, refuse),
                 daemon=True,
             ).start()
         else:
-            self._confirm_via_queue(message, tool, args, decision)
+            self._confirm_via_queue(decision, forward, refuse)
+
+    def _relay(self, message: Any, raw: bytes | None) -> None:
+        """Send a client message to the server, as received when it was valid UTF-8."""
+        if raw is not None:
+            self._send_server_raw(raw)
+        else:
+            self._send_server(message)
 
     def _forward_call(self, message: dict[str, Any], tool: str, args: Any) -> None:
         with self._state_lock:
@@ -346,6 +397,10 @@ class McpProxy:
             # A per-request envelope (protocol 2026-07-28 and later) requires resultType.
             result["resultType"] = "complete"
         self._send_client({"jsonrpc": "2.0", "id": message["id"], "result": result})
+
+    def _refuse_read(self, message: dict[str, Any], decision: Decision) -> None:
+        """Answer a refused ``resources/read`` with an error: it has no result to use."""
+        self._send_client(_error(message["id"], REFUSED, decision.explain()))
 
     def _audit(self, decision: Decision, **extra: Any) -> None:
         record = self.guard.decision_record(decision)
@@ -382,18 +437,23 @@ class McpProxy:
         return True
 
     def _confirm_via_queue(
-        self, message: dict[str, Any], tool: str, args: Any, decision: Decision
+        self, decision: Decision, forward: Callable[[], None], refuse: Callable[[Decision], None]
     ) -> None:
         outcome = self.queue.request(ApprovalRequest.for_decision(self.guard.session, decision))
         apply_outcome(decision, outcome)
         self._audit(decision)
         if decision.effective == Action.ALLOW:
-            self._forward_call(message, tool, args)
+            forward()
         else:
-            self._refuse(message, decision)
+            refuse(decision)
 
     def _confirm_via_elicitation(
-        self, message: dict[str, Any], tool: str, args: Any, decision: Decision, pending: _Pending
+        self,
+        message: dict[str, Any],
+        decision: Decision,
+        pending: _Pending,
+        forward: Callable[[], None],
+        refuse: Callable[[Decision], None],
     ) -> None:
         # Unguessable, so a server cannot make the client's answer to one of its own
         # requests resolve the proxy's question.
@@ -411,13 +471,13 @@ class McpProxy:
                 "method": "elicitation/create",
                 "params": {
                     "message": decision.explain()
-                    + f"\n\nArguments (redacted): {json.dumps(redact_args(args, 200))}",
+                    + f"\n\nArguments (redacted): {json.dumps(redact_args(decision.args, 200))}",
                     "requestedSchema": {
                         "type": "object",
                         "properties": {
                             "approve": {
                                 "type": "boolean",
-                                "title": f"Allow {tool}?",
+                                "title": f"Allow {decision.tool}?",
                                 "description": "Approve this single tool call",
                             }
                         },
@@ -460,9 +520,9 @@ class McpProxy:
             return
         self._audit(decision)
         if approved:
-            self._forward_call(message, tool, args)
+            forward()
         else:
-            self._refuse(message, decision)
+            refuse(decision)
 
     def _resolve_elicitation(self, message: dict[str, Any]) -> bool:
         """Deliver an answer to an elicitation sent by the proxy; return whether it was one."""

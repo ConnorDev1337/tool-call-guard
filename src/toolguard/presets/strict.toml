@@ -66,3 +66,9 @@ trifecta = "block"
 tainted = "confirm"
 untrusted_flow = "block"
 trifecta = "confirm"
+
+# A private value in a resource URI blocks, and an untrusted and private session asks
+# before reading a resource that may be remote.
+[actions.resource]
+private_flow = "block"
+trifecta = "confirm"
