@@ -411,7 +411,8 @@ def passed_back(headers: list[tuple[str, str]]) -> list[tuple[str, str]]:
         if name.lower() == "connection"
         for token in value.split(",")
     }
-    return [(n, v) for n, v in headers if n.lower() not in _HOP and n.lower() not in listed]
+    dropped = _HOP | listed | {"date", "server"}  # The proxy writes its own
+    return [(n, v) for n, v in headers if n.lower() not in dropped]
 
 
 # --------------------------------------------------------------------------- client side

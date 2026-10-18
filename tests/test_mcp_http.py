@@ -827,3 +827,21 @@ def test_policy_mode_monitor_relays_everything(proxy, upstream):
     client.answer(client.call("read_inbox", {}))
     sent = client.answer(client.call("send_email", {"to": ATTACKER}))
     assert text_of(sent) == f"sent to {ATTACKER}"
+
+
+def test_upstream_headers_that_describe_its_connection_stay_behind():
+    headers = [
+        ("Content-Type", "text/event-stream"),
+        ("Date", "yesterday"),
+        ("Server", "uvicorn"),
+        ("Connection", "keep-alive, X-Hop"),
+        ("X-Hop", "1"),
+        ("Transfer-Encoding", "chunked"),
+        ("Mcp-Session-Id", "s"),
+        ("WWW-Authenticate", 'Bearer resource_metadata="x"'),
+    ]
+    assert [name for name, _ in mcp_http.passed_back(headers)] == [
+        "Content-Type",
+        "Mcp-Session-Id",
+        "WWW-Authenticate",
+    ]

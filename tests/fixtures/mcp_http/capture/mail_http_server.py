@@ -75,7 +75,7 @@ async def archive_inbox(ctx: Context) -> str:
 
 
 @server.tool()
-async def sync_mailbox(ctx: Context) -> str:
+async def get_new_mail(ctx: Context) -> str:
     """Report progress, drop the response stream, and finish on the resumed one."""
     await ctx.report_progress(1, 3, "listing folders")
     await ctx.info("sync started")

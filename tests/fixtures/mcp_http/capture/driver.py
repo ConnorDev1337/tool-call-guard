@@ -316,15 +316,15 @@ async def everything(out: Path) -> dict[str, Any]:
                 "progress": progress,
                 "long": text_of(long)[:50],
                 "elicitation_asked": asked.asked,
-                "elicited": text_of(elicited)[:60],
-                "sampled": text_of(sampled)[:60],
+                "elicited": text_of(elicited).splitlines()[1],
+                "sampled": "canned answer" in text_of(sampled),
                 "log_levels": sorted(set(logs)),
             }
     result["observations"] = stack.observations()
     check(result["protocol"] == "2025-11-25", "fell back to the handshake")
     check(progress == [1, 2, 3], "progress notifications relayed")
     check(asked.asked and "Ada" in result["elicited"], "server elicitation answered through proxy")
-    check("canned answer" in result["sampled"], "sampling answered through proxy")
+    check(result["sampled"], "sampling answered through proxy")
     check(result["log_levels"], "log notifications reached the client")
     check(len(result["observations"]) == 3, "resources and prompt observed as sources")
     return result
@@ -334,9 +334,10 @@ async def mail_legacy(out: Path) -> dict[str, Any]:
     """Python SDK server with sessions: blocked, confirmed and declined calls, URI sinks."""
     asked = Elicitations(
         [
-            APPROVE,
-            ElicitResult(action="decline"),
-            ElicitResult(action="accept", content={"confirm": True}),
+            APPROVE,  # The proxy asks about a colleague's address
+            ElicitResult(action="decline"),  # ... and about another one
+            ElicitResult(action="decline"),  # ... and about a private value in a URI
+            ElicitResult(action="accept", content={"confirm": True}),  # The server asks
         ]
     )
     with Stack(out, "mail_legacy", "mail") as stack, no_bearer_in_audit():
@@ -366,7 +367,7 @@ async def mail_legacy(out: Path) -> dict[str, Any]:
                     except MCPError as exc:
                         refusals.append(f"{exc.error.code} {exc.error.message.split(chr(10))[0]}")
                 archived = await c.call_tool("archive_inbox", {})
-                synced = await c.call_tool("sync_mailbox", {})
+                synced = await c.call_tool("get_new_mail", {})
                 result = {
                     "protocol": c.protocol_version,
                     "inbox": text_of(inbox)[:40],
@@ -389,7 +390,7 @@ async def mail_legacy(out: Path) -> dict[str, Any]:
     check(result["archived"] == "archive: accept", "server elicitation relayed")
     check(ATTACKER in result["synced"], "result delivered on the resumed stream")
     tools = [o[0] for o in result["observations"]]
-    check(tools.count("mcp__mail__sync_mailbox") == 1, "resumed result observed")
+    check(tools.count("mcp__mail__get_new_mail") == 1, "resumed result observed")
     return result
 
 
@@ -530,13 +531,13 @@ async def stdio_front(out: Path) -> dict[str, Any]:
                 "long": text_of(long)[:50],
                 "elicitation_asked": asked.asked,
                 "elicited": text_of(elicited)[:60],
-                "sampled": text_of(sampled)[:60],
+                "sampled": "canned answer" in text_of(sampled),
                 "log_levels": sorted(set(logs)),
             }
     result["observations"] = stack.observations()
     check(progress == [1, 2], "progress routed to its request")
     check(asked.asked, "server elicitation routed to the client")
-    check("canned answer" in result["sampled"], "sampling routed to the client")
+    check(result["sampled"], "sampling routed to the client")
     check(result["log_levels"], "unrelated notifications reached the GET stream")
     return result
 
