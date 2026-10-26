@@ -1,9 +1,6 @@
 # Traffic captured from real MCP servers behind the proxy
 
-Each JSON file here is one scenario recorded on 2026-10-17 with real MCP servers running behind
-`toolguard mcp-proxy`, driven by the official Python SDK client or, for input the SDK never sends,
-a minimal JSON-RPC client. [`tests/test_mcp_proxy_live.py`](../../test_mcp_proxy_live.py) replays
-them through in-process proxies, so CI covers real protocol traffic without Docker.
+Each JSON file here is one scenario recorded on 2026-10-17 with real MCP servers running behind `toolguard mcp-proxy`, driven by the official Python SDK client or, for input the SDK never sends, a minimal JSON-RPC client. [`tests/test_mcp_proxy_live.py`](../../test_mcp_proxy_live.py) replays them through in-process proxies, so CI covers real protocol traffic without Docker.
 
 ## Components
 
@@ -17,9 +14,7 @@ them through in-process proxies, so CI covers real protocol traffic without Dock
 | `mcp-server-git` | 2026.10.10 (`mcp` 1.30.0) | Passthrough on a server built on SDK 1.x |
 | `capture/mail_server.py` | `mcp` 2.3.0 | Toy mail server; the only one that speaks protocol 2026-07-28 |
 
-Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and
-`python:3.13-slim-bookworm` pinned by digest in [`capture/Dockerfile`](capture/Dockerfile).
-[`index.json`](index.json) lists the versions reported at run time and what each scenario observed.
+Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and `python:3.13-slim-bookworm` pinned by digest in [`capture/Dockerfile`](capture/Dockerfile). [`index.json`](index.json) lists the versions reported at run time and what each scenario observed.
 
 ## Scenarios
 
@@ -36,15 +31,11 @@ Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and
 | `git.json` | git | Plain passthrough to a server built on SDK 1.x |
 | `modern.json` | toy mail server | Protocol 2026-07-28 end to end: per-request `_meta`, no `initialize`; an injected recipient is blocked and a confirmation fails closed to the queue |
 
-The `large` scenario (a 1.16 MB text file and a 512 KiB image through the filesystem server) is
-checked live but not kept: its summary is in `index.json`.
+The `large` scenario (a 1.16 MB text file and a 512 KiB image through the filesystem server) is checked live but not kept: its summary is in `index.json`.
 
 ## Changes since the capture
 
-The files are kept exactly as recorded. When an engine fix changes a refusal written by the
-proxy, the replay replaces that refusal in memory and the test lists the new text and the reason
-in `AMENDED` ([`test_mcp_proxy_live.py`](../../test_mcp_proxy_live.py)); `observed` in the
-fixture and in `index.json` still shows what was seen at capture time.
+The files are kept exactly as recorded. When an engine fix changes a refusal written by the proxy, the replay replaces that refusal in memory and the test lists the new text and the reason in `AMENDED` ([`test_mcp_proxy_live.py`](../../test_mcp_proxy_live.py)); `observed` in the fixture and in `index.json` still shows what was seen at capture time.
 
 | Scenario | Recorded | Replayed today | Why |
 |---|---|---|---|
@@ -57,20 +48,11 @@ fixture and in `index.json` still shows what was seen at capture time.
  "events": [{"t": 0.0, "dir": "c2p", "server": "everything", "line": "{...}\n"}, ...]}
 ```
 
-`dir` is `c2p` (client to proxy), `p2c`, `p2s` (proxy to server) or `s2p`; `client-eof`,
-`server-eof`, `client-exit` and `server-exit` mark stdin closing and process exits (with `code`);
-`oob` marks the operator's approval. `line` is the exact UTF-8 line and `b64` holds a line that is
-not valid UTF-8. `t` is seconds from the first event; events are ordered by a clock shared by the
-two taps of every proxy. Hidden characters are written as `\uXXXX` escapes.
+`dir` is `c2p` (client to proxy), `p2c`, `p2s` (proxy to server) or `s2p`; `client-eof`, `server-eof`, `client-exit` and `server-exit` mark stdin closing and process exits (with `code`); `oob` marks the operator's approval. `line` is the exact UTF-8 line and `b64` holds a line that is not valid UTF-8. `t` is seconds from the first event; events are ordered by a clock shared by the two taps of every proxy. Hidden characters are written as `\uXXXX` escapes.
 
 ## How the files were produced
 
-All third-party code ran only in a throwaway container built from the pinned images and
-packages (`npm install --ignore-scripts PACKAGE@VERSION`, `pip install PACKAGE==VERSION` in one
-virtual environment per server). Network access was only available while the image was built;
-captures ran as an unprivileged user with `--network none`. The web pages came from a server on
-the container's loopback interface; no external service was contacted. toolguard was mounted
-read-only from this checkout.
+All third-party code ran only in a throwaway container built from the pinned images and packages (`npm install --ignore-scripts PACKAGE@VERSION`, `pip install PACKAGE==VERSION` in one virtual environment per server). Network access was only available while the image was built; captures ran as an unprivileged user with `--network none`. The web pages came from a server on the container's loopback interface; no external service was contacted. toolguard was mounted read-only from this checkout.
 
 ```bash
 docker build --label agent-task=mcp-proxy-live -t mcp-proxy-live tests/fixtures/mcp_live/capture
@@ -81,30 +63,16 @@ docker run --rm --network none --label agent-task=mcp-proxy-live \
 python tests/fixtures/mcp_live/capture/build.py out tests/fixtures/mcp_live
 ```
 
-- [`capture/driver.py`](capture/driver.py) runs every scenario as
-  `client <-> tap <-> toolguard mcp-proxy <-> tap <-> server` and checks its expectations; it
-  exits non-zero if any fails. Pass scenario names after the output directory to run only those.
-- [`capture/tap.py`](capture/tap.py) relays a process's stdio and logs each line with the shared
-  monotonic clock.
-- [`capture/build.py`](capture/build.py) merges the taps into one transcript per scenario and
-  refuses to write one that names the capture host (container id or host paths).
+- [`capture/driver.py`](capture/driver.py) runs every scenario as `client <-> tap <-> toolguard mcp-proxy <-> tap <-> server` and checks its expectations; it exits non-zero if any fails. Pass scenario names after the output directory to run only those.
+- [`capture/tap.py`](capture/tap.py) relays a process's stdio and logs each line with the shared monotonic clock.
+- [`capture/build.py`](capture/build.py) merges the taps into one transcript per scenario and refuses to write one that names the capture host (container id or host paths).
 
-Sanitization: the driver uses fixed git identities and dates, placeholder values
-(`placeholder-token-...` in the `.env` file, `billing@evil-payments.example`) and container paths
-(`/work`); no real account or secret was used. Random values (task ids, elicitation and approval
-ids, timestamps in task metadata) are left as recorded; the replay maps the proxy's own random
-ids.
+Sanitization: the driver uses fixed git identities and dates, placeholder values (`placeholder-token-...` in the `.env` file, `billing@evil-payments.example`) and container paths (`/work`); no real account or secret was used. Random values (task ids, elicitation and approval ids, timestamps in task metadata) are left as recorded; the replay maps the proxy's own random ids.
 
 ## Server quirks found while capturing
 
-- `mcp-server-fetch` refuses loopback and private addresses unless started with
-  `--allow-private-ips`.
-- With `node` on `PATH`, `mcp-server-fetch` (through `readabilipy`) runs `npm install` the first
-  time it simplifies an HTML page, which hangs without network. The captures run it with
-  `PATH=/usr/bin:/bin`, so `readabilipy` uses its Python extractor.
-- `server-memory` writes next to its package by default; it ran with
-  `MEMORY_FILE_PATH=/work/memory.jsonl`.
-- `server-everything` keeps a timer running after `toggle-simulated-logging` and does not exit
-  when its stdin closes; the proxy now terminates it (see `protocol.json`, exit code 143).
-- The SDK 2.x client probes `server/discover` first; every reference server answers `-32601` and
-  the client falls back to `initialize`.
+- `mcp-server-fetch` refuses loopback and private addresses unless started with `--allow-private-ips`.
+- With `node` on `PATH`, `mcp-server-fetch` (through `readabilipy`) runs `npm install` the first time it simplifies an HTML page, which hangs without network. The captures run it with `PATH=/usr/bin:/bin`, so `readabilipy` uses its Python extractor.
+- `server-memory` writes next to its package by default; it ran with `MEMORY_FILE_PATH=/work/memory.jsonl`.
+- `server-everything` keeps a timer running after `toggle-simulated-logging` and does not exit when its stdin closes; the proxy now terminates it (see `protocol.json`, exit code 143).
+- The SDK 2.x client probes `server/discover` first; every reference server answers `-32601` and the client falls back to `initialize`.

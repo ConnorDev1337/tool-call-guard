@@ -1,10 +1,6 @@
 # Streamable HTTP traffic captured from real MCP servers behind the proxy
 
-Each JSON file here is one scenario recorded on 2026-10-18 with real MCP servers behind
-`toolguard mcp-proxy --listen`, driven by the official Python SDK client over Streamable HTTP or,
-for input the SDK never sends, raw `http.client` requests.
-[`tests/test_mcp_http_live.py`](../../test_mcp_http_live.py) replays them through an in-process
-proxy, so CI covers real HTTP traffic without Docker.
+Each JSON file here is one scenario recorded on 2026-10-18 with real MCP servers behind `toolguard mcp-proxy --listen`, driven by the official Python SDK client over Streamable HTTP or, for input the SDK never sends, raw `http.client` requests. [`tests/test_mcp_http_live.py`](../../test_mcp_http_live.py) replays them through an in-process proxy, so CI covers real HTTP traffic without Docker.
 
 ## Components
 
@@ -14,9 +10,7 @@ proxy, so CI covers real HTTP traffic without Docker.
 | `@modelcontextprotocol/server-everything` | 1.0.0 (TypeScript SDK 1.32.1) | `streamableHttp` (sessions, event store) and `stdio` behind the HTTP front |
 | `capture/mail_http_server.py` | `mcp` 2.3.0 | Toy mail server: sessions with resumable SSE, stateless JSON, protocol 2026-07-28 |
 
-Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and
-`python:3.13-slim-bookworm` pinned by digest in [`capture/Dockerfile`](capture/Dockerfile).
-[`index.json`](index.json) lists the versions reported at run time and what each scenario observed.
+Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and `python:3.13-slim-bookworm` pinned by digest in [`capture/Dockerfile`](capture/Dockerfile). [`index.json`](index.json) lists the versions reported at run time and what each scenario observed.
 
 ## Scenarios
 
@@ -37,24 +31,11 @@ Node.js 22.23.3 and Python 3.13.16, from `node:22-bookworm-slim` and
  "request": {"method": "POST", "target": "/mcp", "headers": [...], "body": "..."}}, ...]}
 ```
 
-`dir` is `c2p` (client to proxy), `p2c`, `p2u` (proxy to upstream), `u2p`, or `p2s` and `s2p`
-for the stdio server of the HTTP front (`line` as in the stdio captures). HTTP events carry the
-TCP connection (`conn`) and the request's position on it (`seq`), and one of `request`,
-`response` (status and headers), `event` (one server-sent event: `id`, `event`, `retry`, `data`,
-or `comment`), `body`, `end` (the response is complete), `abort` (the connection closed first) or
-`eof` (that side stopped sending). `t` is seconds from the first event on the clock shared by
-the taps. `setup` lists what the scenario recorded in the session before the traffic (a `.env`
-read by another integration of the same agent). Hidden characters are written as `\uXXXX`
-escapes.
+`dir` is `c2p` (client to proxy), `p2c`, `p2u` (proxy to upstream), `u2p`, or `p2s` and `s2p` for the stdio server of the HTTP front (`line` as in the stdio captures). HTTP events carry the TCP connection (`conn`) and the request's position on it (`seq`), and one of `request`, `response` (status and headers), `event` (one server-sent event: `id`, `event`, `retry`, `data`, or `comment`), `body`, `end` (the response is complete), `abort` (the connection closed first) or `eof` (that side stopped sending). `t` is seconds from the first event on the clock shared by the taps. `setup` lists what the scenario recorded in the session before the traffic (a `.env` read by another integration of the same agent). Hidden characters are written as `\uXXXX` escapes.
 
 ## How the files were produced
 
-All third-party code ran only in a throwaway container built from the pinned images and
-packages (`npm install --ignore-scripts PACKAGE@VERSION`, `pip install mcp==2.3.0` in one virtual
-environment). Network access was only available while the image was built; captures ran as an
-unprivileged user with `--network none`, every server and proxy listening on the container's
-loopback interface. No external service was contacted. toolguard and the stdio tap were mounted
-read-only from this checkout.
+All third-party code ran only in a throwaway container built from the pinned images and packages (`npm install --ignore-scripts PACKAGE@VERSION`, `pip install mcp==2.3.0` in one virtual environment). Network access was only available while the image was built; captures ran as an unprivileged user with `--network none`, every server and proxy listening on the container's loopback interface. No external service was contacted. toolguard and the stdio tap were mounted read-only from this checkout.
 
 ```bash
 docker build --label agent-task=mcp-http-live -t mcp-http-live tests/fixtures/mcp_http/capture
@@ -66,27 +47,16 @@ docker run --rm --network none --label agent-task=mcp-http-live \
 python tests/fixtures/mcp_http/capture/build.py out tests/fixtures/mcp_http
 ```
 
-- [`capture/driver.py`](capture/driver.py) runs every scenario as
-  `client <-> TCP tap <-> toolguard mcp-proxy --listen <-> TCP tap <-> server` (or a stdio tap and
-  a stdio server for the HTTP front) and checks its expectations; it exits non-zero if any fails.
-- [`capture/tcptap.py`](capture/tcptap.py) relays TCP connections and logs every chunk with the
-  shared monotonic clock.
-- [`capture/build.py`](capture/build.py) parses the logs as HTTP/1.1, merges them into one
-  transcript per scenario and refuses to write one that names the capture host.
+- [`capture/driver.py`](capture/driver.py) runs every scenario as `client <-> TCP tap <-> toolguard mcp-proxy --listen <-> TCP tap <-> server` (or a stdio tap and a stdio server for the HTTP front) and checks its expectations; it exits non-zero if any fails.
+- [`capture/tcptap.py`](capture/tcptap.py) relays TCP connections and logs every chunk with the shared monotonic clock.
+- [`capture/build.py`](capture/build.py) parses the logs as HTTP/1.1, merges them into one transcript per scenario and refuses to write one that names the capture host.
 
-Sanitization: placeholder values only (`placeholder-token-...` in the `.env` content,
-`Bearer placeholder-bearer-...`, which no server checks, `billing@evil-payments.example`) and
-container paths (`/work`). Session ids, event ids and dates are left as recorded; the replay maps
-the random values the proxy creates (elicitation ids, approval ids, the session ids of its stdio
-front).
+Sanitization: placeholder values only (`placeholder-token-...` in the `.env` content, `Bearer placeholder-bearer-...`, which no server checks, `billing@evil-payments.example`) and container paths (`/work`). Session ids, event ids and dates are left as recorded; the replay maps the random values the proxy creates (elicitation ids, approval ids, the session ids of its stdio front).
 
 ## Found while capturing
 
-- A request refused before its body was read (bad `Origin`, oversized body) left the body in the
-  connection, and the next request on it was parsed from those bytes and answered with an HTML
+- A request refused before its body was read (bad `Origin`, oversized body) left the body in the connection, and the next request on it was parsed from those bytes and answered with an HTML
   400. Refusals now close the connection.
 - Upstream `Date` and `Server` headers were relayed next to the proxy's own.
-- The Python SDK client closes a resumed stream as soon as it has the response, while the proxy
-  keeps relaying it until the server ends it or a write fails (here, at `DELETE`).
-- The TypeScript reference server sends a priming event (an `id` with empty `data`) at the start
-  of every POST stream; the proxy relays it so the client can resume.
+- The Python SDK client closes a resumed stream as soon as it has the response, while the proxy keeps relaying it until the server ends it or a write fails (here, at `DELETE`).
+- The TypeScript reference server sends a priming event (an `id` with empty `data`) at the start of every POST stream; the proxy relays it so the client can resume.
